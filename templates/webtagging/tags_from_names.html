@@ -1,0 +1,25 @@
+
+<html>
+
+<table>
+
+    <tr>
+        <th>Image name</th>
+
+        {% for col in tagCols %}
+            <th>{{ col }}</th>
+        {% endfor %}
+    </tr>
+
+    {% for row in tagRows %}
+        <tr>
+            <td>{{ row.id }} - {{ row.name }}</td>
+            {% for tag in row.tags %}
+                <td>{{ tag }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+
+</table>
+
+</html>
