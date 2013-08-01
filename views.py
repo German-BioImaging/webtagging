@@ -22,61 +22,74 @@ def tags_from_names(request, datasetId=None, conn=None, **kwargs):
 
     def listTags(image):
         """ This should be in the BlitzGateway! """
-        return [a for a in image.listAnnotations() if a.__class__.__name__ == "TagAnnotation"]
+        return [a for a in image.listAnnotations() if a.__class__.__name__ == "TagAnnotationWrapper"]
 
+    # TODO: handle list of Image IDs. Currently we ONLY support Dataset
     if datasetId is not None:
         dataset = conn.getObject("Dataset", datasetId)
         images = list( dataset.listChildren() )
         images.sort(key=lambda img: img.getName().lower())
 
-    # Need to build our table
-    tagCols = {}     # All tags. {"Name": <id>} or {"Name":None} for new tags
-    tagRows = []
+    # Need to build our table...
 
+    # First go through all images, getting all the name tokens
+    tokens = []
     for image in images:
-
         name = image.getName()
-        tokens = name.split(r'/')       # TODO: improve regex
-        tags = {}
-        for tag in listTags(image):
-            tags[tag.getValue()] = tag.getId()
+        tt = name.split(r'/')       # TODO: improve regex
+        tokens.extend(tt)
 
+    # remove duplicates
+    tokens = list(set(tokens))
+    tokens.sort(key=lambda name: name.lower())
+
+
+    # find which tokens match existing Tags
+    # Each column is a Tag or a Token.
+    tagCols = []    # {"name": Tag, "id":<id>} or {"name":Tag} for new tags
+    for tk in tokens:
+        if len(tk) == 0:
+            continue
+        tags = list(conn.getObjects("TagAnnotation", attributes={'textValue':tk}))
+        if len(tags) == 1:
+            # Column is a Tag
+            tagCols.append({'name':tk, 'id':tags[0].getId()})
+        elif len(tags) > 1:
+            pass    # TODO: Assume Tags are unique for each token?
+        else:
+            tagCols.append({'name':tk})     # No Tag - just a token
+
+
+    # Now we can populate the table data - One row (image) at at time...
+    tagRows = []
+    for image in images:
+        name = image.getName()
+        tt = name.split(r'/')
         imgTags = {}
-        for t in tokens:
-            if t in tags:
-                imgTags[t] = tags[t]
-                tagCols[t] = tags[t]    # {'text':id}
+        for tag in listTags(image):
+            imgTags[tag.getValue()] = tag.getId()
+
+        tableCells = []
+        # for each column of the row, get all the info we need for each cell...
+        for tagCol in tagCols:
+            colName = tagCol["name"]
+            # if the image has the column in it's tokens...
+            if colName in tt:
+                td = {"text":"TAGGED"}
+                # And if it's not already a Tag on the image, show an "Add" button
+                if colName not in imgTags:
+                    td['text'] = "ADD"
+                    td['ADD'] = True
+                    # If the column/token is an Existing Tag, provide the ID
+                    if 'id' in tagCol:
+                        td['tagId'] = tagCol['id']
+                tableCells.append(td)
             else:
-                imgTags[t] = None
-                if t not in tagCols:    # Don't overwrite
-                    tagCols[t] = None
+                tableCells.append({"text":""})
+        # Row Data has imageId, name, and tag/token data
+        tagRows.append({'id':image.id, 'name':name, 'tableCells':tableCells})
 
-        tagRows.append({'id':image.id, 'name':image.name, 'tags':imgTags})
-
-    # Now we know all the column names, we can organise tags for each row into cols...
-
-    # convert to list
-    # tagCols = [{value:tid} for value,tid in tagCols.items()]
-    # tagCols.sort(key=lambda tag:tag.keys()[0])
-    tagCols = tagCols.keys()
-    tagCols.sort(key=lambda tag: tag.lower())
-
-    print tagCols
-
-    for row in tagRows:
-        tagDict = row['tags']
-        tagCells = []       # <td> under tagCols
-        print tagDict
-        for col in tagCols:
-            #tagText = col.keys()[0]
-            tagText = col
-            if tagText in tagDict:
-                tagCells.append(tagText)
-            else:
-                tagCells.append("")
-        print tagCells
-        row['tags'] = tagCells
-
+    # We only need to return a dict - the @render_response() decorator does the rest...
     context = {'template': 'webtagging/tags_from_names.html'}
     context['tagCols'] = tagCols
     context['tagRows'] = tagRows

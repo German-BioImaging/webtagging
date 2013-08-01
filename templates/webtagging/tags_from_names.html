@@ -7,15 +7,20 @@
         <th>Image name</th>
 
         {% for col in tagCols %}
-            <th>{{ col }}</th>
+            <th>{{ col.name }} [{{ col.id }}]</th>
         {% endfor %}
     </tr>
 
     {% for row in tagRows %}
         <tr>
             <td>{{ row.id }} - {{ row.name }}</td>
-            {% for tag in row.tags %}
-                <td>{{ tag }}</td>
+            {% for tag in row.tableCells %}
+                <td>
+                    {{ tag.text }}
+                    {% if tag.ADD %}
+                        <input type="checkbox"/>
+                    {% endif %}
+                </td>
             {% endfor %}
         </tr>
     {% endfor %}
