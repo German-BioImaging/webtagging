@@ -1,0 +1,30 @@
+<script>
+
+$(function() {
+    
+    $("#auto_tag_panel").omeroweb_center_plugin({
+        plugin_index: {{ forloop.counter }},        // since we're in a Django template loop
+        load_plugin_content: function(selected, dtype, oid){
+
+            // since we currently limit our dtype to 'dataset', oid will be dataset ID
+            var auto_tag_url;
+            // if (dtype=="image") {
+            //     var iids = [];
+            //     for (var i=0; i<selected.length; i++) {
+            //         var dtype = selected[i]['id'].split("-")[0];
+            //         if (dtype == "image") {
+            //             iids.push(selected[i]['id'].split("-")[1]);
+            //         };
+            //     }
+            //     auto_tag_url = '{% url webtest_split_view_figure_plugin %}?imageIds='+ iids.join(",") + "&width=120";
+            // // if it's a dataset, show 2 rendering settings side by side.
+            // } else if (dtype=="dataset") {
+                auto_tag_url = '{% url webtagging_index %}auto_tag/dataset/'+oid+'/';
+            // }
+            $(this).load(auto_tag_url);
+        },
+        supported_obj_types: ['dataset']
+    });
+});
+
+</script>

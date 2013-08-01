@@ -13,7 +13,7 @@ def index(request):
 
 @login_required()
 @render_response()
-def tags_from_names(request, datasetId=None, conn=None, **kwargs):
+def auto_tag(request, datasetId=None, conn=None, **kwargs):
     """
     List all the images in a table, with their names tokenised to create 
     suggestions for new tags.
