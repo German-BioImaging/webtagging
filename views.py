@@ -2,6 +2,7 @@ from django.http import HttpResponse
 
 from omeroweb.webclient.decorators import login_required, render_response
 
+from utils import parse_path
 
 def index(request):
     """
@@ -32,12 +33,15 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
 
     # Need to build our table...
 
-    # First go through all images, getting all the name tokens
+    # First go through all images, getting all the tokens
     tokens = []
     for image in images:
         name = image.getName()
-        tt = name.split(r'/')       # TODO: improve regex
-        tokens.extend(tt)
+
+        path_tokens, file_tokens, ext_tokens = parse_path(name)
+        tokens.extend(path_tokens)
+        tokens.extend(file_tokens)
+        tokens.extend(ext_tokens)
 
     # remove duplicates
     tokens = list(set(tokens))
@@ -55,7 +59,7 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
             # Column is a Tag
             tagCols.append({'name':tk, 'id':tags[0].getId()})
         elif len(tags) > 1:
-            pass    # TODO: Assume Tags are unique for each token?
+            pass    # TODO: Assume Tags are unique for each token? #DPWR: Will have to offer a dropdown box as it's very likely a choice will have to be made
         else:
             tagCols.append({'name':tk})     # No Tag - just a token
 
@@ -64,25 +68,34 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
     tagRows = []
     for image in images:
         name = image.getName()
-        tt = name.split(r'/')
+
+        path_tokens, file_tokens, ext_tokens = parse_path(name)
+        tt = path_tokens + file_tokens + ext_tokens
+
+        # Create mapping of tags for this image (value : id)
         imgTags = {}
         for tag in listTags(image):
             imgTags[tag.getValue()] = tag.getId()
 
+
         tableCells = []
-        # for each column of the row, get all the info we need for each cell...
+        # for each column/token of the row, get all the info we need for each cell...
         for tagCol in tagCols:
             colName = tagCol["name"]
             # if the image has the column in it's tokens...
             if colName in tt:
-                td = {"text":"TAGGED"}
-                # And if it's not already a Tag on the image, show an "Add" button
-                if colName not in imgTags:
-                    td['text'] = "ADD"
-                    td['ADD'] = True
-                    # If the column/token is an Existing Tag, provide the ID
-                    if 'id' in tagCol:
-                        td['tagId'] = tagCol['id']
+                td = {}
+
+                # If the column/token is an Existing Tag, provide the ID
+                if 'id' in tagCol:
+                    td['tagId'] = tagCol['id']	# Also indicates 'Matched'
+
+                    # Determine if the Tag is already on the image
+                    if colName in imgTags:
+                        td['selected'] = True
+                    #else:
+                        #td['selected'] = False 	# Implicit
+
                 tableCells.append(td)
             else:
                 tableCells.append({"text":""})
