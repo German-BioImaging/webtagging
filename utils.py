@@ -12,7 +12,7 @@ def parse_path(path):
 
     #TODO Cope with multiple-extensions somehow
     ext_tokens = file.rsplit(r'.')
-    file = ext_tokens[0]
+    file = ext_tokens.pop(0)
 
     #TODO Cope with multiple separators
     file_tokens = file.split(r'_')

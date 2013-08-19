@@ -1,33 +1,52 @@
+<link rel="stylesheet" type="text/css" href="{% static 'webtagging/css/bootstrap.css' %}" />
 
 <html>
+<form id="updateAllForm" action="{% url webtagging_process_update %}" method="post">
 
-<table>
+    <table class="table table-bordered table-striped table-hover table-condensed">
 
-    <tr>
-        <th>Image Name</th>
-
-        {% for col in tagCols %}
-            <th>{{ col.name }} [{{ col.id }}]</th>
-        {% endfor %}
-    </tr>
-
-    {% for row in tagRows %}
         <tr>
-            <td>{{ row.id }} - {{ row.name }}</td>
-            {% for tag in row.tableCells %}
-                <td>
-                    {% if tag.tagId %}
-                        {% if tag.selected %}
+            {% for tokenTag in tokenTags %}
+                <th>
+                    {% if tokenTag.tags %}
+                        <select>
+                            <!-- TODO Should have a list of matching tags available here -->
+                            <!-- If there are 0 matching, select nothing -->
+                            <!-- If there is 1 matching, selected it -->
+                            <!-- If there are more than 1 matching, but 0 selected then select nothing -->
+                            <!-- If there are more than 1 matching and 1 selected, select it?? -->
+                            <!-- If there are more than 1 matching and more than 1 selected, select nothing?? -->
+                                {% for tag in tokenTag.tags %}
+                                <option selected>{{ tag.name }}({{ tag.id }})</option>
+                                {% endfor %}
+                                <!-- The option fires up the same context as creating a new tag to allow overriding a match with a new tag/map -->
+                                <option>Remap</option>
+                        </select>
+                    {% else %}
+                    <!-- Link to create a new tag of this name or map this token (temporarily) to an existing tag -->
+                    <a href="">{{ tokenTag.name }}</a>
+                    {% endif %}
+                </th>
+            {% endfor %}
+            <th>Image Name</th>
+        </tr>
+
+        {% for imageDetail in imageDetails %}
+            <tr>
+                {% for imageToken in imageDetail.tokens %}
+                    <td>
+                        {% if imageToken.autoselect %}
                             <input type="checkbox" checked/>
                         {% else %}
-                            <input type="checkbox" />
+                            <input type="checkbox"/>
                         {% endif %}
-                    {% endif %}
-                </td>
-            {% endfor %}
-        </tr>
-    {% endfor %}
+                    </td>
+                {% endfor %}
+                <td>{{ imageDetail.name }}</td>
+            </tr>
+        {% endfor %}
 
-</table>
-
+    </table>
+    <input type="submit" value="Apply" />
+</form>
 </html>

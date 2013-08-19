@@ -41,7 +41,8 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
         path_tokens, file_tokens, ext_tokens = parse_path(name)
         tokens.extend(path_tokens)
         tokens.extend(file_tokens)
-        tokens.extend(ext_tokens)
+        #TODO As mentioned below (about 40 lines) extension tags are ignored for now
+        #tokens.extend(ext_tokens)
 
     # remove duplicates
     tokens = list(set(tokens))
@@ -49,69 +50,87 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
 
 
     # find which tokens match existing Tags
-    # Each column is a Tag or a Token.
-    tagCols = []    # {"name": Tag, "id":<id>} or {"name":Tag} for new tags
-    for tk in tokens:
-        if len(tk) == 0:
+    tokenTags = []
+    for token in tokens:
+
+        # Skip zero length tokens
+        if len(token) == 0:
             continue
-        tags = list(conn.getObjects("TagAnnotation", attributes={'textValue':tk}))
-        if len(tags) == 1:
-            # Column is a Tag
-            tagCols.append({'name':tk, 'id':tags[0].getId()})
-        elif len(tags) > 1:
-            pass    # TODO: Assume Tags are unique for each token? #DPWR: Will have to offer a dropdown box as it's very likely a choice will have to be made
-        else:
-            tagCols.append({'name':tk})     # No Tag - just a token
 
+        # Get all tags matching the token
+        matchingTags = list(conn.getObjects("TagAnnotation", attributes={'textValue':token}))
 
-    # Now we can populate the table data - One row (image) at at time...
-    tagRows = []
+        tags = []
+        # For each of the matching tags
+        for matchingTag in matchingTags:
+            # Add dictionary of details
+            tags.append({'name':matchingTag.getValue(), 'id':matchingTag.getId(), 'desc':matchingTag.getDescription()})
+
+        tokenTagMap = {'name':token}
+
+        # Assign the matching tags to the token dictionary (only if there are any)
+        if len(tags) > 0:
+            tokenTagMap['tags'] = tags
+
+        # Add the token with any tag mappings to the list
+        tokenTags.append(tokenTagMap)
+
+    # Populate the images with details
+    imageDetails = []
     for image in images:
-        name = image.getName()
+        pathTokens, fileTokens, extTokens = parse_path(image.getName())
+        #TODO allTokens needs to be controlled by some form elements, e.g. extension/directory support on/off
+        # Potentially each list of tokens would be treated differently so searched separately 
+        # Ignore extTokens for now
+        allTokens = pathTokens + fileTokens
 
-        path_tokens, file_tokens, ext_tokens = parse_path(name)
-        tt = path_tokens + file_tokens + ext_tokens
-
-        # Create mapping of tags for this image (value : id)
-        imgTags = {}
+        # Create mapping of tags that exist already on this image (value : id)
+        imageTags = {}
         for tag in listTags(image):
-            imgTags[tag.getValue()] = tag.getId()
+            imageTags[tag.getValue()] = tag.getId()
+        imageTokens = []
+        # For each token that exists (tokens from all images)
+        for token in tokenTags:
+            imageToken = {}
+            # If the token is present in the image
+            if token['name'] in allTokens:
+                # Get the tags (if any) that are relevant
+                if 'tags' in token:
+                    tags = token['tags']
+                    # If exactly 1 tag exists for this image
+                    if len(tags) == 1:
+                        # Mark the token as matched
+                        imageToken['matched'] = True
+                        # Mark the token for autoselect
+                        imageToken['autoselect'] = True
+            # If the tag is already on the image (not necessarily because it has a matching token)
+            if token['name'] in imageTags:
+                # Mark the token as selected
+                imageToken['selected'] = True
+            imageTokens.append(imageToken)
 
 
-        tableCells = []
-        # for each column/token of the row, get all the info we need for each cell...
-        for tagCol in tagCols:
-            colName = tagCol["name"]
-            # if the image has the column in it's tokens...
-            if colName in tt:
-                td = {}
+        imageDetail = {'name':image.getName(), 'tokens':imageTokens}
+        imageDetails.append(imageDetail)
 
-                # If the column/token is an Existing Tag, provide the ID
-                if 'id' in tagCol:
-                    td['tagId'] = tagCol['id']	# Also indicates 'Matched'
 
-                    # Determine if the Tag is already on the image
-                    if colName in imgTags:
-                        td['selected'] = True
-                    #else:
-                        #td['selected'] = False 	# Implicit
+    # How this works:
+    # tokenTags is a list of the tokens involved in all the images. These contain details of the tags that match
+    # imageDetails is a list of the images, each one has details per-above tokens. e.g. If the token is matched,
+    # has a tag already selected or if it should be auto-selected 
 
-                tableCells.append(td)
-            else:
-                tableCells.append({"text":""})
-        # Row Data has imageId, name, and tag/token data
-        tagRows.append({'id':image.id, 'name':name, 'tableCells':tableCells})
-
+    print 'tokenTags: ', tokenTags          #PRINT
+    print 'imageDetails: ', imageDetails    #PRINT
     # We only need to return a dict - the @render_response() decorator does the rest...
     context = {'template': 'webtagging/tags_from_names.html'}
-    context['tagCols'] = tagCols
-    context['tagRows'] = tagRows
+    context['tokenTags'] = tokenTags
+    context['imageDetails'] = imageDetails
     return context
 
 
-
-
-
-
-
-
+@login_required()
+@render_response()
+def process_update(request, conn=None, **kwargs):
+    context = {'template': 'webtagging/submitted.html'}
+    return context
+    
