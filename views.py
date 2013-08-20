@@ -145,12 +145,11 @@ def process_update(request, conn=None, **kwargs):
         imagesPost = request.POST.getlist('image')
 
         # Convert the posted data into something more manageable
-        #TODO If I find I don't need tokenTags as a dict, could be a list of tuples
         tokenTags = {}
         for tokenTag in tokenTagsPost:
             n,v = tokenTag.split(r'_')
             tokenTags[n] = long(v)
-        
+        print tokenTags
         history = {}
         for h in historyPost:
             n,v = h.split(r'_')
@@ -171,26 +170,34 @@ def process_update(request, conn=None, **kwargs):
         # Or if I need to search it, a dictionary instead of the list
         imageIds = [long(image) for image in imagesPost]
 
-        additions = []
-        removals = []
+        modifications = {}
         # Create a list of tags to add on images and one to remove tags from images
         for imageId in imageIds:
 
             # If the image has some checked items
             if imageId in checked:
-                # Get the checked tokens
-                checkedTokens = checked[imageId]
-                # Get the previously selected tokens
-                selectedTokens = history[imageId]
-
                 # Add any tokens (for addition) that are not preexisting (checked - history)
-                additions.append(list(set(checkedTokens) - set(selectedTokens)))
+                additionsTokens = list(set(checked[imageId]) - set(history[imageId]))
                 # Add any tokens (for removal) that are prexisiting but not checked (history - checked)
-                removals.append(list(set(selectedTokens) - set(checkedTokens)))
+                removalsTokens = list(set(history[imageId]) - set(checked[imageId]))
+                additions = []
+                removals = []
+
+                # Lookup which tag is mapped to the tokens that are to be added/removed
+                for token in additionsTokens:
+                    # Currently the submitted tokens include ones with no mapping, simply ignore these
+                    if token in tokenTags:
+                        additions.append(tokenTags[token])
+
+                for token in removalsTokens:
+                    # Currently the submitted tokens include ones with no mapping, simply ignore these
+                    if token in tokenTags:
+                        removals.append(tokenTags[token])
                 
-            
-        print 'additions', additions    #PRINT
-        print 'removals', removals      #PRINT
+                modifications[imageId] = {'additions':additions, 'removals':removals}
+
+        print 'modifications', modifications    #PRINT
+
 
     context = {'template': 'webtagging/submitted.html'}
     return context
