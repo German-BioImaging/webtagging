@@ -4,6 +4,8 @@ from omeroweb.webclient.decorators import login_required, render_response
 
 from utils import parse_path
 
+from urlparse import parse_qsl
+
 def index(request):
     """
     Just a place-holder, base for creating urls etc
@@ -91,7 +93,7 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
         imageTokens = []
         # For each token that exists (tokens from all images)
         for token in tokenTags:
-            imageToken = {}
+            imageToken = {'name':token['name']}
             # If the token is present in the image
             if token['name'] in allTokens:
                 # Get the tags (if any) that are relevant
@@ -110,7 +112,7 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
             imageTokens.append(imageToken)
 
 
-        imageDetail = {'name':image.getName(), 'tokens':imageTokens}
+        imageDetail = {'id':image.getId(), 'name':image.getName(), 'tokens':imageTokens}
         imageDetails.append(imageDetail)
 
 
@@ -131,6 +133,65 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
 @login_required()
 @render_response()
 def process_update(request, conn=None, **kwargs):
+    if request.method == "POST":
+        #controls = parse_qsl(request.raw_post_data, keep_blank_values=True)
+        
+        #In django > 1.4
+        #controls = request.POST.dict()
+        controls = request.POST.iterlists()
+        tokenTagsPost = request.POST.getlist('tokentag')
+        historyPost = request.POST.getlist('imagechecked_history')
+        checkedPost = request.POST.getlist('imagechecked')
+        imagesPost = request.POST.getlist('image')
+
+        # Convert the posted data into something more manageable
+        #TODO If I find I don't need tokenTags as a dict, could be a list of tuples
+        tokenTags = {}
+        for tokenTag in tokenTagsPost:
+            n,v = tokenTag.split(r'_')
+            tokenTags[n] = long(v)
+        
+        history = {}
+        for h in historyPost:
+            n,v = h.split(r'_')
+            if long(n) in history:
+                history[long(n)].append(v)
+            else:
+                history[long(n)] = [v]
+
+        checked = {}
+        for c in checkedPost:
+            n,v = c.split(r'_')
+            if long(n) in checked:
+                checked[long(n)].append(v)
+            else:
+                checked[long(n)] = [v]
+
+        # Use simple list for images for now, if I need more info I many need a list of dicts or a list of tuples
+        # Or if I need to search it, a dictionary instead of the list
+        imageIds = [long(image) for image in imagesPost]
+
+        additions = []
+        removals = []
+        # Create a list of tags to add on images and one to remove tags from images
+        for imageId in imageIds:
+
+            # If the image has some checked items
+            if imageId in checked:
+                # Get the checked tokens
+                checkedTokens = checked[imageId]
+                # Get the previously selected tokens
+                selectedTokens = history[imageId]
+
+                # Add any tokens (for addition) that are not preexisting (checked - history)
+                additions.append(list(set(checkedTokens) - set(selectedTokens)))
+                # Add any tokens (for removal) that are prexisiting but not checked (history - checked)
+                removals.append(list(set(selectedTokens) - set(checkedTokens)))
+                
+            
+        print 'additions', additions    #PRINT
+        print 'removals', removals      #PRINT
+
     context = {'template': 'webtagging/submitted.html'}
     return context
     
