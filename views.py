@@ -2,7 +2,7 @@ from django.http import HttpResponse
 
 from omeroweb.webclient.decorators import login_required, render_response
 
-from utils import parse_path#, createTagAnnotationsLinks
+from utils import parse_path, createTagAnnotationsLinks
 
 from urlparse import parse_qsl
 
@@ -87,9 +87,23 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
         allTokens = pathTokens + fileTokens
 
         # Create mapping of tags that exist already on this image (value : id)
+        #TODO Inadequate if there are multiple tags with the same value
         imageTags = {}
         for tag in listTags(image):
             imageTags[tag.getValue()] = tag.getId()
+
+        #TODO Currently I set one hidden field for tokens that have a single tag match
+        # This is adequate, but will require a lot of additional javascript to work
+        # What if a token has many matches? There would be no hidden field set, thus no data about which tags may be selected server side
+        #       ajax queries will be required to get data about the current selected drop down in order to update the cell-backgrounds and checked status
+        #       It will also require javascript to update/add the hidden field so that form submission can carry the selected status forward.
+        # Possible alternate solution:
+        #   Add a hidden field for each image->tag link. Replaces current image->token link.
+        #       This will require javascript to update the cell-backgrounds and checked status when the dropdown value is changed
+        #       It will also require javascript to add a new hidden field when adding a new tag mapping as a prelude to updating the cell-backgrounds and checked statuses
+        #
+        #   
+
         imageTokens = []
         # For each token that exists (tokens from all images)
         for token in tokenTags:
@@ -108,6 +122,7 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
             # If the tag is already on the image (not necessarily because it has a matching token)
             if token['name'] in imageTags:
                 # Mark the token as selected
+                #TODO Inadequate if there are multiple tags with the same value as this merely marks the token as matching 
                 imageToken['selected'] = True
             imageTokens.append(imageToken)
 
@@ -208,4 +223,4 @@ def process_update(request, conn=None, **kwargs):
 
     context = {'template': 'webtagging/submitted.html'}
     return context
-    
+   
