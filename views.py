@@ -23,15 +23,28 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
     Indicate where these match existing tags etc.
     """
 
-    def listTags(image):
-        """ This should be in the BlitzGateway! """
-        return [a for a in image.listAnnotations() if a.__class__.__name__ == "TagAnnotationWrapper"]
-
     # TODO: handle list of Image IDs. Currently we ONLY support Dataset
     if datasetId is not None:
         dataset = conn.getObject("Dataset", datasetId)
         images = list( dataset.listChildren() )
         images.sort(key=lambda img: img.getName().lower())
+
+    tokenTags, imageDetails = build_table_data(conn, images)
+    # We only need to return a dict - the @render_response() decorator does the rest...
+    context = {'template': 'webtagging/tags_from_names.html'}
+    context['tokenTags'] = tokenTags
+    context['imageDetails'] = imageDetails
+    return context
+
+
+def build_table_data(conn, images):
+    """
+    We need to build tagging table data when the page originally loads AND after form processing
+    """
+
+    def listTags(image):
+        """ This should be in the BlitzGateway! """
+        return [a for a in image.listAnnotations() if a.__class__.__name__ == "TagAnnotationWrapper"]
 
     # Need to build our table...
 
@@ -138,11 +151,8 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
 
     print 'tokenTags: ', tokenTags          #PRINT
     print 'imageDetails: ', imageDetails    #PRINT
-    # We only need to return a dict - the @render_response() decorator does the rest...
-    context = {'template': 'webtagging/tags_from_names.html'}
-    context['tokenTags'] = tokenTags
-    context['imageDetails'] = imageDetails
-    return context
+
+    return tokenTags, imageDetails
 
 
 @login_required()
@@ -221,6 +231,15 @@ def process_update(request, conn=None, **kwargs):
         print 'removals:', removals     #PRINT
         #createTagAnnotationsLinks(conn, additions, removals)
 
-    context = {'template': 'webtagging/submitted.html'}
+    # Now we re-build the tagging table and return it
+    context = {'template': 'webtagging/tag_table.html'}
+
+    images = list(conn.getObjects("Image", imageIds))
+    images.sort(key=lambda img: img.getName().lower())
+
+    tokenTags, imageDetails = build_table_data(conn, images)
+    # We only need to return a dict - the @render_response() decorator does the rest...
+    context['tokenTags'] = tokenTags
+    context['imageDetails'] = imageDetails
     return context
    
