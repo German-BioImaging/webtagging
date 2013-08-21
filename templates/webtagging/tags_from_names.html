@@ -1,6 +1,19 @@
+<html>
+
 <link rel="stylesheet" type="text/css" href="{% static 'webtagging/css/bootstrap.css' %}" />
 
-<html>
+<script>window.jQuery || document.write('<script src="/static/3rdparty/jquery-1.7.2.js"><\/script><script src="{% static "webclient/javascript/jquery.form.js" %}"><\/script>')</script>
+
+<script>
+$(function(){
+    $("#updateAllForm").ajaxForm({
+        success: function(data) {
+            console.log(data);
+        }
+    });
+});
+</script>
+
 <form id="updateAllForm" action="{% url webtagging_process_update %}" method="post">
 
     <table class="table table-bordered table-striped table-hover table-condensed">
