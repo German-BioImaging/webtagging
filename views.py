@@ -2,7 +2,7 @@ from django.http import HttpResponse
 
 from omeroweb.webclient.decorators import login_required, render_response
 
-from utils import parse_path
+from utils import parse_path#, createTagAnnotationsLinks
 
 from urlparse import parse_qsl
 
@@ -149,7 +149,8 @@ def process_update(request, conn=None, **kwargs):
         for tokenTag in tokenTagsPost:
             n,v = tokenTag.split(r'_')
             tokenTags[n] = long(v)
-        print tokenTags
+        print tokenTags     #PRINT
+
         history = {}
         for h in historyPost:
             n,v = h.split(r'_')
@@ -170,34 +171,40 @@ def process_update(request, conn=None, **kwargs):
         # Or if I need to search it, a dictionary instead of the list
         imageIds = [long(image) for image in imagesPost]
 
-        modifications = {}
+        additions = []
+        removals = []
         # Create a list of tags to add on images and one to remove tags from images
         for imageId in imageIds:
 
             # If the image has some checked items
-            if imageId in checked:
-                # Add any tokens (for addition) that are not preexisting (checked - history)
-                additionsTokens = list(set(checked[imageId]) - set(history[imageId]))
-                # Add any tokens (for removal) that are prexisiting but not checked (history - checked)
-                removalsTokens = list(set(history[imageId]) - set(checked[imageId]))
-                additions = []
-                removals = []
+            if imageId in checked or imageId in history:
+                # Not every image will have both of these so have to default to empty list
+                checkedTokens = []
+                selectedTokens = []
+                if imageId in checked:
+                    checkedTokens = checked[imageId]
+                if imageId in history:
+                    selectedTokens = history[imageId]
+
+                # Add any tokens (for addition) that are not preexisting (checked - selected)
+                additionsTokens = list(set(checkedTokens) - set(selectedTokens))
+                # Add any tokens (for removal) that are prexisiting but not checked (selected - checked)
+                removalsTokens = list(set(selectedTokens) - set(checkedTokens))
 
                 # Lookup which tag is mapped to the tokens that are to be added/removed
                 for token in additionsTokens:
                     # Currently the submitted tokens include ones with no mapping, simply ignore these
                     if token in tokenTags:
-                        additions.append(tokenTags[token])
+                        additions.append((imageId, tokenTags[token]))
 
                 for token in removalsTokens:
                     # Currently the submitted tokens include ones with no mapping, simply ignore these
                     if token in tokenTags:
-                        removals.append(tokenTags[token])
+                        removals.append((imageId, tokenTags[token]))
                 
-                modifications[imageId] = {'additions':additions, 'removals':removals}
-
-        print 'modifications', modifications    #PRINT
-
+        print 'additions:', additions   #PRINT 
+        print 'removals:', removals     #PRINT
+        #createTagAnnotationsLinks(conn, additions, removals)
 
     context = {'template': 'webtagging/submitted.html'}
     return context
