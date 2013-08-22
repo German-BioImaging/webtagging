@@ -1,39 +1,43 @@
-<tr>
-    {% for tokenTag in tokenTags %}
-        <th>
-            {% if tokenTag.tags %}
-                <select name="tokentag">
-                    <!-- TODO Should have a list of matching tags available here -->
-                    <!-- If there are 0 matching, select nothing -->
-                    <!-- If there is 1 matching, selected it -->
-                    <!-- If there are more than 1 matching, but 0 selected then select nothing -->
-                    <!-- If there are more than 1 matching and 1 selected, select it?? -->
-                    <!-- If there are more than 1 matching and more than 1 selected, select nothing?? -->
-                        {% for tag in tokenTag.tags %}
-                        <option value="{{ tokenTag.name }}_{{ tag.id }}" selected>{{ tag.name }}({{ tag.id }})</option>
-                        {% endfor %}
-                        <!-- TODO The option fires up the same context as creating a new tag to allow overriding a match with a new tag/map -->
-                        <!-- DO NOT FORGET that if I map a token to an existing tag then there may be some updates required in the table as that tag may already be selected on some of the images. Hidden tags will have to be added/removed, checkboxes ticked/unticked, background colour updated -->
-                        <option>Remap</option>
-                </select>
-            {% else %}
-            <!-- Link to create a new tag of this name or map this token (temporarily) to an existing tag -->
-            <a href="">{{ tokenTag.name }}</a>
-            {% endif %}
-        </th>
-    {% endfor %}
-    <th>Image Name</th>
-</tr>
-
-{% for imageDetail in imageDetails %}
+<thead>
     <tr>
-        {% for imageToken in imageDetail.tokens %}
-            <td>
+        {% for tokenTag in tokenTags %}
+            <th>
+                {% if tokenTag.tags %}
+                    <select name="tokentag">
+                        <!-- TODO Should have a list of matching tags available here -->
+                        <!-- If there are 0 matching, select nothing -->
+                        <!-- If there is 1 matching, selected it -->
+                        <!-- If there are more than 1 matching, but 0 selected then select nothing -->
+                        <!-- If there are more than 1 matching and 1 selected, select it?? -->
+                        <!-- If there are more than 1 matching and more than 1 selected, select nothing?? -->
+                            {% for tag in tokenTag.tags %}
+                            <option value="{{ tokenTag.name }}_{{ tag.id }}" selected>{{ tag.name }}({{ tag.id }})</option>
+                            {% endfor %}
+                            <!-- TODO The option fires up the same context as creating a new tag to allow overriding a match with a new tag/map -->
+                            <!-- DO NOT FORGET that if I map a token to an existing tag then there may be some updates required in the table as that tag may already be selected on some of the images. Hidden tags will have to be added/removed, checkboxes ticked/unticked, background colour updated -->
+                            <option>Remap</option>
+                    </select>
+                {% else %}
+                <!-- Link to create a new tag of this name or map this token (temporarily) to an existing tag -->
+                <a href="">{{ tokenTag.name }}</a>
+                {% endif %}
+            </th>
+        {% endfor %}
+        <th>Image Name</th>
+    </tr>
+</thead>
+<tbody>
+    {% for imageDetail in imageDetails %}
+        <tr >
+            {% for imageToken in imageDetail.tokens %}
+                <!-- Display special case background color for server selected tokens -->
+                <td{% if imageToken.selected %} class="success"{% endif %}>
+
                 <!-- Currently I show checkboxes even if there is no matching tag -->
                 <!-- This makes sense as it's the token that is recognised that is important -->
                 <!-- If the user submits without mapping that token to a tag then this is simply ignored -->
                 <!-- Alternately I could refrain from showing checkboxes for these columns until the mapping is done -->
-                {% if imageToken.autoselect %}
+                {% if imageToken.autoselect or imageToken.selected %}
                     <input name="imagechecked" value="{{ imageDetail.id }}_{{ imageToken.name }}" type="checkbox" checked />
                 {% else %}
                     <input name="imagechecked" value="{{ imageDetail.id }}_{{ imageToken.name }}" type="checkbox" />
@@ -43,12 +47,12 @@
                 {% if imageToken.selected %}
                     <input name="imagechecked_history" type="hidden" value="{{ imageDetail.id }}_{{ imageToken.name }}" />
                 {% endif %}
+                </td>
+            {% endfor %}
+            <td>
+                {{ imageDetail.name }}
+                <input name="image" type="hidden" value="{{ imageDetail.id }}" />
             </td>
-        {% endfor %}
-        <td>
-            {{ imageDetail.name }}
-            <input name="image" type="hidden" value="{{ imageDetail.id }}" />
-        </td>
-    </tr>
-{% endfor %}
-
+        </tr>
+    {% endfor %}
+</tbody>

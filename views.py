@@ -14,7 +14,7 @@ def index(request):
     return HttpResponse("Welcome to webtagging")
 
 
-@login_required()
+@login_required(setGroupContext=True)
 @render_response()
 def auto_tag(request, datasetId=None, conn=None, **kwargs):
     """
@@ -155,7 +155,7 @@ def build_table_data(conn, images):
     return tokenTags, imageDetails
 
 
-@login_required()
+@login_required(setGroupContext=True)
 @render_response()
 def process_update(request, conn=None, **kwargs):
     if request.method == "POST":
@@ -174,7 +174,7 @@ def process_update(request, conn=None, **kwargs):
         for tokenTag in tokenTagsPost:
             n,v = tokenTag.split(r'_')
             tokenTags[n] = long(v)
-        print tokenTags     #PRINT
+        print 'tokenTags:', tokenTags     #PRINT
 
         history = {}
         for h in historyPost:
@@ -229,7 +229,7 @@ def process_update(request, conn=None, **kwargs):
                 
         print 'additions:', additions   #PRINT 
         print 'removals:', removals     #PRINT
-        #createTagAnnotationsLinks(conn, additions, removals)
+        createTagAnnotationsLinks(conn, additions, removals)
 
     # Now we re-build the tagging table and return it
     context = {'template': 'webtagging/tag_table.html'}
