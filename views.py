@@ -246,4 +246,17 @@ def process_update(request, conn=None, **kwargs):
     context['tokenTags'] = tokenTags
     context['imageDetails'] = imageDetails
     return context
-   
+
+
+@login_required(setGroupContext=True)
+@render_response()
+def list_tags(request, conn=None, **kwargs):
+    """
+    List all tags in the current group
+    """
+    tags = []
+    for t in conn.getObjects("TagAnnotation"):
+        tags.append({'id':t.id,
+            'name':t.getTextValue()})
+    return {'template': 'webtagging/tag_dialog_form.html', 'tags':tags}
+

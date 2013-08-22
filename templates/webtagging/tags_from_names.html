@@ -5,6 +5,10 @@
 
 <script>window.jQuery || document.write('<script src="/static/3rdparty/jquery-1.7.2.js"><\/script><script src="{% static "webclient/javascript/jquery.form.js" %}"><\/script>')</script>
 
+<link rel="stylesheet" href="{% static '3rdparty/jquery.chosen/chosen.css' %}" type="text/css" media="screen"/>
+<script src="{% static '3rdparty/jquery.chosen/chosen.jquery.js' %}"></script>
+<script src="{% static 'webtagging/js/show_tags_dialog.js' %}"></script>
+
 <script>
 $(function(){
 
@@ -22,6 +26,15 @@ $(function(){
             $submitButton.removeAttr('disabled');
         }
     });
+
+    // Example how to use tags dialog
+    // OME.show_tags_dialog(
+    //     "{% url webtagging_list_tags %}",
+    //     function(tags){
+    //         console.log(tags);
+    //     },
+    //     {'new_tag_default':"MyNewTag"}
+    // );
 });
 </script>
 
