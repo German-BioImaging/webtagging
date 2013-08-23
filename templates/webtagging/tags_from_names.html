@@ -5,6 +5,10 @@
 
 <script>window.jQuery || document.write('<script src="/static/3rdparty/jquery-1.7.2.js"><\/script><script src="{% static "webclient/javascript/jquery.form.js" %}"><\/script>')</script>
 
+<link rel="stylesheet" href="{% static '3rdparty/jquery.chosen/chosen.css' %}" type="text/css" media="screen"/>
+<script src="{% static '3rdparty/jquery.chosen/chosen.jquery.js' %}"></script>
+<script src="{% static 'webtagging/js/show_tags_dialog.js' %}"></script>
+
 <script>
 $(function(){
 
@@ -21,6 +25,34 @@ $(function(){
             $("#updateAllForm>table").html(data);
             $submitButton.removeAttr('disabled');
         }
+    });
+
+    // Example how to use tags dialog
+    // OME.show_tags_dialog(
+    //     "{% url webtagging_list_tags %}",
+    //     function(tags){
+    //         console.log(tags);
+    //     },
+    //     {'new_tag_default':"MyNewTag"}
+    // );
+
+    $("#updateAllForm").on("click", "a.token", function(event){
+        var $tokenLink = $(this),
+            tokenText = $tokenLink.text(),
+            $th = $tokenLink.parent();
+        OME.show_tags_dialog({
+            list_tags: "{% url webtagging_list_tags %}",
+            create_tag: "{% url webtagging_create_tag %}",
+            success: function(tags){
+                console.log(tags);
+                var tag = tags[0];
+                $select = $("<select name='tokentag'></select>")
+                    .append("<option value='" + tag.name + "_" + tag.id +"'>" + tag.name + "(" + tag.id + ")</option>");
+                $th.empty().append($select);
+            },
+            'new_tag_default':tokenText}
+        );
+        return false;
     });
 });
 </script>
