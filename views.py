@@ -2,6 +2,10 @@ from django.http import HttpResponse
 
 from omeroweb.webclient.decorators import login_required, render_response
 
+import omero
+from omero.model import TagAnnotationI
+from omero.rtypes import rstring
+
 from utils import parse_path, createTagAnnotationsLinks
 
 from urlparse import parse_qsl
@@ -246,4 +250,38 @@ def process_update(request, conn=None, **kwargs):
     context['tokenTags'] = tokenTags
     context['imageDetails'] = imageDetails
     return context
-   
+
+
+@login_required(setGroupContext=True)
+@render_response()
+def list_tags(request, conn=None, **kwargs):
+    """
+    List all tags in the current group
+    """
+    tags = []
+    for t in conn.getObjects("TagAnnotation"):
+        tags.append({'id':t.id,
+            'name':t.getTextValue()})
+    return {'template': 'webtagging/tag_dialog_form.html', 'tags':tags}
+
+
+@login_required(setGroupContext=True)
+@render_response()
+def create_tag(request, conn=None, **kwargs):
+    """
+    Creates a Tag from POST data. "tag_name" & "tag_description"
+    """
+    if not request.POST:
+        return {"error": "need to POST"}
+
+    tag_name = request.POST.get("tag_name")
+    tag_desc = request.POST.get("tag_description", None)
+
+    tag = omero.model.TagAnnotationI()
+    tag.textValue = rstring(str(tag_name))
+    if tag_desc is not None:
+        tag.description = rstring(str(tag_desc))
+
+    tag = conn.getUpdateService().saveAndReturnObject(tag)
+
+    return {'id':tag.id.val, 'name':tag.textValue.val}
