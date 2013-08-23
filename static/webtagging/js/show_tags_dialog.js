@@ -1,7 +1,7 @@
 if (typeof OME === "undefined"){
     var OME = {}
 }
-OME.show_tags_dialog = function(tags_url, success, options) {
+OME.show_tags_dialog = function(options) {
 
     options = options || {};
 
@@ -10,39 +10,58 @@ OME.show_tags_dialog = function(tags_url, success, options) {
         title += "s";
     }
     if ($("#tag_chooser_form").length === 0) {
-        $("<form id='tag_chooser_form'></form>")
+        $("<form id='tag_chooser_form' method='POST' action='"+ options.create_tag + "'></form>")
             .attr('title', title)
             .hide().appendTo('body');
     }
+    var $tag_chooser_form = $("#tag_chooser_form")
     // set-up the tags form to use dialog
-    $("#tag_chooser_form").dialog({
+    $tag_chooser_form.dialog({
         autoOpen: true,
         resizable: false,
         height: 370,
         width:420,
         modal: true,
         buttons: {
-            "Accept": function() {
+            "OK": function() {
                 var rv = []
                 $("#tag_chooser_select option:selected").each(function(){
                     var $select = $(this);
                     rv.push({'id':$select.attr('value'), 'name':$(this).text()});
                 });
-                success(rv);
-                $( this ).dialog( "close" );
+                if (rv.length == 0) {
+                    var new_tag = $('#tag_chooser_new').val();
+                    if (new_tag.length > 0 && options.create_tag) {
+                        $tag_chooser_form.submit();
+                    }
+                }
+                else if (options.success) {
+                    options.success(rv);
+                    $( this ).dialog( "close" );
+                }
             },
             "Cancel": function() {
                 $( this ).dialog( "close" );
-                success();
             }
         },
         close: function() {
-            $("#tag_chooser_form").dialog( "destroy" ).remove();
+            $tag_chooser_form.dialog( "destroy" ).remove();
+        }
+    });
+
+    $("#tag_chooser_form").ajaxForm({
+        dataType: 'json',
+        success: function(data) {
+            console.log("ajax success", data);
+            if (options.success) {
+                options.success([data]);
+            }
+            $tag_chooser_form.dialog("close");
         }
     });
 
     // load form via AJAX...
-    $("#tag_chooser_form").load(tags_url, function() {
+    $("#tag_chooser_form").load(options.list_tags, function() {
         if (options.multiple) {
             $("#tag_chooser_select").attr('multiple', true);
         }

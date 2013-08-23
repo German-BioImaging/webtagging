@@ -13,6 +13,7 @@ urlpatterns = patterns('django.views.generic.simple',
     # process main form submission
     url( r'^auto_tag/processUpdate/$', views.process_update, name="webtagging_process_update" ),
 
-    # list tags for tags dialog
+    # list & create tags for tags dialog
     url( r'^list_tags/$', views.list_tags, name="webtagging_list_tags" ),
+    url( r'^create_tag/$', views.create_tag, name="webtagging_create_tag" ),
 )

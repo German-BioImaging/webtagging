@@ -35,6 +35,25 @@ $(function(){
     //     },
     //     {'new_tag_default':"MyNewTag"}
     // );
+
+    $("#updateAllForm").on("click", "a.token", function(event){
+        var $tokenLink = $(this),
+            tokenText = $tokenLink.text(),
+            $th = $tokenLink.parent();
+        OME.show_tags_dialog({
+            list_tags: "{% url webtagging_list_tags %}",
+            create_tag: "{% url webtagging_create_tag %}",
+            success: function(tags){
+                console.log(tags);
+                var tag = tags[0];
+                $select = $("<select name='tokentag'></select>")
+                    .append("<option value='" + tag.name + "_" + tag.id +"'>" + tag.name + "(" + tag.id + ")</option>");
+                $th.empty().append($select);
+            },
+            'new_tag_default':tokenText}
+        );
+        return false;
+    });
 });
 </script>
 
