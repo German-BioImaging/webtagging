@@ -282,6 +282,6 @@ def create_tag(request, conn=None, **kwargs):
     if tag_desc is not None:
         tag.description = rstring(str(tag_desc))
 
-    tag = conn.getUpdateService().saveAndReturnObject(tag)
+    tag = conn.getUpdateService().saveAndReturnObject(tag, conn.SERVICE_OPTS)
 
     return {'id':tag.id.val, 'name':tag.textValue.val}
