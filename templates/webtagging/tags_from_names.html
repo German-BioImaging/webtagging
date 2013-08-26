@@ -54,16 +54,52 @@ $(function(){
         );
         return false;
     });
+
+    $('#hidePathTokensToggle').change(function(){
+        
+        if ($(this).prop('checked')) {
+            $("#token-table").removeClass('hidePathTokens');
+        } else {
+            $("#token-table").addClass('hidePathTokens');
+        }
+    });
+
+    $('#hideExtTokensToggle').change(function(){
+        
+        if ($(this).prop('checked')) {
+            $("#token-table").removeClass('hideExtTokens');
+        } else {
+            $("#token-table").addClass('hideExtTokens');
+        }
+    });
+
 });
+/*
+function toggleColumn(n) {
+    var currentClass = $document.getElementById("mytable").className;
+    if (currentClass.indexOf("show"+n) != -1) {
+        document.getElementById("mytable").className = currentClass.replace("show"+n, "");
+    }
+    else {
+        document.getElementById("mytable").className += " " + "show"+n;
+    }
+}
+*/
 </script>
 
-<form id="updateAllForm" action="{% url webtagging_process_update %}" method="post">
+<div style="position:absolute; top:0px; left:0px; right:0px; height: 29px; border-right:0px" class="toolbar">
+    Path: <input id="hidePathTokensToggle" name="hidePathTokensToggle" value="hidePathTokensToggle" type="checkbox" />
+    Extensions: <input id="hideExtTokensToggle" name="hideExtTokensToggle" value="hideExtTokensToggle" type="checkbox" />
+</div>
+<div style="position:absolute; bottom:25px; left:0px; top:29px; overflow:auto; margin-top:0px; right:0px">
+    <form id="updateAllForm" action="{% url webtagging_process_update %}" method="post">
 
-    <table class="table table-bordered table-striped table-hover table-condensed">
+        <table id="token-table" class="table table-bordered table-striped table-hover table-condensed hidePathTokens hideExtTokens">
 
-    {% include "webtagging/tag_table.html" %}
+        {% include "webtagging/tag_table.html" %}
 
-    </table>
-    <input type="submit" value="Apply" />
-</form>
+        </table>
+        <input type="submit" value="Apply" />
+    </form>
+</div>
 </html>

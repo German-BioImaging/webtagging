@@ -1,3 +1,17 @@
+th.pathTokens {
+    background-color:yellow
+}
+
+th.extTokens {
+    background-color:red
+}
+
+
+table.pathTokens { display:table-cell; }
+table.hidePathTokens .pathTokens { display:none; }
+table.extTokens { display:table-cell; }
+table.hideExtTokens .extTokens { display:none; }
+
 .table tbody tr > td.success {
   background-color: #dff0d8 !important;
 }

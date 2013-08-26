@@ -10,6 +10,7 @@ from utils import parse_path, createTagAnnotationsLinks
 
 from urlparse import parse_qsl
 
+
 def index(request):
     """
     Just a place-holder, base for creating urls etc
@@ -53,59 +54,80 @@ def build_table_data(conn, images):
     # Need to build our table...
 
     # First go through all images, getting all the tokens
-    tokens = []
+    # Each set of tokens must be separate so that they can be distinguished
+    pathTokens = []
+    fileTokens = []
+    extTokens = []
+    # Also record which tokens are in which images to avoid reparsing later per-image
+    imagesTokens = {}
+
     for image in images:
         name = image.getName()
+ 
+        pt, ft, et = parse_path(name)
+        pathTokens.extend(pt)
+        fileTokens.extend(ft)
+        extTokens.extend(et)
+        imagesTokens[image] = set(pt + et + ft)
 
-        path_tokens, file_tokens, ext_tokens = parse_path(name)
-        tokens.extend(path_tokens)
-        tokens.extend(file_tokens)
-        #TODO As mentioned below (about 40 lines) extension tags are ignored for now
-        #tokens.extend(ext_tokens)
+    # Remove duplicates from each set
+    pathTokens = set(pathTokens)
+    fileTokens = set(fileTokens)
+    extTokens = set(extTokens)
+    # Remove duplicates that exist between sets (from path, then extenstion)
+    pathTokens = pathTokens - fileTokens
+    pathTokens = pathTokens - extTokens
+    extTokens = extTokens - fileTokens
 
-    # remove duplicates
-    tokens = list(set(tokens))
-    tokens.sort(key=lambda name: name.lower())
+    # Convert back to list
+    pathTokens = list(pathTokens)
+    fileTokens = list(fileTokens)
+    extTokens = list(extTokens)
+    
+    # Order the lists by name
+    pathTokens.sort(key=lambda name: name.lower())
+    fileTokens.sort(key=lambda name: name.lower())
+    extTokens.sort(key=lambda name: name.lower())
 
+    tokens = {'pathTokens' : pathTokens, 'fileTokens' : fileTokens, 'extTokens' : extTokens}
 
+    tokenTags = {}
     # find which tokens match existing Tags
-    tokenTags = []
-    for token in tokens:
+    for tokenType in ['pathTokens', 'fileTokens','extTokens']:
+        tt = []
+        for token in tokens[tokenType]:
 
-        # Skip zero length tokens
-        if len(token) == 0:
-            continue
+            # Skip zero length tokens
+            if len(token) == 0:
+                continue
 
-        # Skip (for now) tokens that are simply numbers
-        if token.isdigit():
-            continue
+            # Skip (at least for now) tokens that are simply numbers
+            if token.isdigit():
+                continue
 
-        # Get all tags matching the token
-        matchingTags = list(conn.getObjects("TagAnnotation", attributes={'textValue':token}))
+            # Get all tags matching the token
+            matchingTags = list(conn.getObjects("TagAnnotation", attributes={'textValue':token}))
 
-        tags = []
-        # For each of the matching tags
-        for matchingTag in matchingTags:
-            # Add dictionary of details
-            tags.append({'name':matchingTag.getValue(), 'id':matchingTag.getId(), 'desc':matchingTag.getDescription()})
+            tags = []
+            # For each of the matching tags
+            for matchingTag in matchingTags:
+                # Add dictionary of details
+                tags.append({'name':matchingTag.getValue(), 'id':matchingTag.getId(), 'desc':matchingTag.getDescription()})
 
-        tokenTagMap = {'name':token}
+            tokenTagMap = {'name':token}
 
-        # Assign the matching tags to the token dictionary (only if there are any)
-        if len(tags) > 0:
-            tokenTagMap['tags'] = tags
+            # Assign the matching tags to the token dictionary (only if there are any)
+            if len(tags) > 0:
+                tokenTagMap['tags'] = tags
 
-        # Add the token with any tag mappings to the list
-        tokenTags.append(tokenTagMap)
+            # Add the token with any tag mappings to the list
+            tt.append(tokenTagMap)
+
+        tokenTags[tokenType] = tt
 
     # Populate the images with details
     imageDetails = []
-    for image in images:
-        pathTokens, fileTokens, extTokens = parse_path(image.getName())
-        #TODO allTokens needs to be controlled by some form elements, e.g. extension/directory support on/off
-        # Potentially each list of tokens would be treated differently so searched separately 
-        # Ignore extTokens for now
-        allTokens = pathTokens + fileTokens
+    for image, allTokens in imagesTokens.iteritems():
 
         # Create mapping of tags that exist already on this image (value : id)
         #TODO Inadequate if there are multiple tags with the same value
@@ -127,25 +149,29 @@ def build_table_data(conn, images):
 
         imageTokens = []
         # For each token that exists (tokens from all images)
-        for token in tokenTags:
-            imageToken = {'name':token['name']}
-            # If the token is present in the image
-            if token['name'] in allTokens:
-                # Get the tags (if any) that are relevant
-                if 'tags' in token:
-                    tags = token['tags']
-                    # If exactly 1 tag exists for this image
-                    if len(tags) == 1:
-                        # Mark the token as matched
-                        imageToken['matched'] = True
-                        # Mark the token for autoselect
-                        imageToken['autoselect'] = True
-            # If the tag is already on the image (not necessarily because it has a matching token)
-            if token['name'] in imageTags:
-                # Mark the token as selected
-                #TODO Inadequate if there are multiple tags with the same value as this merely marks the token as matching 
-                imageToken['selected'] = True
-            imageTokens.append(imageToken)
+        for tokenType in ['pathTokens', 'fileTokens','extTokens']:
+            for token in tokenTags[tokenType]:
+                imageToken = {'name':token['name']}
+                # If the token is present in the image
+                if token['name'] in allTokens:
+                    # Get the tags (if any) that are relevant
+                    if 'tags' in token:
+                        tags = token['tags']
+                        # If exactly 1 tag exists for this image
+                        if len(tags) == 1:
+                            # Mark the token as matched
+                            imageToken['matched'] = True
+                    # Mark the token for autoselect (Do this even if the token is not matched)
+                    imageToken['autoselect'] = True
+                # Assign token type
+                imageToken['tokenType'] = tokenType
+
+                # If the tag is already on the image (not necessarily because it has a matching token)
+                if token['name'] in imageTags:
+                    # Mark the token as selected
+                    #TODO Inadequate if there are multiple tags with the same value as this merely marks the token as matching 
+                    imageToken['selected'] = True
+                imageTokens.append(imageToken)
 
 
         imageDetail = {'id':image.getId(), 'name':image.getName(), 'tokens':imageTokens}
