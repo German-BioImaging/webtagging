@@ -1,3 +1,7 @@
+.toolbar {
+    text-align:right;
+}
+
 th.pathTokens {
     background-color:yellow
 }
@@ -11,6 +15,10 @@ table.pathTokens { display:table-cell; }
 table.hidePathTokens .pathTokens { display:none; }
 table.extTokens { display:table-cell; }
 table.hideExtTokens .extTokens { display:none; }
+
+.table td {
+    text-align:center;
+}
 
 .table tbody tr > td.success {
   background-color: #dff0d8 !important;

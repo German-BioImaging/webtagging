@@ -1,9 +1,11 @@
 <thead>
     <tr>
+        {#TODO Condense these 3 sections into 1 as they are very similar #}
+
         {% for tokenTag in tokenTags.pathTokens %}
             <th class="pathTokens">
                 {% if tokenTag.tags %}
-                    <select name="tokentag">
+                    <select class="tag-selector" name="tokentag" id="{{ tokenTag.name }}">
                         {% comment %}
                             TODO Should have a list of matching tags available here
                             If there are 0 matching, select nothing 
@@ -29,7 +31,7 @@
         {% for tokenTag in tokenTags.fileTokens %}
             <th class="fileTokens">
                 {% if tokenTag.tags %}
-                    <select name="tokentag">
+                    <select class="tag-selector" name="tokentag" id="{{ tokenTag.name }}">
                         {% comment %}
                             TODO Should have a list of matching tags available here
                             If there are 0 matching, select nothing 
@@ -55,7 +57,7 @@
         {% for tokenTag in tokenTags.extTokens %}
             <th class="extTokens">
                 {% if tokenTag.tags %}
-                    <select name="tokentag">
+                    <select class="tag-selector" name="tokentag" id="{{ tokenTag.name }}">
                         {% comment %}
                             TODO Should have a list of matching tags available here
                             If there are 0 matching, select nothing 
@@ -84,7 +86,7 @@
 
 <tbody>
     {% for imageDetail in imageDetails %}
-        <tr >
+        <tr id="{{ imageDetail.id }}">
             {% for imageToken in imageDetail.tokens %}
                 {# Display special case background color for server selected tokens #}
                 <td class="{{ imageToken.tokenType }}{% if imageToken.selected %} success{% endif %}">
