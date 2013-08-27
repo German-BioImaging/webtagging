@@ -75,8 +75,15 @@ $(function(){
     
     // Need a way of then getting all the table-cells for this column and changing the hidden field to reflect the checked status based on the results of an ajax query for all images and the new tag in-use.
     $('.tag-selector').change(function(){
-        var tokenName = $(this).prop('id');
+        var tokenName = "." + $(this).prop('id');
 
+        // I still need to harvest imageIds somehow (select th fields, read imageIds from there)
+        $(tokenName).each(function(index, value) {
+            // Add/Remove the hidden field depending on whether the new tag is tagged or not.
+            $(this).children('.imagechecked_history').prop('value','TESTTEST');
+            // Updte the background color as well
+            $(this).removeClass('success');
+        });
         // Perform an ajax call to get the tagged status for each of the images
         // I have the id of the tag from the selection box. I will also need to gather the list of images from the table.
         // The more I do this, the more I think that passing JSON to the web page and letting javascript render the whole table is a good idea. Or at least having all the data as a JSON object for easy query
@@ -86,10 +93,9 @@ $(function(){
         // Get the tr with the id of the image -> Get the td with the id of the token -> updated the hidden selected field with the <imageId>_<tokenName> and the td's className with success
 
 
-        $('tr#image').each(function(idx, item) {
+        //$('tr#image').each(function(idx, item) {
             // do something
-        });
-        alert('value:' + imageId);
+        //});
     });
 
 });
