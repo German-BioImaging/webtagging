@@ -129,11 +129,14 @@ def build_table_data(conn, images):
     imageDetails = []
     for image, allTokens in imagesTokens.iteritems():
 
-        # Create mapping of tags that exist already on this image (value : id)
-        #TODO Inadequate if there are multiple tags with the same value
+        # Create mapping of tags that exist already on this image (tagValue : [ids])
+        #TODO Add any manually added mappings to this list
         imageTags = {}
         for tag in listTags(image):
-            imageTags[tag.getValue()] = tag.getId()
+            if tag.getValue() in imageTags:
+                imageTags[tag.getValue()].append(tag.getId())
+            else:
+                imageTags[tag.getValue()] = [tag.getId()]
 
         #TODO Currently I set one hidden field for tokens that have a single tag match
         # This is adequate, but will require a lot of additional javascript to work
@@ -163,14 +166,21 @@ def build_table_data(conn, images):
                             imageToken['matched'] = True
                     # Mark the token for autoselect (Do this even if the token is not matched)
                     imageToken['autoselect'] = True
+
                 # Assign token type
                 imageToken['tokenType'] = tokenType
 
-                # If the tag is already on the image (not necessarily because it has a matching token)
+                # Add all the matching tags 
+                #TODO or are manually added
                 if token['name'] in imageTags:
-                    # Mark the token as selected
-                    #TODO Inadequate if there are multiple tags with the same value as this merely marks the token as matching 
-                    imageToken['selected'] = True
+                    # Add the tagIds that match to this token
+                    imageToken['tags'] = imageTags[token['name']]
+
+                    # If there is just the one matching tag for this column, mark the token selected
+                    if len(token['tags']) == 1:
+                        imageToken['selected'] = True
+
+
                 imageTokens.append(imageToken)
 
 
@@ -195,28 +205,28 @@ def process_update(request, conn=None, **kwargs):
     if request.method == "POST":
         #controls = parse_qsl(request.raw_post_data, keep_blank_values=True)
         
-        #In django > 1.4
-        #controls = request.POST.dict()
-        controls = request.POST.iterlists()
         tokenTagsPost = request.POST.getlist('tokentag')
-        historyPost = request.POST.getlist('imagechecked_history')
+        serverSelectedPost = request.POST.getlist('serverselected')
         checkedPost = request.POST.getlist('imagechecked')
         imagesPost = request.POST.getlist('image')
 
         # Convert the posted data into something more manageable
+        #TODO Potential problem with underscore in tag name.
         tokenTags = {}
         for tokenTag in tokenTagsPost:
-            n,v = tokenTag.split(r'_')
-            tokenTags[n] = long(v)
+            # Only if there is a selection made
+            if len(tokenTag) > 0:
+                n,v = tokenTag.split(r'_')
+                tokenTags[n] = long(v)
         print 'tokenTags:', tokenTags     #PRINT
 
-        history = {}
-        for h in historyPost:
-            n,v = h.split(r'_')
-            if long(n) in history:
-                history[long(n)].append(v)
+        serverSelected = {}
+        for s in serverSelectedPost:
+            imageId,tokenName,tagId = s.split(r'_')
+            if long(imageId) in serverSelected:
+                serverSelected[long(imageId)].append((tokenName,long(tagId)))
             else:
-                history[long(n)] = [v]
+                serverSelected[long(imageId)] = [(tokenName,long(tagId))]
 
         checked = {}
         for c in checkedPost:
@@ -236,33 +246,52 @@ def process_update(request, conn=None, **kwargs):
         for imageId in imageIds:
 
             # If the image has some checked items
-            if imageId in checked or imageId in history:
+            if imageId in checked or imageId in serverSelected:
                 # Not every image will have both of these so have to default to empty list
-                checkedTokens = []
-                selectedTokens = []
+                # These are the ids of the tag
+                checkedTags = []
+                selectedTags = []
+
+                # If there are checked checkboxes for this image
                 if imageId in checked:
-                    checkedTokens = checked[imageId]
-                if imageId in history:
-                    selectedTokens = history[imageId]
+                    # checked[imageId] is the list of token names that have been checked, resolve to tagIds
+                    for token in checked[imageId]:
+                        # Ensure there is a mapping for this token
+                        if token in tokenTags:
+                            # Add the id to the list of checked tags
+                            checkedTags.append(tokenTags[token])
 
-                # Add any tokens (for addition) that are not preexisting (checked - selected)
-                additionsTokens = list(set(checkedTokens) - set(selectedTokens))
-                # Add any tokens (for removal) that are prexisiting but not checked (selected - checked)
-                removalsTokens = list(set(selectedTokens) - set(checkedTokens))
+                # If there are server selected tags for this image
+                if imageId in serverSelected:
+                    # serverSelected[imageId] is the list of tagIds that are selected along with the token they represent (<tokenName>,<tagId>)
+                    # We are only concerned with the current mapping
+                    for s in serverSelected[imageId]:
+                        if s[0] in tokenTags:
+                            selectedTags.append(s[1])
+                            break
 
-                # Lookup which tag is mapped to the tokens that are to be added/removed
-                for token in additionsTokens:
-                    # Currently the submitted tokens include ones with no mapping, simply ignore these
-                    if token in tokenTags:
-                        additions.append((imageId, tokenTags[token]))
 
-                for token in removalsTokens:
-                    # Currently the submitted tokens include ones with no mapping, simply ignore these
-                    if token in tokenTags:
-                        removals.append((imageId, tokenTags[token]))
+
+                # Add any tags (for addition) that are not preexisting (checked - serverSelected)
+                additionsTags = list(set(checkedTags) - set(selectedTags))
+                # Add any tokens (for removal) that are prexisiting but not checked (serverSelected - checked)
+                removalsTags = list(set(selectedTags) - set(checkedTags))
+                print 'imageId: ', imageId
+                print 'checked:', checkedTags   #PRINT 
+                print 'selected:', selectedTags     #PRINT
+                print 'additions:', additionsTags   #PRINT 
+                print 'removals:', removalsTags     #PRINT
+                print
+
+                for tagId in additionsTags:
+                    additions.append((imageId, tagId))
+
+                for tagId in removalsTags:
+                    removals.append((imageId, tagId))
                 
-        print 'additions:', additions   #PRINT 
-        print 'removals:', removals     #PRINT
+#        print 'additions:', additions   #PRINT 
+#        print 'removals:', removals     #PRINT
+        return
         createTagAnnotationsLinks(conn, additions, removals)
 
     # Now we re-build the tagging table and return it
@@ -311,3 +340,22 @@ def create_tag(request, conn=None, **kwargs):
     tag = conn.getUpdateService().saveAndReturnObject(tag, conn.SERVICE_OPTS)
 
     return {'id':tag.id.val, 'name':tag.textValue.val}
+
+@login_required(setGroupContext=True)
+@render_response()
+def get_tag_on_images(request, conn=None, **kwargs):
+    """
+    Given a TagId and a list of images, determine the tagged status for each
+    """
+
+    imageIdList = [1,2,3]
+    tagId = "R3D"
+
+    links = conn.getAnnotationLinks("Image", parent_ids=imageIdList, ann_ids=[tagId], params=params)
+
+    tagOnImages = []
+    # The above returns image->tag links that were not specified for deletion, so only delete the appropriate ones 
+    for link in links:
+        tagOnImages.append(link.parent.id.val)
+
+    print 'tagsOnImages', tagsOnImages

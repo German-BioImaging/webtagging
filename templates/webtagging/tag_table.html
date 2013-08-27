@@ -16,8 +16,9 @@
                         {% endcomment %}
 
                             {% for tag in tokenTag.tags %}
-                            <option value="{{ tokenTag.name }}_{{ tag.id }}" selected>{{ tag.name }}({{ tag.id }})</option>
+                                <option value="{{ tokenTag.name }}_{{ tag.id }}">{{ tag.name }}({{ tag.id }})</option>
                             {% endfor %}
+                            <option/>
                             {#TODO The option fires up the same context as creating a new tag to allow overriding a match with a new tag/map #}
                             <option>Remap</option>
                     </select>
@@ -41,8 +42,9 @@
                             If there are more than 1 matching and more than 1 selected, select nothing??
                         {% endcomment %}
 
+                            <option value=""></option>
                             {% for tag in tokenTag.tags %}
-                            <option value="{{ tokenTag.name }}_{{ tag.id }}" selected>{{ tag.name }}({{ tag.id }})</option>
+                                <option value="{{ tokenTag.name }}_{{ tag.id }}"{% ifequal tokenTag.tags|length 1 %} selected{% endifequal %}>{{ tag.name }}({{ tag.id }})</option>
                             {% endfor %}
                             {#TODO The option fires up the same context as creating a new tag to allow overriding a match with a new tag/map #}
                             <option>Remap</option>
@@ -68,7 +70,7 @@
                         {% endcomment %}
 
                             {% for tag in tokenTag.tags %}
-                            <option value="{{ tokenTag.name }}_{{ tag.id }}" selected>{{ tag.name }}({{ tag.id }})</option>
+                                <option value="{{ tokenTag.name }}_{{ tag.id }}">{{ tag.name }}({{ tag.id }})</option>
                             {% endfor %}
                             {#TODO The option fires up the same context as creating a new tag to allow overriding a match with a new tag/map #}
                             <option>Remap</option>
@@ -98,13 +100,15 @@
                 {% endif %}
 
                 {# Create hidden fields for the tags which are already on the image #}
-                {% if imageToken.selected %}
-                    <input class="imagechecked_history" name="imagechecked_history" type="hidden" value="{{ imageDetail.id }}_{{ imageToken.name }}" />
+                {% if imageToken.tags %}
+                    {% for tag in imageToken.tags %}
+                        <input class="serverselected" name="serverselected" type="hidden" value="{{ imageDetail.id }}_{{ imageToken.name }}_{{ tag }}" />
+                    {% endfor %}
                 {% endif %}
                 </td>
             {% endfor %}
             <td>
-                {{ imageDetail.name }}
+                {{ imageDetail.name }} ({{ imageDetail.id }})
                 <input name="image" type="hidden" value="{{ imageDetail.id }}" />
             </td>
         </tr>
