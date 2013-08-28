@@ -102,7 +102,7 @@
                 {# Create hidden fields for the tags which are already on the image #}
                 {% if imageToken.tags %}
                     {% for tag in imageToken.tags %}
-                        <input class="serverselected" name="serverselected" type="hidden" value="{{ imageDetail.id }}_{{ imageToken.name }}_{{ tag }}" />
+                        <input class="serverselected {{ imageToken.name }}_{{ tag }}" name="serverselected" type="hidden" value="{{ imageDetail.id }}_{{ imageToken.name }}_{{ tag }}"/>
                     {% endfor %}
                 {% endif %}
                 </td>
