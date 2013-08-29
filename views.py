@@ -181,8 +181,8 @@ def build_table_data(conn, images):
     # imageDetails is a list of the images, each one has details per-above tokens. e.g. If the token is matched,
     # has a tag already selected or if it should be auto-selected 
 
-    print 'tokenTags: ', tokenTags          #PRINT
-    print 'imageDetails: ', imageDetails    #PRINT
+    #print 'tokenTags: ', tokenTags          #PRINT
+    #print 'imageDetails: ', imageDetails    #PRINT
 
     return tokenTags, imageDetails
 
@@ -205,27 +205,22 @@ def process_update(request, conn=None, **kwargs):
         for tokenTag in tokenTagsPost:
             # Only if there is a selection made
             if len(tokenTag) > 0:
-                n,v = tokenTag.rsplit(r'_')
-                tokenTags[n] = long(v)
-        print 'tokenTags:', tokenTags     #PRINT
+                tokenName,tagId = tokenTag.rsplit(r'_', 1)
+                tokenTags[tokenName] = long(tagId)
+        #print 'tokenTags:', tokenTags     #PRINT
 
         serverSelected = {}
         for s in serverSelectedPost:
-            imageId,tokenName,tagId = s.split(r'_')
-
-            if long(imageId) in serverSelected:
-                serverSelected[long(imageId)].append((tokenName,long(tagId)))
-            else:
-                serverSelected[long(imageId)] = [(tokenName,long(tagId))]
+            # Split first leftmost part, then rightmost as the middle may contain extra underscores
+            imageId,tokenNameTagId = s.split(r'_',1)
+            tokenName, tagId = tokenNameTagId.rsplit(r'_',1)
+            serverSelected.setdefault(long(imageId), []).append( (tokenName, long(tagId) ) )
 
         checked = {}
         for c in checkedPost:
-            n,v = c.split(r'_')
-            if long(n) in checked:
-                checked[long(n)].append(v)
-            else:
-                checked[long(n)] = [v]
+            imageId,tokenName = c.split(r'_', 1)
 
+            checked.setdefault(long(imageId), []).append(tokenName)
         # Use simple list for images for now, if I need more info I many need a list of dicts or a list of tuples
         # Or if I need to search it, a dictionary instead of the list
         imageIds = [long(image) for image in imagesPost]
