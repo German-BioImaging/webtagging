@@ -75,20 +75,32 @@ $(function(){
     
     // Need a way of then getting all the table-cells for this column and changing the hidden field to reflect the checked status based on the results of an ajax query for all images and the new tag in-use.
     $('.tag-selector').change(function(){
-        // Get the name of the column so each cell can be dealt with
-        var tokenName = "." + $(this).prop('id');
+
+        // Get the name of the selected item so appropriate hidden field can be selected
         var selectedValue = $(this).val();
 
-        //Remove all the background highlights
-        $(tokenName).removeClass('success');
-        if (selectedValue != '') {
+        // Create variables holding all the th elements so that this can be used to calculate the index
+        var $th = $('th');
+        var $rows = $('tr');
 
-            // Add background highlights where appropriate
-            $(tokenName).children('.' + selectedValue).each(function(index, value){
-                $(this).parent().addClass('success');
-            });
-        }
-            
+        // Get the position of the th element in which the selector is
+        var colIndex = $th.index( $(this).parent() );
+
+        // For each row
+        $rows.each(function(){
+            // Get the td which corresponds to the index of the th above
+            var $td = $(this).children().eq(colIndex);
+
+            //Remove all the background highlights
+            $td.removeClass('success');
+
+            if (selectedValue != '') {
+                // Add background highlights where appropriate
+                $td.children('.' + selectedValue).each(function(index, value){
+                    $(this).parent().addClass('success');
+                });
+            }
+        });
     });
 
 });

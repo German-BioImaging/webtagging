@@ -5,7 +5,7 @@
         {% for tokenTag in tokenTags.pathTokens %}
             <th class="pathTokens">
                 {% if tokenTag.tags %}
-                    <select class="tag-selector" name="tokentag" id="token_{{ tokenTag.name }}">
+                    <select class="tag-selector" name="tokentag">
                         {% comment %}
                             TODO Should have a list of matching tags available here
                             If there are 0 matching, select nothing 
@@ -32,7 +32,7 @@
         {% for tokenTag in tokenTags.fileTokens %}
             <th class="fileTokens">
                 {% if tokenTag.tags %}
-                    <select class="tag-selector" name="tokentag" id="token_{{ tokenTag.name }}">
+                    <select class="tag-selector" name="tokentag">
                         {% comment %}
                             TODO Should have a list of matching tags available here
                             If there are 0 matching, select nothing 
@@ -59,7 +59,7 @@
         {% for tokenTag in tokenTags.extTokens %}
             <th class="extTokens">
                 {% if tokenTag.tags %}
-                    <select class="tag-selector" name="tokentag" id="token_{{ tokenTag.name }}">
+                    <select class="tag-selector" name="tokentag">
                         {% comment %}
                             TODO Should have a list of matching tags available here
                             If there are 0 matching, select nothing 
@@ -91,7 +91,7 @@
         <tr id="image_{{ imageDetail.id }}">
             {% for imageToken in imageDetail.tokens %}
                 {# Display special case background color for server selected tokens #}
-                <td class="{{ imageToken.tokenType }} token_{{ imageToken.name }}{% if imageToken.selected %} success{% endif %}">
+                <td class="{{ imageToken.tokenType }} {% if imageToken.selected %} success{% endif %}">
 
                 {% if imageToken.autoselect or imageToken.selected %}
                     <input class="imagechecked" name="imagechecked" value="{{ imageDetail.id }}_{{ imageToken.name }}" type="checkbox" checked />
