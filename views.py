@@ -175,6 +175,8 @@ def build_table_data(conn, images):
         imageDetail = {'id':image.getId(), 'name':image.getName(), 'tokens':imageTokens}
         imageDetails.append(imageDetail)
 
+    # Sort imageDetails
+    imageDetails.sort(key=lambda name: name['name'].lower())
 
     # How this works:
     # tokenTags is a list of the tokens involved in all the images. These contain details of the tags that match
