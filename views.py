@@ -138,18 +138,6 @@ def build_table_data(conn, images):
             else:
                 imageTags[tag.getValue()] = [tag.getId()]
 
-        #TODO Currently I set one hidden field for tokens that have a single tag match
-        # This is adequate, but will require a lot of additional javascript to work
-        # What if a token has many matches? There would be no hidden field set, thus no data about which tags may be selected server side
-        #       ajax queries will be required to get data about the current selected drop down in order to update the cell-backgrounds and checked status
-        #       It will also require javascript to update/add the hidden field so that form submission can carry the selected status forward.
-        # Possible alternate solution:
-        #   Add a hidden field for each image->tag link. Replaces current image->token link.
-        #       This will require javascript to update the cell-backgrounds and checked status when the dropdown value is changed
-        #       It will also require javascript to add a new hidden field when adding a new tag mapping as a prelude to updating the cell-backgrounds and checked statuses
-        #
-        #   
-
         imageTokens = []
         # For each token that exists (tokens from all images)
         for tokenType in ['pathTokens', 'fileTokens','extTokens']:
@@ -203,7 +191,6 @@ def build_table_data(conn, images):
 @render_response()
 def process_update(request, conn=None, **kwargs):
     if request.method == "POST":
-        #controls = parse_qsl(request.raw_post_data, keep_blank_values=True)
         
         tokenTagsPost = request.POST.getlist('tokentag')
         serverSelectedPost = request.POST.getlist('serverselected')
@@ -218,7 +205,7 @@ def process_update(request, conn=None, **kwargs):
         for tokenTag in tokenTagsPost:
             # Only if there is a selection made
             if len(tokenTag) > 0:
-                n,v = tokenTag.split(r'_')
+                n,v = tokenTag.rsplit(r'_')
                 tokenTags[n] = long(v)
         print 'tokenTags:', tokenTags     #PRINT
 
