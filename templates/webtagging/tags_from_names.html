@@ -73,9 +73,7 @@ $(function(){
         }
     });
     
-    // Need a way of then getting all the table-cells for this column and changing the hidden field to reflect the checked status based on the results of an ajax query for all images and the new tag in-use.
-    $('.tag-selector').change(function(){
-
+    $("#updateAllForm").on("change", ".tag-selector", function(event){
         // Get the name of the selected item so appropriate hidden field can be selected
         var selectedValue = $(this).val();
 
@@ -91,14 +89,11 @@ $(function(){
             // Get the td which corresponds to the index of the th above
             var $td = $(this).children().eq(colIndex);
 
-            //Remove all the background highlights
+            // Remove all the background highlights
             $td.removeClass('success');
-
+            // Add appropriate background highlights
             if (selectedValue != '') {
-                // Add background highlights where appropriate
-                $td.children('.' + selectedValue).each(function(index, value){
-                    $(this).parent().addClass('success');
-                });
+                $td.has("."+selectedValue).addClass('success');
             }
         });
     });

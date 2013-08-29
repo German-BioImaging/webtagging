@@ -212,6 +212,8 @@ def process_update(request, conn=None, **kwargs):
 
         # Convert the posted data into something more manageable
         #TODO Potential problem with underscore in tag name.
+        #TODO Preserve manually added mappings through a submit, e.g. 'dv' -> 'deltavision.
+        #     May require some html changes if they are not selected in the mapping
         tokenTags = {}
         for tokenTag in tokenTagsPost:
             # Only if there is a selection made
@@ -223,6 +225,7 @@ def process_update(request, conn=None, **kwargs):
         serverSelected = {}
         for s in serverSelectedPost:
             imageId,tokenName,tagId = s.split(r'_')
+
             if long(imageId) in serverSelected:
                 serverSelected[long(imageId)].append((tokenName,long(tagId)))
             else:
@@ -264,11 +267,11 @@ def process_update(request, conn=None, **kwargs):
                 # If there are server selected tags for this image
                 if imageId in serverSelected:
                     # serverSelected[imageId] is the list of tagIds that are selected along with the token they represent (<tokenName>,<tagId>)
-                    # We are only concerned with the current mapping
+                    # Discard serverSelected mappings which are not the current mapping
                     for s in serverSelected[imageId]:
                         if s[0] in tokenTags:
-                            selectedTags.append(s[1])
-                            break
+                            if tokenTags[s[0]] == s[1]:
+                                selectedTags.append(s[1])
 
 
 
@@ -276,12 +279,6 @@ def process_update(request, conn=None, **kwargs):
                 additionsTags = list(set(checkedTags) - set(selectedTags))
                 # Add any tokens (for removal) that are prexisiting but not checked (serverSelected - checked)
                 removalsTags = list(set(selectedTags) - set(checkedTags))
-                print 'imageId: ', imageId
-                print 'checked:', checkedTags   #PRINT 
-                print 'selected:', selectedTags     #PRINT
-                print 'additions:', additionsTags   #PRINT 
-                print 'removals:', removalsTags     #PRINT
-                print
 
                 for tagId in additionsTags:
                     additions.append((imageId, tagId))
@@ -289,9 +286,8 @@ def process_update(request, conn=None, **kwargs):
                 for tagId in removalsTags:
                     removals.append((imageId, tagId))
                 
-#        print 'additions:', additions   #PRINT 
-#        print 'removals:', removals     #PRINT
-        return
+        print 'additions:', additions   #PRINT 
+        print 'removals:', removals     #PRINT
         createTagAnnotationsLinks(conn, additions, removals)
 
     # Now we re-build the tagging table and return it
