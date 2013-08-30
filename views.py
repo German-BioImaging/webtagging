@@ -10,6 +10,7 @@ from utils import parse_path, createTagAnnotationsLinks
 
 from urlparse import parse_qsl
 
+import json
 
 def index(request):
     """
@@ -39,6 +40,7 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
     context = {'template': 'webtagging/tags_from_names.html'}
     context['tokenTags'] = tokenTags
     context['imageDetails'] = imageDetails
+    context['imageState'] = json.dumps(imageDetails)
     return context
 
 

@@ -12,6 +12,9 @@
 <script>
 $(function(){
 
+    // Parse state object
+    imageState = {{ imageState|safe }}
+
     var $submitButton = $("#updateAllForm input[type='submit']");
 
     // Our table form is 'ajax' - whole table content is updated from form submission
