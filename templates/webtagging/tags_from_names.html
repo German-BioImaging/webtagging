@@ -173,6 +173,13 @@ $(function(){
                     $td.addClass('success');
                 }
 
+                // If a match was found or autoselect is set for this token, check the box
+                if ( token.autoselect || found ) {
+                    $td.children('.imagechecked').prop('checked', true);
+                } else {
+                    $td.children('.imagechecked').prop('checked', false);
+                }
+
 
                 $td.has("."+selectedValue).addClass('success');
             }
