@@ -52,15 +52,16 @@ def createTagAnnotationsLinks(conn, additions=[], removals=[]):
 
     if len(removals) > 0:
         # Get existing links belonging to current user (all at once to save on queries)
-        allImageIds, allTagIds = zip(*removals)
+        allImageIds, allTagIds, allTokenNames = zip(*removals)
+        # removalsCheck has to exist because the check to see if the image/tagId combo was in the list, there is no knowledge of the tokenName
+        removalsCheck = zip(allImageIds, allTagIds)
         params = omero.sys.Parameters()
         params.theFilter = omero.sys.Filter()
         params.theFilter.ownerId = rlong(conn.getUserId())
-        links = conn.getAnnotationLinks("Image", parent_ids=allImageIds, ann_ids=allTagIds, params=params)
-
+        links = conn.getAnnotationLinks("Image", parent_ids=list(allImageIds), ann_ids=list(allTagIds), params=params)
         # The above returns image->tag links that were not specified for deletion, so only delete the appropriate ones 
         for link in links:
-            if (link.parent.id.val, link.child.id.val) in removals:
+            if (link.parent.id.val, link.child.id.val) in removalsCheck:
                 conn.deleteObjectDirect(link._obj)
 
         

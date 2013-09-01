@@ -35,12 +35,13 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
         images = list( dataset.listChildren() )
         images.sort(key=lambda img: img.getName().lower())
 
-    tokenTags, imageDetails = build_table_data(conn, images)
+    tokenTags, imageDetails, imageStates = build_table_data(conn, images)
     # We only need to return a dict - the @render_response() decorator does the rest...
     context = {'template': 'webtagging/tags_from_names.html'}
     context['tokenTags'] = tokenTags
     context['imageDetails'] = imageDetails
-    context['imageState'] = json.dumps(imageDetails)
+    print 'imageStates: ', imageStates
+    context['imageStates'] = json.dumps(imageStates)
     return context
 
 
@@ -129,10 +130,11 @@ def build_table_data(conn, images):
 
     # Populate the images with details
     imageDetails = []
+    imageStates = {}
+
     for image, allTokens in imagesTokens.iteritems():
 
         # Create mapping of tags that exist already on this image (tagValue : [ids])
-        #TODO Add any manually added mappings to this list
         imageTags = {}
         for tag in listTags(image):
             if tag.getValue() in imageTags:
@@ -141,6 +143,7 @@ def build_table_data(conn, images):
                 imageTags[tag.getValue()] = [tag.getId()]
 
         imageTokens = []
+        imageTokenStates = {}
         # For each token that exists (tokens from all images)
         for tokenType in ['pathTokens', 'fileTokens','extTokens']:
             for token in tokenTags[tokenType]:
@@ -161,22 +164,21 @@ def build_table_data(conn, images):
                 imageToken['tokenType'] = tokenType
 
                 # Add all the matching tags 
-                #TODO or are manually added
                 if token['name'] in imageTags:
                     # Add the tagIds that match to this token
                     imageToken['tags'] = imageTags[token['name']]
 
                     # If there is just the one matching tag for this column, mark the token selected
+                    #TODO This can be removed in favor of a simple filter in django ??
                     if len(token['tags']) == 1:
                         imageToken['selected'] = True
 
-
                 imageTokens.append(imageToken)
-
+                imageTokenStates[token['name']] = imageToken
 
         imageDetail = {'id':image.getId(), 'name':image.getName(), 'tokens':imageTokens}
+        imageStates[image.getId()] = {'name':image.getName(), 'tokens':imageTokenStates}
         imageDetails.append(imageDetail)
-
     # Sort imageDetails
     imageDetails.sort(key=lambda name: name['name'].lower())
 
@@ -188,7 +190,7 @@ def build_table_data(conn, images):
     #print 'tokenTags: ', tokenTags          #PRINT
     #print 'imageDetails: ', imageDetails    #PRINT
 
-    return tokenTags, imageDetails
+    return tokenTags, imageDetails, imageStates
 
 
 @login_required(setGroupContext=True)
@@ -199,94 +201,76 @@ def process_update(request, conn=None, **kwargs):
         tokenTagsPost = request.POST.getlist('tokentag')
         serverSelectedPost = request.POST.getlist('serverselected')
         checkedPost = request.POST.getlist('imagechecked')
-        imagesPost = request.POST.getlist('image')
 
         # Convert the posted data into something more manageable
-        #TODO Potential problem with underscore in tag name.
-        #TODO Preserve manually added mappings through a submit, e.g. 'dv' -> 'deltavision.
-        #     May require some html changes if they are not selected in the mapping
+        # tokenTags = { tokenName: tagId }
         tokenTags = {}
         for tokenTag in tokenTagsPost:
             # Only if there is a selection made
             if len(tokenTag) > 0:
                 tokenName,tagId = tokenTag.rsplit(r'_', 1)
                 tokenTags[tokenName] = long(tagId)
-        #print 'tokenTags:', tokenTags     #PRINT
+        print 'tokenTags:', tokenTags     #PRINT
 
+        # serverSelected = { imageId: [tokenName]}
         serverSelected = {}
         for s in serverSelectedPost:
-            # Split first leftmost part, then rightmost as the middle may contain extra underscores
-            imageId,tokenNameTagId = s.split(r'_',1)
-            tokenName, tagId = tokenNameTagId.rsplit(r'_',1)
-            serverSelected.setdefault(long(imageId), []).append( (tokenName, long(tagId) ) )
-
+            imageId,tokenName = s.split(r'_',1)
+            serverSelected.setdefault(long(imageId), []).append(tokenName)
+        # checked = { imageId: [tokenName] }
+        #TODO Unmapped tokens checkboxes should probably be disabled on the form until there is a mapping.
         checked = {}
         for c in checkedPost:
             imageId,tokenName = c.split(r'_', 1)
+            # Ignore submissions from unmapped tokens
+            if tokenName in tokenTags:
+                checked.setdefault(long(imageId), []).append(tokenName)
 
-            checked.setdefault(long(imageId), []).append(tokenName)
-        # Use simple list for images for now, if I need more info I many need a list of dicts or a list of tuples
-        # Or if I need to search it, a dictionary instead of the list
-        imageIds = [long(image) for image in imagesPost]
+        # Get the list of images that may require operations as they have some selections or checks
+        imageIds = list(set(serverSelected.keys() + checked.keys()))
 
-        additions = []
-        removals = []
+        additions = []  # [(imageID, tagId, tokenName)]
+        removals = []   # [(imageId, tagId, tokenName)]
         # Create a list of tags to add on images and one to remove tags from images
         for imageId in imageIds:
 
-            # If the image has some checked items
-            if imageId in checked or imageId in serverSelected:
-                # Not every image will have both of these so have to default to empty list
-                # These are the ids of the tag
-                checkedTags = []
-                selectedTags = []
+            # Not every image will have both of these so have to default to empty list
+            checkedTokens = []
+            selectedTokens = []
 
-                # If there are checked checkboxes for this image
-                if imageId in checked:
-                    # checked[imageId] is the list of token names that have been checked, resolve to tagIds
-                    for token in checked[imageId]:
-                        # Ensure there is a mapping for this token
-                        if token in tokenTags:
-                            # Add the id to the list of checked tags
-                            checkedTags.append(tokenTags[token])
+            # If there are checked checkboxes for this image
+            if imageId in checked:
+                checkedTokens = checked[imageId]
 
-                # If there are server selected tags for this image
-                if imageId in serverSelected:
-                    # serverSelected[imageId] is the list of tagIds that are selected along with the token they represent (<tokenName>,<tagId>)
-                    # Discard serverSelected mappings which are not the current mapping
-                    for s in serverSelected[imageId]:
-                        if s[0] in tokenTags:
-                            if tokenTags[s[0]] == s[1]:
-                                selectedTags.append(s[1])
+            # If there are server selected tokens for this image
+            if imageId in serverSelected:
+                selectedTokens = serverSelected[imageId]
 
+            # Add any tokens (for addition) that are not preexisting (checked - serverSelected)
+            additionsTokens = list(set(checkedTokens) - set(selectedTokens))
+            # Add any tokens (for removal) that are prexisiting but not checked (serverSelected - checked)
+            removalsTokens = list(set(selectedTokens) - set(checkedTokens))
 
+            # Resolve tokenNames to tagIds, but keep tokenNames as the client needs these back to update the table
+            for tokenName in additionsTokens:
+                # Resolve tokenName to a tagId
+                tagId = tokenTags[tokenName]
+                additions.append((imageId, tagId, tokenName))
 
-                # Add any tags (for addition) that are not preexisting (checked - serverSelected)
-                additionsTags = list(set(checkedTags) - set(selectedTags))
-                # Add any tokens (for removal) that are prexisiting but not checked (serverSelected - checked)
-                removalsTags = list(set(selectedTags) - set(checkedTags))
-
-                for tagId in additionsTags:
-                    additions.append((imageId, tagId))
-
-                for tagId in removalsTags:
-                    removals.append((imageId, tagId))
+            for tokenName in removalsTokens:
+                # Resolve tokenName to a tagId
+                tagId = tokenTags[tokenName]
+                removals.append((imageId, tagId, tokenName))
                 
         print 'additions:', additions   #PRINT 
         print 'removals:', removals     #PRINT
+        #TODO Return success/failure of each addition/removal
+        #TODO The success/failure need not contain the tagId like these additions/removals do, html will be indexing so will need to change there also.
         createTagAnnotationsLinks(conn, additions, removals)
-
-    # Now we re-build the tagging table and return it
-    context = {'template': 'webtagging/tag_table.html'}
-
-    images = list(conn.getObjects("Image", imageIds))
-    images.sort(key=lambda img: img.getName().lower())
-
-    tokenTags, imageDetails = build_table_data(conn, images)
+    
+    successfulUpdates = {'additions': additions, 'removals': removals}
     # We only need to return a dict - the @render_response() decorator does the rest...
-    context['tokenTags'] = tokenTags
-    context['imageDetails'] = imageDetails
-    return context
+    return successfulUpdates
 
 
 @login_required(setGroupContext=True)

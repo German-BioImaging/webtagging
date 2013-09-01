@@ -8,13 +8,13 @@
 <link rel="stylesheet" href="{% static '3rdparty/jquery.chosen/chosen.css' %}" type="text/css" media="screen"/>
 <script src="{% static '3rdparty/jquery.chosen/chosen.jquery.js' %}"></script>
 <script src="{% static 'webtagging/js/show_tags_dialog.js' %}"></script>
+<!-- In various places I could rely only on an HTML5 data- field, but testing shows that jQuery selection based on data field is much slower than class based (especially on IE)-->
 
 <script>
 $(function(){
 
     // Parse state object
-    imageState = {{ imageState|safe }}
-
+    imageStates = {{ imageStates|safe }}
     var $submitButton = $("#updateAllForm input[type='submit']");
 
     // Our table form is 'ajax' - whole table content is updated from form submission
@@ -23,9 +23,55 @@ $(function(){
             // prevent submitting the form again while waiting
             $submitButton.attr('disabled', true);
         },
+        dataType: "json",
         success: function(data) {
-            // Simply replace the table content with the returned html
-            $("#updateAllForm>table").html(data);
+
+
+            // For each update, find the cell and update it's selected status
+            for (var i in data.additions) {
+                var imageId = data.additions[i][0];
+                var tagId = data.additions[i][1];
+                var tokenName = data.additions[i][2];
+                $td = $('tr#image_' + imageId + ' .token_' + tokenName);
+                $td.addClass('success');
+                $td.append('<input class="serverselected" name="serverselected" type="hidden" value="' + imageId + '_' + tokenName + '"/>');
+
+                // Get the tags from state and update
+                var image = imageStates[imageId];
+                var token = image.tokens[tokenName];
+                var tags = [];
+                if (token.tags) {
+                    tags = token.tags;
+                }
+                tags.push(tagId);
+                token.tags = tags;
+            }
+
+            for (var i in data.removals) {
+                var imageId = data.removals[i][0];
+                var tagId = data.removals[i][1];
+                var tokenName = data.removals[i][2];
+                $td = $('tr#image_' + imageId + ' .token_' + tokenName);
+                $td.removeClass('success');
+                $td.children('.serverselected').remove();
+
+                // Get the tags from state and update
+                var image = imageStates[imageId];
+                var token = image.tokens[tokenName];
+                var tags = token.tags;
+
+                // Check the list of tags for a match
+                if ( tags ) {
+                    $.each(tags, function(k,v){
+                        if (v == tagId) {
+                            tags.splice(k,1);
+                            return false;
+                        }
+                    });
+                }
+                
+            }
+  
             $submitButton.removeAttr('disabled');
         }
     });
@@ -82,20 +128,52 @@ $(function(){
 
         // Create variables holding all the th elements so that this can be used to calculate the index
         var $th = $('th');
-        var $rows = $('tr');
+        var $rows = $('tbody > tr');
 
         // Get the position of the th element in which the selector is
         var colIndex = $th.index( $(this).parent() );
 
         // For each row
-        $rows.each(function(){
+        $rows.each(function(i, v){
+            // Get the imageId from the tr
+            var imageId = $(v).data('imageid');
+
             // Get the td which corresponds to the index of the th above
             var $td = $(this).children().eq(colIndex);
 
             // Remove all the background highlights
             $td.removeClass('success');
-            // Add appropriate background highlights
+            // Remove any serverselected markers
+            $td.children('.serverselected').remove();
+
             if (selectedValue != '') {
+
+                // Query the JSON State object to determine if the new mapping should be marked selected or not for this image
+                var selectedValueSplit = selectedValue.split('_');
+                var tagId = selectedValueSplit[selectedValueSplit.length-1];
+                //TODO Build token from all but the last element of the selectedValueSplit
+                var tokenName = selectedValueSplit[0];
+                var image = imageStates[imageId];
+                var token = image.tokens[tokenName];
+                var tags = token.tags;
+
+                // Check the list of tags for a match
+                var found = false;
+                if ( tags ) {
+                    $.each(tags, function(k,v){
+                        if (v == tagId) {
+                            found = true;
+                            return false;
+                        }
+                    });
+                }
+                // If a match was found, then add the hidden serverselected field
+                if ( found ) {
+                    $td.append('<input class="serverselected" name="serverselected" type="hidden" value="' + imageId + '_' + tokenName + '"/>');
+                    $td.addClass('success');
+                }
+
+
                 $td.has("."+selectedValue).addClass('success');
             }
         });

@@ -88,10 +88,10 @@
 
 <tbody>
     {% for imageDetail in imageDetails %}
-        <tr id="image_{{ imageDetail.id }}">
+        <tr id="image_{{ imageDetail.id }}" data-imageid="{{ imageDetail.id }}">
             {% for imageToken in imageDetail.tokens %}
                 {# Display special case background color for server selected tokens #}
-                <td class="{{ imageToken.tokenType }} {% if imageToken.selected %} success{% endif %}">
+                <td class="{{ imageToken.tokenType }} token_{{ imageToken.name }}{% if imageToken.selected %} success{% endif %}">
 
                 {% if imageToken.autoselect or imageToken.selected %}
                     <input class="imagechecked" name="imagechecked" value="{{ imageDetail.id }}_{{ imageToken.name }}" type="checkbox" checked />
@@ -99,17 +99,15 @@
                     <input class="imagechecked" name="imagechecked" value="{{ imageDetail.id }}_{{ imageToken.name }}" type="checkbox" />
                 {% endif %}
 
-                {# Create hidden fields for the tags which are already on the image #}
-                {% if imageToken.tags %}
-                    {% for tagId in imageToken.tags %}
-                        <input class="serverselected {{ imageToken.name }}_{{ tagId }}" name="serverselected" type="hidden" value="{{ imageDetail.id }}_{{ imageToken.name }}_{{ tagId }}"/>
-                    {% endfor %}
+                {# Create a hidden field to indicate that for the current mapping, this image is tagged server side #}
+                {% if imageToken.selected %}
+                    <input class="serverselected" name="serverselected" type="hidden" value="{{ imageDetail.id }}_{{ imageToken.name }}"/>
                 {% endif %}
                 </td>
             {% endfor %}
             <td>
                 {{ imageDetail.name }} ({{ imageDetail.id }})
-                <input name="image" type="hidden" value="{{ imageDetail.id }}" />
+                <!--<input name="image" type="hidden" value="{{ imageDetail.id }}" />-->
             </td>
         </tr>
     {% endfor %}
