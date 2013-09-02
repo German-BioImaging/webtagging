@@ -127,8 +127,8 @@ $(function(){
         var selectedValue = $(this).val();
 
         // Create variables holding all the th elements so that this can be used to calculate the index
-        var $th = $('th');
-        var $rows = $('tbody > tr');
+        var $th = $('#token-table > thead > tr > th');
+        var $rows = $('#token-table > tbody > tr');
 
         // Get the position of the th element in which the selector is
         var colIndex = $th.index( $(this).parent() );
