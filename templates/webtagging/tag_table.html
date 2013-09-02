@@ -3,80 +3,45 @@
         {#TODO Condense these 3 sections into 1 as they are very similar #}
 
         {% for tokenTag in tokenTags.pathTokens %}
-            <th class="pathTokens">
+            <th class="pathTokens" data-tokenname="{{ tokenTag.name }}">
                 {% if tokenTag.tags %}
                     <select class="tag-selector" name="tokentag">
-                        {% comment %}
-                            TODO Should have a list of matching tags available here
-                            If there are 0 matching, select nothing 
-                            If there is 1 matching, selected it
-                            If there are more than 1 matching, but 0 selected then select nothing
-                            If there are more than 1 matching and 1 selected, select it??
-                            If there are more than 1 matching and more than 1 selected, select nothing??
-                        {% endcomment %}
-
+                            <option value=""></option>
                             {% for tag in tokenTag.tags %}
-                                <option value="{{ tokenTag.name }}_{{ tag.id }}">{{ tag.name }}({{ tag.id }})</option>
+                                <option value="{{ tokenTag.name }}_{{ tag.id }}"{% ifequal tokenTag.tags|length 1 %} selected{% endifequal %}>{{ tag.name }}({{ tag.id }})</option>
                             {% endfor %}
-                            <option/>
-                            {#TODO The option fires up the same context as creating a new tag to allow overriding a match with a new tag/map #}
-                            <option>Remap</option>
                     </select>
                 {% else %}
-                {# Link to create a new tag of this name or map this token (temporarily) to an existing tag #}
                 <a class="token" href="">{{ tokenTag.name }}</a>
                 {% endif %}
             </th>
         {% endfor %}
 
         {% for tokenTag in tokenTags.fileTokens %}
-            <th class="fileTokens">
+            <th class="fileTokens" data-tokenname="{{ tokenTag.name }}">
                 {% if tokenTag.tags %}
                     <select class="tag-selector" name="tokentag">
-                        {% comment %}
-                            TODO Should have a list of matching tags available here
-                            If there are 0 matching, select nothing 
-                            If there is 1 matching, selected it
-                            If there are more than 1 matching, but 0 selected then select nothing
-                            If there are more than 1 matching and 1 selected, select it??
-                            If there are more than 1 matching and more than 1 selected, select nothing??
-                        {% endcomment %}
-
                             <option value=""></option>
                             {% for tag in tokenTag.tags %}
                                 <option value="{{ tokenTag.name }}_{{ tag.id }}"{% ifequal tokenTag.tags|length 1 %} selected{% endifequal %}>{{ tag.name }}({{ tag.id }})</option>
                             {% endfor %}
-                            {#TODO The option fires up the same context as creating a new tag to allow overriding a match with a new tag/map #}
-                            <option>Remap</option>
                     </select>
                 {% else %}
-                {# Link to create a new tag of this name or map this token (temporarily) to an existing tag #}
                 <a class="token" href="">{{ tokenTag.name }}</a>
                 {% endif %}
             </th>
         {% endfor %}
 
         {% for tokenTag in tokenTags.extTokens %}
-            <th class="extTokens">
+            <th class="extTokens" data-tokenname="{{ tokenTag.name }}">
                 {% if tokenTag.tags %}
                     <select class="tag-selector" name="tokentag">
-                        {% comment %}
-                            TODO Should have a list of matching tags available here
-                            If there are 0 matching, select nothing 
-                            If there is 1 matching, selected it
-                            If there are more than 1 matching, but 0 selected then select nothing
-                            If there are more than 1 matching and 1 selected, select it??
-                            If there are more than 1 matching and more than 1 selected, select nothing??
-                        {% endcomment %}
-
+                            <option value=""></option>
                             {% for tag in tokenTag.tags %}
-                                <option value="{{ tokenTag.name }}_{{ tag.id }}">{{ tag.name }}({{ tag.id }})</option>
+                                <option value="{{ tokenTag.name }}_{{ tag.id }}"{% ifequal tokenTag.tags|length 1 %} selected{% endifequal %}>{{ tag.name }}({{ tag.id }})</option>
                             {% endfor %}
-                            {#TODO The option fires up the same context as creating a new tag to allow overriding a match with a new tag/map #}
-                            <option>Remap</option>
                     </select>
                 {% else %}
-                {# Link to create a new tag of this name or map this token (temporarily) to an existing tag #}
                 <a class="token" href="">{{ tokenTag.name }}</a>
                 {% endif %}
             </th>
