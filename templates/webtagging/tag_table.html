@@ -11,6 +11,7 @@
                                 <option value="{{ tokenTag.name }}_{{ tag.id }}"{% ifequal tokenTag.tags|length 1 %} selected{% endifequal %}>{{ tag.name }}({{ tag.id }})</option>
                             {% endfor %}
                     </select>
+
                 {% else %}
                 <a class="token" href="">{{ tokenTag.name }}</a>
                 {% endif %}
@@ -26,6 +27,16 @@
                                 <option value="{{ tokenTag.name }}_{{ tag.id }}"{% ifequal tokenTag.tags|length 1 %} selected{% endifequal %}>{{ tag.name }}({{ tag.id }})</option>
                             {% endfor %}
                     </select>
+                    <div class="tag">
+                        <a class="tooltip tag_inner" href="/webclient/usertags/?show=tag-51" target="_top">R3D</a>
+                        <span class="showTag" id="51-tag" title="Remove Tag" url="/webclient/action/remove/tag/51/" style="display: none;">X</span>
+                        <span class="tooltip_html" style="display: none;">
+                            <b>Owner:</b> Douglas Russell<br>
+                            <b>Linked by:</b> Douglas Russell<br>
+                            <b>On:</b> 2013-08-22 23:19:34<br>
+                            <b>Description:</b> 
+                        </span>
+                    </div>
                 {% else %}
                 <a class="token" href="">{{ tokenTag.name }}</a>
                 {% endif %}
