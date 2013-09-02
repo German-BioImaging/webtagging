@@ -143,7 +143,7 @@ $(function(){
                 });
                 
             // Updates to the selection box
-            $select = $("<select name='tokentag'></select>").append("<option value=''></option><option value='" + tokenName + "_" + tag.id +"' selected >" + tag.name + "(" + tag.id + ")</option>");
+            $select = $("<select class='tag-selector' name='tokentag'></select>").append("<option value=''></option><option value='" + tokenName + "_" + tag.id +"' selected >" + tag.name + "(" + tag.id + ")</option>");
             $th.empty().append($select);
 
             },
