@@ -3,7 +3,18 @@
 <link rel="stylesheet" type="text/css" href="{% static 'webtagging/css/bootstrap.css' %}" />
 <link rel="stylesheet" type="text/css" href="{% static 'webtagging/css/webtagging.css' %}" />
 
-<script>window.jQuery || document.write('<script src="/static/3rdparty/jquery-1.7.2.js"><\/script><script src="{% static "webclient/javascript/jquery.form.js" %}"><\/script>')</script>
+<!--<script>window.jQuery || document.write('<script src="/static/3rdparty/jquery-1.7.2.js"><\/script><script src="{% static "webclient/javascript/jquery.form.js" %}"><\/script>')</script>-->
+<!-- Diagnostics -->
+<script>window.jQuery || document.write('<script src="/static/3rdparty/jquery-1.7.2.js"><\/script><script src="{% static "webclient/javascript/jquery.form.js" %}"><\/script><script src="{% static "3rdparty/jquery-ui-1.8.19/jquery-ui-1.8.19.custom.min.js" %}"><\/script>')</script>
+<head>
+    <link rel="stylesheet" href="{% static "webgateway/css/reset.css" %}" type="text/css" />   
+    <link rel="stylesheet" href="{% static "webgateway/css/ome.body.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "webclient/css/dusty.css" %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static "webgateway/css/ome.header.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "webclient/css/layout.css" %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static "3rdparty/jquery-ui-1.8.19/themes/base/jquery.ui.base.css" %}" type="text/css" />
+</head>
+<!-- End Diagnostics -->
 
 <link rel="stylesheet" href="{% static '3rdparty/jquery.chosen/chosen.css' %}" type="text/css" media="screen"/>
 <script src="{% static '3rdparty/jquery.chosen/chosen.jquery.js' %}"></script>
