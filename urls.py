@@ -16,4 +16,8 @@ urlpatterns = patterns('django.views.generic.simple',
     # list & create tags for tags dialog
     url( r'^list_tags/$', views.list_tags, name="webtagging_list_tags" ),
     url( r'^create_tag/$', views.create_tag, name="webtagging_create_tag" ),
+
+    # determine if images have a certain tag
+    url( r'^get_tag_on_images/$', views.get_tag_on_images, name="webtagging_get_tag_on_images" ),
+
 )

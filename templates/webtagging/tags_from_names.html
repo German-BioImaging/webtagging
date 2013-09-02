@@ -3,7 +3,18 @@
 <link rel="stylesheet" type="text/css" href="{% static 'webtagging/css/bootstrap.css' %}" />
 <link rel="stylesheet" type="text/css" href="{% static 'webtagging/css/webtagging.css' %}" />
 
-<script>window.jQuery || document.write('<script src="/static/3rdparty/jquery-1.7.2.js"><\/script><script src="{% static "webclient/javascript/jquery.form.js" %}"><\/script>')</script>
+<!--<script>window.jQuery || document.write('<script src="/static/3rdparty/jquery-1.7.2.js"><\/script><script src="{% static "webclient/javascript/jquery.form.js" %}"><\/script>')</script>-->
+<!-- Diagnostics -->
+<script>window.jQuery || document.write('<script src="/static/3rdparty/jquery-1.7.2.js"><\/script><script src="{% static "webclient/javascript/jquery.form.js" %}"><\/script><script src="{% static "3rdparty/jquery-ui-1.8.19/jquery-ui-1.8.19.custom.min.js" %}"><\/script>')</script>
+<head>
+    <link rel="stylesheet" href="{% static "webgateway/css/reset.css" %}" type="text/css" />   
+    <link rel="stylesheet" href="{% static "webgateway/css/ome.body.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "webclient/css/dusty.css" %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static "webgateway/css/ome.header.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "webclient/css/layout.css" %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static "3rdparty/jquery-ui-1.8.19/themes/base/jquery.ui.base.css" %}" type="text/css" />
+</head>
+<!-- End Diagnostics -->
 
 <link rel="stylesheet" href="{% static '3rdparty/jquery.chosen/chosen.css' %}" type="text/css" media="screen"/>
 <script src="{% static '3rdparty/jquery.chosen/chosen.jquery.js' %}"></script>
@@ -15,6 +26,7 @@ $(function(){
 
     // Parse state object
     imageStates = {{ imageStates|safe }}
+    console.log(imageStates);
     var $submitButton = $("#updateAllForm input[type='submit']");
 
     // Our table form is 'ajax' - whole table content is updated from form submission
@@ -86,20 +98,56 @@ $(function(){
     // );
 
     $("#updateAllForm").on("click", "a.token", function(event){
-        var $tokenLink = $(this),
-            tokenText = $tokenLink.text(),
-            $th = $tokenLink.parent();
+        var $tokenLink = $(this);
+        var $th = $tokenLink.parent();
+        var tokenName = $tokenLink.parent().data('tokenname');
         OME.show_tags_dialog({
             list_tags: "{% url webtagging_list_tags %}",
             create_tag: "{% url webtagging_create_tag %}",
             success: function(tags){
                 console.log(tags);
                 var tag = tags[0];
-                $select = $("<select name='tokentag'></select>")
-                    .append("<option value='" + tag.name + "_" + tag.id +"'>" + tag.name + "(" + tag.id + ")</option>");
-                $th.empty().append($select);
+                
+                // Make list of images
+                imageList = [];
+                for ( var imageId in imageStates ) {
+                    // Ensure the key is an actual property, not part of the prototype
+                    if (imageStates.hasOwnProperty(imageId)) {
+                        imageList.push(imageId);
+                    }
+                }
+
+                //TODO Only call this if an existing tag is being mapped to, not if a new tag is created, especially with default tokenName
+                // AJAX query to find out if this new tag is on the images
+                $.ajax({
+                    type: "POST",
+                    url: "{% url webtagging_get_tag_on_images %}",
+                    data: { image_ids: imageList, tag_id: tag.id },
+                    dataType: "json",
+                    success: function(imagesPresent) {
+                        // Update state object to contain details of the new mapping's option's
+                        for ( var imageId in imagesPresent) {
+                            
+                            var image = imageStates[imagesPresent[imageId]];
+                            var token = image.tokens[tokenName];
+                            // Add tags array if it doesn't exist
+                            if ( !token.tags ) {
+                                token.tags = [] 
+                            }
+                            var tags = token.tags;
+                            tags.push(tag.id);
+                            // Update checked and selected status
+                            mappingChangeUpdate(tokenName + '_' + tag.id, $th);
+                        } 
+                    }
+                });
+                
+            // Updates to the selection box
+            $select = $("<select name='tokentag'></select>").append("<option value=''></option><option value='" + tokenName + "_" + tag.id +"' selected >" + tag.name + "(" + tag.id + ")</option>");
+            $th.empty().append($select);
+
             },
-            'new_tag_default':tokenText}
+            'new_tag_default':tokenName}
         );
         return false;
     });
@@ -121,17 +169,15 @@ $(function(){
             $("#token-table").addClass('hideExtTokens');
         }
     });
-    
-    $("#updateAllForm").on("change", ".tag-selector", function(event){
-        // Get the name of the selected item so appropriate hidden field can be selected
-        var selectedValue = $(this).val();
 
+    // Update the selections and checked states for a column
+    mappingChangeUpdate = function(selectedValue, $thUpdated){
         // Create variables holding all the th elements so that this can be used to calculate the index
         var $th = $('#token-table > thead > tr > th');
         var $rows = $('#token-table > tbody > tr');
 
         // Get the position of the th element in which the selector is
-        var colIndex = $th.index( $(this).parent() );
+        var colIndex = $th.index( $thUpdated );
 
         // For each row
         $rows.each(function(i, v){
@@ -180,10 +226,13 @@ $(function(){
                     $td.children('.imagechecked').prop('checked', false);
                 }
 
-
-                $td.has("."+selectedValue).addClass('success');
             }
         });
+    }
+    $("#updateAllForm").on("change", ".tag-selector", function(event){
+        // Get the name of the selected item so appropriate hidden field can be selected
+        var selectedValue = $(this).val();
+        mappingChangeUpdate(selectedValue, $(this).parent());
     });
 
 });

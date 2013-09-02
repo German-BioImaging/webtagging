@@ -4,7 +4,7 @@ from omeroweb.webclient.decorators import login_required, render_response
 
 import omero
 from omero.model import TagAnnotationI
-from omero.rtypes import rstring
+from omero.rtypes import rstring, rlong
 
 from utils import parse_path, createTagAnnotationsLinks
 
@@ -153,10 +153,6 @@ def build_table_data(conn, images):
                     # Get the tags (if any) that are relevant
                     if 'tags' in token:
                         tags = token['tags']
-                        # If exactly 1 tag exists for this image
-                        if len(tags) == 1:
-                            # Mark the token as matched
-                            imageToken['matched'] = True
                     # Mark the token for autoselect (Do this even if the token is not matched)
                     imageToken['autoselect'] = True
 
@@ -314,14 +310,24 @@ def get_tag_on_images(request, conn=None, **kwargs):
     Given a TagId and a list of images, determine the tagged status for each
     """
 
-    imageIdList = [1,2,3]
-    tagId = "R3D"
+    if not request.POST:
+        return {"error": "need to POST"}
 
+    tagId = request.POST.get("tag_id")
+    imageIdList = request.POST.getlist("image_ids[]")
+
+    if not tagId or not imageIdList:
+        return {"error": "need a tagId and imageId list to process"}
+
+    tagId = long(tagId)
+    imageIdList = map(long, imageIdList)
+
+    params = omero.sys.Parameters()
     links = conn.getAnnotationLinks("Image", parent_ids=imageIdList, ann_ids=[tagId], params=params)
 
     tagOnImages = []
-    # The above returns image->tag links that were not specified for deletion, so only delete the appropriate ones 
+    # Only return imageIds
     for link in links:
         tagOnImages.append(link.parent.id.val)
 
-    print 'tagsOnImages', tagsOnImages
+    return tagOnImages
