@@ -40,6 +40,19 @@
                 {% else %}
                 <a class="token" href="">{{ tokenTag.name }}</a>
                 {% endif %}
+
+            <div style="position: relative">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                    <li><a href="#">Action</a></li>
+                    <li><a href="#">Another action</a></li>
+                    <li><a href="#">Something else here</a></li>
+                    <li class="divider"></li>
+                    <li><a href="#">Separated link</a></li>
+                </ul>
+            </div>
             </th>
         {% endfor %}
 

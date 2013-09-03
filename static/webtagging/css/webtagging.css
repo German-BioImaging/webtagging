@@ -52,33 +52,13 @@ table.hideExtTokens .extTokens { display:none; }
   background-color: #c4e3f3 !important;
 }
 
-/* Adapted from dusty .removeTag and .removeTag:hover */
-.showTag {
-    color: #000;
-    cursor:pointer;
-    font-weight:bold; 
-    text-shadow: 0 1px 0 rgba(255,255,255,.7);
-    display:inline-block;
-    width:12px;
-    height:12px;
-    position:absolute;
-    z-index:90;
-    right:5px;
-    top:5px;
-    -webkit-border-radius:20px;
-    -moz-border-radius:20px;
-    border-radius:20px;
-    text-align:center;
-    margin-left:5px;
-    overflow:hidden;
-    display:block !important;
-    background:url(../images/tag_arrow_down.png) center center no-repeat;
-    text-indent:-99px;
+
+.dropdown-menu {
+  top: 20px;
 }
 
-
-.showTag:hover {
-    background-color:hsla(205,40%,60%,.7);
-    color:hsl(210,20%,30%);
-    text-shadow: 0 1px 0 rgba(255,255,255,.5);
+.btn-default {
+  border: solid gray 1px;
+  width: 14px;
+  height: 20px;
 }

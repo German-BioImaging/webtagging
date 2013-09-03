@@ -17,6 +17,7 @@
 <!-- End Diagnostics -->
 
 <link rel="stylesheet" href="{% static '3rdparty/jquery.chosen/chosen.css' %}" type="text/css" media="screen"/>
+<script src="{% static 'webtagging/3rd-party/bootstrap/bootstrap.js' %}"></script>
 <script src="{% static '3rdparty/jquery.chosen/chosen.jquery.js' %}"></script>
 <script src="{% static 'webtagging/js/show_tags_dialog.js' %}"></script>
 <!-- In various places I could rely only on an HTML5 data- field, but testing shows that jQuery selection based on data field is much slower than class based (especially on IE)-->
@@ -234,6 +235,10 @@ $(function(){
         var selectedValue = $(this).val();
         mappingChangeUpdate(selectedValue, $(this).parent());
     });
+
+    // Bootstrap doesn't need this the first time that bootstrap.js is loaded,
+    // but is needed when we reload this plugin (and bootstrap.js is already cached)
+    $(".dropdown-toggle").dropdown();
 
 });
 
