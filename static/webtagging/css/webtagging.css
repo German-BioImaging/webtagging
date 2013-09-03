@@ -72,7 +72,7 @@ table.hideExtTokens .extTokens { display:none; }
     margin-left:5px;
     overflow:hidden;
     display:block !important;
-    background:url(../images/table_arrow_down.png) center center no-repeat;
+    background:url(../images/tag_arrow_down.png) center center no-repeat;
     text-indent:-99px;
 }
 
