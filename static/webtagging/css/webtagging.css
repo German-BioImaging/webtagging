@@ -52,11 +52,6 @@ table.hideExtTokens .extTokens { display:none; }
   background-color: #c4e3f3 !important;
 }
 
-
-.dropdown-menu {
-  top: 20px;
-}
-
 .btn-default {
   border: solid gray 1px;
   width: 14px;
