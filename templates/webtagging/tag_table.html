@@ -27,32 +27,42 @@
                                 <option value="{{ tokenTag.name }}_{{ tag.id }}"{% ifequal tokenTag.tags|length 1 %} selected{% endifequal %}>{{ tag.name }}({{ tag.id }})</option>
                             {% endfor %}
                     </select>
-                    <div class="tag">
-                        <a class="tooltip tag_inner" href="/webclient/usertags/?show=tag-51" target="_top">R3D</a>
-                        <span class="showTag" id="51-tag" title="Remove Tag" url="/webclient/action/remove/tag/51/" style="display: none;">X</span>
-                        <span class="tooltip_html" style="display: none;">
-                            <b>Owner:</b> Douglas Russell<br>
-                            <b>Linked by:</b> Douglas Russell<br>
-                            <b>On:</b> 2013-08-22 23:19:34<br>
-                            <b>Description:</b> 
-                        </span>
-                    </div>
                 {% else %}
-                <a class="token" href="">{{ tokenTag.name }}</a>
+                    <a class="token" href="">{{ tokenTag.name }}</a>
                 {% endif %}
+
+            {# In the case when there is exactly one tag associated with a token #}
+            {% ifequal tokenTag.tags|length 1 %}
+                <input name="tag-selector" type="hidden" value="{{ tokenTag.name }}_{{ tokenTag.tags.0.id }}"/>
+
+                <div class="tag">
+                    <a class="tooltip tag_inner" href="/webclient/usertags/?show=tag-51" target="_top">R3D</a>
+                    <span class="showTag" id="51-tag" title="Remove Tag" url="/webclient/action/remove/tag/51/" style="display: none;">X</span>
+                    <span class="tooltip_html" style="display: none;">
+                        <b>Owner:</b> Douglas Russell<br>
+                        <b>Linked by:</b> Douglas Russell<br>
+                        <b>On:</b> 2013-08-22 23:19:34<br>
+                        <b>Description:</b> 
+                    </span>
+                </div>
+            {% endifequal %}
 
             <span style="position: relative">
                 <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                     <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu" role="menu">
-                    <li><a href="#">Action</a></li>
-                    <li><a href="#">Another action</a></li>
-                    <li><a href="#">Something else here</a></li>
+                    {% if tokenTag.tags %}
+                        {% for tag in tokenTag.tags %}
+                            <li><a class="tag-select" data-tagname="{{ tag.name }}" data-tagid="{{ tag.id }}">{{ tag.name }}({{ tag.id }})</a></li>
+                        {% endfor %}
+                    {% endif %}
                     <li class="divider"></li>
-                    <li><a href="#">Separated link</a></li>
+                    <li><a href="#">Action</a></li>
                 </ul>
             </span>
+
+
             </th>
         {% endfor %}
 

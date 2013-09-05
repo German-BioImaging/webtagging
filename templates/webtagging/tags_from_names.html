@@ -101,12 +101,12 @@ $(function(){
     $("#updateAllForm").on("click", "a.token", function(event){
         var $tokenLink = $(this);
         var $th = $tokenLink.parent();
-        var tokenName = $tokenLink.parent().data('tokenname');
+        var tokenName = $th.data('tokenname');
+
         OME.show_tags_dialog({
             list_tags: "{% url webtagging_list_tags %}",
             create_tag: "{% url webtagging_create_tag %}",
             success: function(tags){
-                console.log(tags);
                 var tag = tags[0];
                 
                 // Make list of images
@@ -152,6 +152,37 @@ $(function(){
         );
         return false;
     });
+
+    // Click tag mapping in dropdown
+    $("#updateAllForm").on("click", "a.tag-select", function(event){
+        var $th = $(this).parents('th');
+        var tokenName = $th.data('tokenname');
+        var tagId = $(this).data('tagid');
+        var tagName = $(this).data('tagname');
+
+        var $input = $th.has('input').children('input');
+        if($input.length > 0) {
+            // If this the same mapping as already exists, do nothing
+            if ($input.val() == tokenName + '_' + tagId) {
+                // return here as the below update should not occur in this case (unless this is made into a 'refresh' type thing
+                return true;
+            } else {
+                var $tagInner = $th.find('.tag_inner');
+                $tagInner.prop('href', '/webclient/usertags/?show=tag-' + tagId);
+                $tagInner.val(tagName);
+                
+            }
+        } else {
+            // Add the input if it's missing
+            $th.append('<input name="tag-selector" type="hidden" value="' + tokenName + '_' + tagId + '">');
+            var $tag = $('<div class="tag"></div>').append('<a class="tooltip tag_inner" href="/webclient/usertags/?show=tag-' + tagId + '" target="_top">' + tagName + '</a>');
+            $th.prepend($tag);
+        }
+
+        //Run update
+        mappingChangeUpdate(tokenName + '_' + tagId, $th);
+    });
+    
 
     $('#hidePathTokensToggle').change(function(){
         
@@ -229,6 +260,16 @@ $(function(){
 
             }
         });
+/*
+        // Update the tag icon
+        if (selectedValue != '') {
+            var selectedValueSplit = selectedValue.split('_');
+            var tagId = selectedValueSplit[selectedValueSplit.length-1];
+            //TODO Build token from all but the last element of the selectedValueSplit
+            var tokenName = selectedValueSplit[0];
+
+        }
+*/
     }
     $("#updateAllForm").on("change", ".tag-selector", function(event){
         // Get the name of the selected item so appropriate hidden field can be selected
