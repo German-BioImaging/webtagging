@@ -27,7 +27,6 @@ $(function(){
 
     // Parse state object
     imageStates = {{ imageStates|safe }}
-    console.log(imageStates);
     var $submitButton = $("#updateAllForm input[type='submit']");
 
     // Our table form is 'ajax' - whole table content is updated from form submission
@@ -138,7 +137,7 @@ $(function(){
                             var tags = token.tags;
                             tags.push(tag.id);
                             // Update checked and selected status
-                            mappingChangeUpdate(tokenName + '_' + tag.id, $th);
+                            mappingChangeUpdate(tagId, tokenName, $th);
                         } 
                     }
                 });
@@ -168,6 +167,7 @@ $(function(){
                 return true;
             } else {
                 var $tagInner = $th.find('.tag_inner');
+                $input.val(tokenName + '_' + tagId);
                 $tagInner.prop('href', '/webclient/usertags/?show=tag-' + tagId);
                 $tagInner.val(tagName);
                 
@@ -180,7 +180,7 @@ $(function(){
         }
 
         //Run update
-        mappingChangeUpdate(tokenName + '_' + tagId, $th);
+        mappingChangeUpdate(tagId, tokenName, $th);
     });
     
 
@@ -203,11 +203,10 @@ $(function(){
     });
 
     // Update the selections and checked states for a column
-    mappingChangeUpdate = function(selectedValue, $thUpdated){
+    mappingChangeUpdate = function(tagId, tokenName, $thUpdated){
         // Create variables holding all the th elements so that this can be used to calculate the index
         var $th = $('#token-table > thead > tr > th');
         var $rows = $('#token-table > tbody > tr');
-
         // Get the position of the th element in which the selector is
         var colIndex = $th.index( $thUpdated );
 
@@ -224,13 +223,13 @@ $(function(){
             // Remove any serverselected markers
             $td.children('.serverselected').remove();
 
-            if (selectedValue != '') {
+            if (tokenName != '') {
 
                 // Query the JSON State object to determine if the new mapping should be marked selected or not for this image
-                var selectedValueSplit = selectedValue.split('_');
-                var tagId = selectedValueSplit[selectedValueSplit.length-1];
+                //var selectedValueSplit = selectedValue.split('_');
+                //var tagId = selectedValueSplit[selectedValueSplit.length-1];
                 //TODO Build token from all but the last element of the selectedValueSplit
-                var tokenName = selectedValueSplit[0];
+                //var tokenName = selectedValueSplit[0];
                 var image = imageStates[imageId];
                 var token = image.tokens[tokenName];
                 var tags = token.tags;
@@ -274,7 +273,7 @@ $(function(){
     $("#updateAllForm").on("change", ".tag-selector", function(event){
         // Get the name of the selected item so appropriate hidden field can be selected
         var selectedValue = $(this).val();
-        mappingChangeUpdate(selectedValue, $(this).parent());
+        mappingChangeUpdate('delete', 'me', $(this).parent());
     });
 
     // Bootstrap doesn't need this the first time that bootstrap.js is loaded,
