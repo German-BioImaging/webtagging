@@ -1,13 +1,21 @@
+.tag_annotation_wrapper {
+    float:left;
+}
+
+.title_dropdown_button {
+    float:right;
+}
+
 .toolbar {
     text-align:right;
 }
 
 th.pathTokens {
-    background-color:yellow
+    background-color:yellow;
 }
 
 th.extTokens {
-    background-color:red
+    background-color:red;
 }
 
 

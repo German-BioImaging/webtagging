@@ -4,80 +4,56 @@
 
         {% for tokenTag in tokenTags.pathTokens %}
             <th class="pathTokens" data-tokenname="{{ tokenTag.name }}">
-                {% if tokenTag.tags %}
-                    <select class="tag-selector" name="tokentag">
-                            <option value=""></option>
-                            {% for tag in tokenTag.tags %}
-                                <option value="{{ tokenTag.name }}_{{ tag.id }}"{% ifequal tokenTag.tags|length 1 %} selected{% endifequal %}>{{ tag.name }}({{ tag.id }})</option>
-                            {% endfor %}
-                    </select>
-
-                {% else %}
                 <a class="token" href="">{{ tokenTag.name }}</a>
-                {% endif %}
             </th>
         {% endfor %}
 
         {% for tokenTag in tokenTags.fileTokens %}
             <th class="fileTokens" data-tokenname="{{ tokenTag.name }}">
-                {% if tokenTag.tags %}
-                    <select class="tag-selector" name="tokentag">
-                            <option value=""></option>
-                            {% for tag in tokenTag.tags %}
-                                <option value="{{ tokenTag.name }}_{{ tag.id }}"{% ifequal tokenTag.tags|length 1 %} selected{% endifequal %}>{{ tag.name }}({{ tag.id }})</option>
-                            {% endfor %}
-                    </select>
-                {% else %}
-                    <a class="token" href="">{{ tokenTag.name }}</a>
-                {% endif %}
 
-            {# In the case when there is exactly one tag associated with a token #}
-            {% ifequal tokenTag.tags|length 1 %}
-                <input name="tag-selector" type="hidden" value="{{ tokenTag.name }}_{{ tokenTag.tags.0.id }}"/>
+            {{ tokenTag.name }}
 
-                <div class="tag">
-                    <a class="tooltip tag_inner" href="/webclient/usertags/?show=tag-51" target="_top">R3D</a>
-                    <span class="showTag" id="51-tag" title="Remove Tag" url="/webclient/action/remove/tag/51/" style="display: none;">X</span>
-                    <span class="tooltip_html" style="display: none;">
-                        <b>Owner:</b> Douglas Russell<br>
-                        <b>Linked by:</b> Douglas Russell<br>
-                        <b>On:</b> 2013-08-22 23:19:34<br>
-                        <b>Description:</b> 
+            <div>
+                {# In the case when there is exactly one tag associated with a token #}
+                {% ifequal tokenTag.tags|length 1 %}
+                    <input name="tag-selector" type="hidden" value="{{ tokenTag.name }}_{{ tokenTag.tags.0.id }}"/>
+                    
+                    <span class="tag_annotation_wrapper" id="tag_ann-80">
+                        <div class="tag">
+                            <a class="tooltip tag_inner" href="/webclient/usertags/?show=tag-{{ tokenTag.tags.0.id }}" target="_top">{{ tokenTag.tags.0.name }}</a>
+                            <span class="tooltip_html" style="display: none;">
+                                <b>Owner:</b> Douglas Russell<br>
+                                <b>Linked by:</b> Douglas Russell<br>
+                                <b>On:</b> 2013-08-22 23:19:34<br>
+                                <b>Description:</b> 
+                            </span>
+                        </div>
                     </span>
-                </div>
-            {% endifequal %}
+                    
+                {% endifequal %}
 
-            <span style="position: relative">
-                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                    <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu" role="menu">
-                    {% if tokenTag.tags %}
-                        {% for tag in tokenTag.tags %}
-                            <li><a class="tag-select" data-tagname="{{ tag.name }}" data-tagid="{{ tag.id }}">{{ tag.name }}({{ tag.id }})</a></li>
-                        {% endfor %}
-                    {% endif %}
-                    <li class="divider"></li>
-                    <li><a href="#">Action</a></li>
-                </ul>
-            </span>
-
+                <span class="title_dropdown_button" style="position: relative">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                        {% if tokenTag.tags %}
+                            {% for tag in tokenTag.tags %}
+                                <li><a class="tag-select" data-tagname="{{ tag.name }}" data-tagid="{{ tag.id }}">{{ tag.name }}({{ tag.id }})</a></li>
+                            {% endfor %}
+                        {% endif %}
+                        <li class="divider"></li>
+                        <li><a class="token-map">New/Existing Tag</a></li>
+                    </ul>
+                </span>
+            </div>
 
             </th>
         {% endfor %}
 
         {% for tokenTag in tokenTags.extTokens %}
             <th class="extTokens" data-tokenname="{{ tokenTag.name }}">
-                {% if tokenTag.tags %}
-                    <select class="tag-selector" name="tokentag">
-                            <option value=""></option>
-                            {% for tag in tokenTag.tags %}
-                                <option value="{{ tokenTag.name }}_{{ tag.id }}"{% ifequal tokenTag.tags|length 1 %} selected{% endifequal %}>{{ tag.name }}({{ tag.id }})</option>
-                            {% endfor %}
-                    </select>
-                {% else %}
                 <a class="token" href="">{{ tokenTag.name }}</a>
-                {% endif %}
             </th>
         {% endfor %}
 

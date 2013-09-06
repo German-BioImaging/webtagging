@@ -97,10 +97,9 @@ $(function(){
     //     {'new_tag_default':"MyNewTag"}
     // );
 
-    $("#updateAllForm").on("click", "a.token", function(event){
-        var $tokenLink = $(this);
-        var $th = $tokenLink.parent();
-        var tokenName = $th.data('tokenname');
+    $("#updateAllForm").on("click", "a.token-map", function(event){
+        var $th = $(this).parents("th");
+        var tokenName = $th.data("tokenname");
 
         OME.show_tags_dialog({
             list_tags: "{% url webtagging_list_tags %}",
@@ -117,60 +116,67 @@ $(function(){
                     }
                 }
 
-                //TODO Only call this if an existing tag is being mapped to, not if a new tag is created, especially with default tokenName
+                //TODO For efficiency only call this if an existing tag is being mapped to, not if a new tag is created, especially with default tokenName
+                if (true) {
                 // AJAX query to find out if this new tag is on the images
-                $.ajax({
-                    type: "POST",
-                    url: "{% url webtagging_get_tag_on_images %}",
-                    data: { image_ids: imageList, tag_id: tag.id },
-                    dataType: "json",
-                    success: function(imagesPresent) {
-                        // Update state object to contain details of the new mapping's option's
-                        for ( var imageId in imagesPresent) {
-                            
-                            var image = imageStates[imagesPresent[imageId]];
-                            var token = image.tokens[tokenName];
-                            // Add tags array if it doesn't exist
-                            if ( !token.tags ) {
-                                token.tags = [] 
-                            }
-                            var tags = token.tags;
-                            tags.push(tag.id);
-                            // Update checked and selected status
-                            mappingChangeUpdate(tagId, tokenName, $th);
-                        } 
-                    }
-                });
-                
-            // Updates to the selection box
-            $select = $("<select class='tag-selector' name='tokentag'></select>").append("<option value=''></option><option value='" + tokenName + "_" + tag.id +"' selected >" + tag.name + "(" + tag.id + ")</option>");
-            $th.empty().append($select);
+                    $.ajax({
+                        type: "POST",
+                        url: "{% url webtagging_get_tag_on_images %}",
+                        data: { image_ids: imageList, tag_id: tag.id },
+                        dataType: "json",
+                        success: function(imagesPresent) {
+                            // Update state object to contain details of the new mapping's option's
+                            for ( var imageId in imagesPresent) {
+                                
+                                var image = imageStates[imagesPresent[imageId]];
+                                var token = image.tokens[tokenName];
+                                // Add tags array if it doesn't exist
+                                if ( !token.tags ) {
+                                    token.tags = [] 
+                                }
+                                var tags = token.tags;
+                                tags.push(tag.id);
+                            } 
+                            // Update the dropdown menu
+                            $ul = $th.find("ul.dropdown-menu");
+                            $li = $("<li></li>").append("<a class='tag-select' data-tagname='" + tag.name + "' data-tagid='" + tag.id + "'>" + tag.name + "(" + tag.id + ")</a>");
+                            $ul.append($li);
 
+                            // Update the column
+                            columnUpdate(tag.id, tag.name, tokenName, $th);
+                        }
+                    });
+                } else {
+                    // Update the dropdown menu
+                    $ul = $th.find("ul.dropdown-menu");
+                    $li = $("<li></li>").append("<a class='tag-select' data-tagname='" + tag.name + "' data-tagid='" + tag.id + "'>" + tag.name + "(" + tag.id + ")</a>");
+                    $ul.append($li);
+
+                    // Update the column
+                    columnUpdate(tag.id, tag.name, tokenName, $th);
+                }
             },
             'new_tag_default':tokenName}
         );
         return false;
     });
 
-    // Click tag mapping in dropdown
-    $("#updateAllForm").on("click", "a.tag-select", function(event){
-        var $th = $(this).parents('th');
-        var tokenName = $th.data('tokenname');
-        var tagId = $(this).data('tagid');
-        var tagName = $(this).data('tagname');
-
+    // Update the tag icon
+    columnUpdate = function(tagId, tagName, tokenName, $th) {
+        console.log('columnUpdate: ' + tagName + '(' + tagId + '), ' + tokenName);
         var $input = $th.has('input').children('input');
+
+        //If the input field (and thus by inference the tag icon) exists
         if($input.length > 0) {
             // If this the same mapping as already exists, do nothing
             if ($input.val() == tokenName + '_' + tagId) {
                 // return here as the below update should not occur in this case (unless this is made into a 'refresh' type thing
                 return true;
             } else {
-                var $tagInner = $th.find('.tag_inner');
                 $input.val(tokenName + '_' + tagId);
+                var $tagInner = $th.find('.tag_inner');
                 $tagInner.prop('href', '/webclient/usertags/?show=tag-' + tagId);
                 $tagInner.val(tagName);
-                
             }
         } else {
             // Add the input if it's missing
@@ -179,8 +185,18 @@ $(function(){
             $th.prepend($tag);
         }
 
-        //Run update
         mappingChangeUpdate(tagId, tokenName, $th);
+    }
+
+    // Click tag mapping in dropdown
+    $("#updateAllForm").on("click", "a.tag-select", function(event){
+        var $th = $(this).parents('th');
+        var tokenName = $th.data('tokenname');
+        var tagId = $(this).data('tagid');
+        var tagName = $(this).data('tagname');
+
+        //Run update
+        columnUpdate(tagId, tagName, tokenName, $th);
     });
     
 
@@ -259,22 +275,7 @@ $(function(){
 
             }
         });
-/*
-        // Update the tag icon
-        if (selectedValue != '') {
-            var selectedValueSplit = selectedValue.split('_');
-            var tagId = selectedValueSplit[selectedValueSplit.length-1];
-            //TODO Build token from all but the last element of the selectedValueSplit
-            var tokenName = selectedValueSplit[0];
-
-        }
-*/
     }
-    $("#updateAllForm").on("change", ".tag-selector", function(event){
-        // Get the name of the selected item so appropriate hidden field can be selected
-        var selectedValue = $(this).val();
-        mappingChangeUpdate('delete', 'me', $(this).parent());
-    });
 
     // Bootstrap doesn't need this the first time that bootstrap.js is loaded,
     // but is needed when we reload this plugin (and bootstrap.js is already cached)
