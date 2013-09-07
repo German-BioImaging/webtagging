@@ -27,9 +27,51 @@ $(function(){
 
     // Parse state object
     imageStates = {{ imageStates|safe }}
+
+    var $refreshButton = $("#updateAllForm #refreshForm");
     var $submitButton = $("#updateAllForm input[type='submit']");
 
-    // Our table form is 'ajax' - whole table content is updated from form submission
+
+    $("#updateAllForm").on("click", "#refreshForm", function(event){
+
+        // Get options
+        var ignoreFirstFileToken = $('#ignoreFirstFileToken').prop('checked');
+        var ignoreLastFileToken = $('#ignoreLastFileToken').prop('checked');
+
+        // Get the list of images
+        var imageIds = [];
+        var $rows = $('#token-table > tbody > tr');
+        $rows.each(function(i, v){
+            imageIds.push($(v).data('imageid'));
+        });
+
+        var datasetId = $("body").data("selected_objects.ome")[0].id
+        var oid = datasetId.split('dataset-')[1];
+
+        var params = "";
+        var first = true;
+        if (ignoreFirstFileToken || ignoreLastFileToken) {
+            params += "?";
+            if (ignoreFirstFileToken) {
+                params += "ignoreFirstFileToken=True";
+                first = false;
+            }
+            if (ignoreLastFileToken) {
+                if (!first) {
+                    params += "&";
+                }
+                params += "ignoreLastFileToken=True";
+                first = false;
+            }
+        }
+
+        var auto_tag_url = '{% url webtagging_index %}auto_tag/dataset/'+oid+'/' + params;
+
+        $("#auto_tag_panel").load(auto_tag_url);
+    });
+    
+
+    // Our table form is 'ajax'
     $("#updateAllForm").ajaxForm({
         beforeSubmit: function() {
             // prevent submitting the form again while waiting
@@ -163,26 +205,25 @@ $(function(){
 
     // Update the tag icon
     columnUpdate = function(tagId, tagName, tokenName, $th) {
-        console.log('columnUpdate: ' + tagName + '(' + tagId + '), ' + tokenName);
         var $input = $th.has('input').children('input');
-
+        var $icon = $th.find('.tag_inner');
         //If the input field (and thus by inference the tag icon) exists
         if($input.length > 0) {
-            // If this the same mapping as already exists, do nothing
+            // If this is the same mapping as already exists, do nothing
             if ($input.val() == tokenName + '_' + tagId) {
                 // return here as the below update should not occur in this case (unless this is made into a 'refresh' type thing
                 return true;
             } else {
                 $input.val(tokenName + '_' + tagId);
-                var $tagInner = $th.find('.tag_inner');
-                $tagInner.prop('href', '/webclient/usertags/?show=tag-' + tagId);
-                $tagInner.val(tagName);
+                //$icon.prop('href', '/webclient/usertags/?show=tag-' + tagId);
+                $icon.removeClass('tagInactive');
+                $icon.text(tagName);
             }
         } else {
             // Add the input if it's missing
             $th.append('<input name="tag-selector" type="hidden" value="' + tokenName + '_' + tagId + '">');
-            var $tag = $('<div class="tag"></div>').append('<a class="tooltip tag_inner" href="/webclient/usertags/?show=tag-' + tagId + '" target="_top">' + tagName + '</a>');
-            $th.prepend($tag);
+            $icon.removeClass('tagInactive');
+            $icon.text(tagName);
         }
 
         mappingChangeUpdate(tagId, tokenName, $th);
@@ -199,6 +240,61 @@ $(function(){
         columnUpdate(tagId, tagName, tokenName, $th);
     });
     
+    // On a change to the 'all' checkbox, update the imagechecked checkboxes appropriately
+    $("#updateAllForm").on("change", ".imagechecked-all", function(){
+        var check = false;
+        if(this.checked) {
+            check = true;
+        }
+
+        // Create variables holding all the th elements so that this can be used to calculate the index
+        var $th = $('#token-table > thead > tr > th');
+        var $rows = $('#token-table > tbody > tr');
+        // Get the position of the th element in which the selector is
+        var $thUpdated = $(this).parents('th');
+        var colIndex = $th.index( $thUpdated );
+        // For each row
+        $rows.each(function(i, v){
+
+            // Get the checkbox which corresponds to the index of the th above
+            var $cb = $(v).children().eq(colIndex).children('.imagechecked');
+            $cb.prop('checked',check);
+        });
+    });
+
+    //On a change of any checkbox, update the 'all' checkbox appropriately
+    $("#updateAllForm").on("change", ".imagechecked", function(){
+        var check = false;
+        if(this.checked) {
+            check = true;
+        }
+
+        // Create variables holding all the td elements so that this can be used to calculate the index
+        var $td = $(this).parents('tr').children('td');
+        // Get the position of the td element in which the selector is
+        var $tdUpdated = $(this).parents('td');
+        var colIndex = $td.index( $tdUpdated );
+
+        
+        // Check the other tds in this column for fully-checked status
+        if (check) {
+            var $rows = $('#token-table > tbody > tr');
+            $rows.each(function(i, v){
+                // Get the checkbox which corresponds to the index 
+                var $cb = $(v).children().eq(colIndex).children('.imagechecked');
+                if (!$cb.prop('checked')) {
+                    check = false;
+                    return false;
+                }
+            });
+            
+        }
+
+        var $th = $('#token-table > thead > tr > th');
+        // Get the th which corresponds to the index of the td
+        var $thChange = $th.eq(colIndex);
+        $thChange.find('.imagechecked-all').prop('checked', check);
+    });
 
     $('#hidePathTokensToggle').change(function(){
         
@@ -226,6 +322,10 @@ $(function(){
         // Get the position of the th element in which the selector is
         var colIndex = $th.index( $thUpdated );
 
+        if (tokenName != '') {
+            $thUpdated.find('.imagechecked-all').prop('disabled', false);
+        }
+
         // For each row
         $rows.each(function(i, v){
             // Get the imageId from the tr
@@ -250,6 +350,10 @@ $(function(){
                 var token = image.tokens[tokenName];
                 var tags = token.tags;
 
+
+                // Enable the checkbox
+                $td.children('.imagechecked').prop('disabled', false);
+
                 // Check the list of tags for a match
                 var found = false;
                 if ( tags ) {
@@ -273,9 +377,13 @@ $(function(){
                     $td.children('.imagechecked').prop('checked', false);
                 }
 
+            } else {
+                $td.children('.imagechecked').prop('disabled', true);
             }
         });
     }
+
+    
 
     // Bootstrap doesn't need this the first time that bootstrap.js is loaded,
     // but is needed when we reload this plugin (and bootstrap.js is already cached)
@@ -285,19 +393,22 @@ $(function(){
 
 </script>
 
-<div style="position:absolute; top:0px; left:0px; right:0px; height: 29px; border-right:0px" class="toolbar">
-    Path: <input id="hidePathTokensToggle" name="hidePathTokensToggle" value="hidePathTokensToggle" type="checkbox" />
-    Extensions: <input id="hideExtTokensToggle" name="hideExtTokensToggle" value="hideExtTokensToggle" type="checkbox" />
-</div>
-<div style="position:absolute; bottom:25px; left:0px; top:29px; overflow:auto; margin-top:0px; right:0px">
-    <form id="updateAllForm" action="{% url webtagging_process_update %}" method="post">
-
-        <table id="token-table" class="table table-bordered table-striped table-hover table-condensed hidePathTokens hideExtTokens">
-
-        {% include "webtagging/tag_table.html" %}
-
-        </table>
+<form id="updateAllForm" action="{% url webtagging_process_update %}" method="post">
+    <div style="position:absolute; top:0px; left:0px; right:0px; height: 29px; border-right:0px" class="toolbar">
+        Path: <input id="hidePathTokensToggle" name="hidePathTokensToggle" value="hidePathTokensToggle" type="checkbox" />
+        Extensions: <input id="hideExtTokensToggle" name="hideExtTokensToggle" value="hideExtTokensToggle" type="checkbox" />
         <input type="submit" value="Apply" />
-    </form>
-</div>
+        <input type="button" id="refreshForm" value="Refresh" />
+        Ignore First File Token: <input id="ignoreFirstFileToken" type="checkbox" {% if ignoreFirstFileToken %} checked{% endif %}/>
+        Ignore Last File Token: <input id="ignoreLastFileToken" type="checkbox" {% if ignoreLastFileToken %} checked{% endif %}/>
+    </div>
+    <div style="position:absolute; bottom:25px; left:0px; top:29px; overflow:auto; margin-top:0px; right:0px">
+
+            <table id="token-table" class="table table-bordered table-striped table-hover table-condensed hidePathTokens hideExtTokens">
+
+            {% include "webtagging/tag_table.html" %}
+
+            </table>
+    </div>
+</form>
 </html>
