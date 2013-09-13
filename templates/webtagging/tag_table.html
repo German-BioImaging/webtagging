@@ -4,46 +4,82 @@
 
         {% for tokenTag in tokenTags.pathTokens %}
             <th class="pathTokens" data-tokenname="{{ tokenTag.name }}">
-                {% if tokenTag.tags %}
-                    <select class="tag-selector" name="tokentag">
-                            <option value=""></option>
-                            {% for tag in tokenTag.tags %}
-                                <option value="{{ tokenTag.name }}_{{ tag.id }}"{% ifequal tokenTag.tags|length 1 %} selected{% endifequal %}>{{ tag.name }}({{ tag.id }})</option>
-                            {% endfor %}
-                    </select>
-                {% else %}
-                <a class="token" href="">{{ tokenTag.name }}</a>
-                {% endif %}
+                <div class="token">{{ tokenTag.name }}</div>
+                <div class="tag" >
+                    <span style="position: relative;">
+                        <span class="tag_inner{% ifnotequal tokenTag.tags|length 1 %} tagInactive{% endifnotequal %}">{% ifequal tokenTag.tags|length 1 %}{{ tokenTag.tags.0.name }}{% else %}&nbsp;{% endifequal %}</span>
+                        <span class="showTag dropdown-toggle" data-toggle="dropdown" style="display:none">X</span>
+                        <ul class="dropdown-menu" role="menu">
+                            {% if tokenTag.tags %}
+                                {% for tag in tokenTag.tags %}
+                                    <li><a class="tag-select" data-tagname="{{ tag.name }}" data-tagid="{{ tag.id }}">{{ tag.name }}({{ tag.id }})</a></li>
+                                {% endfor %}
+                            {% endif %}
+                            <li class="divider"></li>
+                            <li><a class="token-map">New/Existing Tag</a></li>
+                        </ul>
+                    </span>
+                    <input class="imagechecked-all" type="checkbox"{% ifnotequal tokenTag.tags|length 1 %} disabled{% endifnotequal %}/>
+                </div>
+
+                {# In the case when there is exactly one tag associated with a token #}
+                {% ifequal tokenTag.tags|length 1 %}
+                    <input name="tag-selector" type="hidden" value="{{ tokenTag.name }}_{{ tokenTag.tags.0.id }}"/>
+                {% endifequal %}
             </th>
         {% endfor %}
 
         {% for tokenTag in tokenTags.fileTokens %}
             <th class="fileTokens" data-tokenname="{{ tokenTag.name }}">
-                {% if tokenTag.tags %}
-                    <select class="tag-selector" name="tokentag">
-                            <option value=""></option>
-                            {% for tag in tokenTag.tags %}
-                                <option value="{{ tokenTag.name }}_{{ tag.id }}"{% ifequal tokenTag.tags|length 1 %} selected{% endifequal %}>{{ tag.name }}({{ tag.id }})</option>
-                            {% endfor %}
-                    </select>
-                {% else %}
-                <a class="token" href="">{{ tokenTag.name }}</a>
-                {% endif %}
+                <div class="token">{{ tokenTag.name }}</div>
+                <div class="tag">
+                    <span style="position: relative;">
+                        <span class="tag_inner{% ifnotequal tokenTag.tags|length 1 %} tagInactive{% endifnotequal %}">{% ifequal tokenTag.tags|length 1 %}{{ tokenTag.tags.0.name }}{% else %}&nbsp;{% endifequal %}</span>
+                        <span class="showTag dropdown-toggle" data-toggle="dropdown" style="display:none">X</span>
+                        <ul class="dropdown-menu" role="menu">
+                            {% if tokenTag.tags %}
+                                {% for tag in tokenTag.tags %}
+                                    <li><a class="tag-select" data-tagname="{{ tag.name }}" data-tagid="{{ tag.id }}">{{ tag.name }}({{ tag.id }})</a></li>
+                                {% endfor %}
+                            {% endif %}
+                            <li class="divider"></li>
+                            <li><a class="token-map">New/Existing Tag</a></li>
+                        </ul>
+                    </span>
+                    <input class="imagechecked-all" type="checkbox"{% ifnotequal tokenTag.tags|length 1 %} disabled{% endifnotequal %}/>
+                </div>
+
+                {# In the case when there is exactly one tag associated with a token #}
+                {% ifequal tokenTag.tags|length 1 %}
+                    <input name="tag-selector" type="hidden" value="{{ tokenTag.name }}_{{ tokenTag.tags.0.id }}"/>
+                {% endifequal %}
             </th>
         {% endfor %}
 
         {% for tokenTag in tokenTags.extTokens %}
             <th class="extTokens" data-tokenname="{{ tokenTag.name }}">
-                {% if tokenTag.tags %}
-                    <select class="tag-selector" name="tokentag">
-                            <option value=""></option>
-                            {% for tag in tokenTag.tags %}
-                                <option value="{{ tokenTag.name }}_{{ tag.id }}"{% ifequal tokenTag.tags|length 1 %} selected{% endifequal %}>{{ tag.name }}({{ tag.id }})</option>
-                            {% endfor %}
-                    </select>
-                {% else %}
-                <a class="token" href="">{{ tokenTag.name }}</a>
-                {% endif %}
+                <div class="token">{{ tokenTag.name }}</div>
+                <div class="tag">
+                    <span style="position: relative;">
+                        <span class="tag_inner{% ifnotequal tokenTag.tags|length 1 %} tagInactive{% endifnotequal %}">{% ifequal tokenTag.tags|length 1 %}{{ tokenTag.tags.0.name }}{% else %}&nbsp;{% endifequal %}</span>
+                        <span class="showTag dropdown-toggle" data-toggle="dropdown" style="display:none">X</span>
+                        <ul class="dropdown-menu" role="menu">
+                            {% if tokenTag.tags %}
+                                {% for tag in tokenTag.tags %}
+                                    <li><a class="tag-select" data-tagname="{{ tag.name }}" data-tagid="{{ tag.id }}">{{ tag.name }}({{ tag.id }})</a></li>
+                                {% endfor %}
+                            {% endif %}
+                            <li class="divider"></li>
+                            <li><a class="token-map">New/Existing Tag</a></li>
+                        </ul>
+                    </span>
+                    <input class="imagechecked-all" type="checkbox"{% ifnotequal tokenTag.tags|length 1 %} disabled{% endifnotequal %}/>
+                </div>
+
+                {# In the case when there is exactly one tag associated with a token #}
+                {% ifequal tokenTag.tags|length 1 %}
+                    <input name="tag-selector" type="hidden" value="{{ tokenTag.name }}_{{ tokenTag.tags.0.id }}"/>
+                {% endifequal %}
             </th>
         {% endfor %}
 
@@ -58,11 +94,7 @@
                 {# Display special case background color for server selected tokens #}
                 <td class="{{ imageToken.tokenType }} token_{{ imageToken.name }}{% if imageToken.selected %} success{% endif %}">
 
-                {% if imageToken.autoselect or imageToken.selected %}
-                    <input class="imagechecked" name="imagechecked" value="{{ imageDetail.id }}_{{ imageToken.name }}" type="checkbox" checked />
-                {% else %}
-                    <input class="imagechecked" name="imagechecked" value="{{ imageDetail.id }}_{{ imageToken.name }}" type="checkbox" />
-                {% endif %}
+                <input class="imagechecked" name="imagechecked" value="{{ imageDetail.id }}_{{ imageToken.name }}" type="checkbox"{% if imageToken.autoselect or imageToken.selected %} checked{% endif %}{% if imageToken.disabled %} disabled{% endif %}/>
 
                 {# Create a hidden field to indicate that for the current mapping, this image is tagged server side #}
                 {% if imageToken.selected %}

@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+from django.shortcuts import render
 
 from omeroweb.webclient.decorators import login_required, render_response
 
@@ -35,19 +36,23 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
         images = list( dataset.listChildren() )
         images.sort(key=lambda img: img.getName().lower())
 
-    tokenTags, imageDetails, imageStates = build_table_data(conn, images)
+    ignoreFirstFileToken = bool(request.GET.get('ignoreFirstFileToken', False))
+    ignoreLastFileToken = bool(request.GET.get('ignoreLastFileToken', False))
+
+    tokenTags, imageDetails, imageStates = build_table_data(conn, images, ignoreFirstFileToken=ignoreFirstFileToken, ignoreLastFileToken=ignoreLastFileToken)
     # We only need to return a dict - the @render_response() decorator does the rest...
     context = {'template': 'webtagging/tags_from_names.html'}
     context['tokenTags'] = tokenTags
     context['imageDetails'] = imageDetails
-    print 'imageStates: ', imageStates
     context['imageStates'] = json.dumps(imageStates)
+    context['ignoreFirstFileToken'] = ignoreFirstFileToken
+    context['ignoreLastFileToken'] = ignoreLastFileToken
     return context
 
 
-def build_table_data(conn, images):
+def build_table_data(conn, images, ignoreFirstFileToken=False, ignoreLastFileToken=False):
     """
-    We need to build tagging table data when the page originally loads AND after form processing
+    We need to build tagging table data when the page originally loads 
     """
 
     def listTags(image):
@@ -68,6 +73,14 @@ def build_table_data(conn, images):
         name = image.getName()
  
         pt, ft, et = parse_path(name)
+        
+        # Do discards
+        #TODO Incredibly primitive, replace with much, much smarter discarding system
+        if (ignoreFirstFileToken):
+            ft.pop(0)
+        if (ignoreLastFileToken):
+            ft.pop()
+
         pathTokens.extend(pt)
         fileTokens.extend(ft)
         extTokens.extend(et)
@@ -165,9 +178,13 @@ def build_table_data(conn, images):
                     imageToken['tags'] = imageTags[token['name']]
 
                     # If there is just the one matching tag for this column, mark the token selected
-                    #TODO This can be removed in favor of a simple filter in django ??
+                    #TODO This could be removed in favor of a simple filter in django?
                     if len(token['tags']) == 1:
                         imageToken['selected'] = True
+
+                # If the token has no matching tags or more than 1
+                if 'tags' not in token or len(token['tags']) != 1:
+                    imageToken['disabled'] = True 
 
                 imageTokens.append(imageToken)
                 imageTokenStates[token['name']] = imageToken
@@ -194,18 +211,16 @@ def build_table_data(conn, images):
 def process_update(request, conn=None, **kwargs):
     if request.method == "POST":
         
-        tokenTagsPost = request.POST.getlist('tokentag')
+        tagSelector = request.POST.getlist('tag-selector')
         serverSelectedPost = request.POST.getlist('serverselected')
         checkedPost = request.POST.getlist('imagechecked')
 
         # Convert the posted data into something more manageable
         # tokenTags = { tokenName: tagId }
         tokenTags = {}
-        for tokenTag in tokenTagsPost:
-            # Only if there is a selection made
-            if len(tokenTag) > 0:
-                tokenName,tagId = tokenTag.rsplit(r'_', 1)
-                tokenTags[tokenName] = long(tagId)
+        for tokenTag in tagSelector:
+            tokenName,tagId = tokenTag.rsplit(r'_', 1)
+            tokenTags[tokenName] = long(tagId)
         print 'tokenTags:', tokenTags     #PRINT
 
         # serverSelected = { imageId: [tokenName]}
@@ -214,7 +229,6 @@ def process_update(request, conn=None, **kwargs):
             imageId,tokenName = s.split(r'_',1)
             serverSelected.setdefault(long(imageId), []).append(tokenName)
         # checked = { imageId: [tokenName] }
-        #TODO Unmapped tokens checkboxes should probably be disabled on the form until there is a mapping.
         checked = {}
         for c in checkedPost:
             imageId,tokenName = c.split(r'_', 1)

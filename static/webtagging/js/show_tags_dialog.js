@@ -29,12 +29,14 @@ OME.show_tags_dialog = function(options) {
                     var $select = $(this);
                     rv.push({'id':$select.attr('value'), 'name':$(this).text()});
                 });
+                // If no existing tags are selected
                 if (rv.length == 0) {
                     var new_tag = $('#tag_chooser_new').val();
                     if (new_tag.length > 0 && options.create_tag) {
                         $tag_chooser_form.submit();
                     }
                 }
+                // If there is a success function, call it
                 else if (options.success) {
                     options.success(rv);
                     $( this ).dialog( "close" );
