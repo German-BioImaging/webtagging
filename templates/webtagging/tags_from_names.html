@@ -32,6 +32,7 @@ $(function(){
     var $submitButton = $("#updateAllForm input[type='submit']");
 
 
+    // Refresh the entire auto-tagger with some potential options
     $("#updateAllForm").on("click", "#refreshForm", function(event){
 
         // Get options
@@ -71,7 +72,7 @@ $(function(){
     });
     
 
-    // Our table form is 'ajax'
+    // Form Submission
     $("#updateAllForm").ajaxForm({
         beforeSubmit: function() {
             // prevent submitting the form again while waiting
@@ -139,12 +140,19 @@ $(function(){
     //     {'new_tag_default':"MyNewTag"}
     // );
 
+    // Add/Map Tag Dialog
     $("#updateAllForm").on("click", "a.token-map", function(event){
         var $th = $(this).parents("th");
         var tokenName = $th.data("tokenname");
+        var currentTags = [];
+        $('.tag-select').each(function(k,v) {
+            currentTags.push($(v).data('tagid'));
+        });
+        console.log('currentTags' + currentTags);
 
         OME.show_tags_dialog({
             list_tags: "{% url webtagging_list_tags %}",
+            current_tags: currentTags,
             create_tag: "{% url webtagging_create_tag %}",
             success: function(tags){
                 var tag = tags[0];
@@ -181,21 +189,21 @@ $(function(){
                             } 
                             // Update the dropdown menu
                             $ul = $th.find("ul.dropdown-menu");
-                            $li = $("<li></li>").append("<a class='tag-select' data-tagname='" + tag.name + "' data-tagid='" + tag.id + "'>" + tag.name + "(" + tag.id + ")</a>");
+                            $li = $("<li></li>").append("<a class='tag-select' data-tagname='" + tag.name + "' data-tagid='" + tag.id + "' data-tagdesc='" + tag.desc + "' data-tagowner='" + tag.owner + "'>" + tag.name + "(" + tag.id + ")</a>");
                             $ul.append($li);
 
                             // Update the column
-                            columnUpdate(tag.id, tag.name, tokenName, $th);
+                            columnUpdate(tag.id, tag.name, tag.desc, tag.owner, tokenName, $th);
                         }
                     });
                 } else {
                     // Update the dropdown menu
                     $ul = $th.find("ul.dropdown-menu");
-                    $li = $("<li></li>").append("<a class='tag-select' data-tagname='" + tag.name + "' data-tagid='" + tag.id + "'>" + tag.name + "(" + tag.id + ")</a>");
+                    $li = $("<li></li>").append("<a class='tag-select' data-tagname='" + tag.name + "' data-tagid='" + tag.id + "' data-tagdesc='" + tag.desc + "' data-tagowner='" + tag.owner + "'>" + tag.name + "(" + tag.id + ")</a>");
                     $ul.append($li);
 
                     // Update the column
-                    columnUpdate(tag.id, tag.name, tokenName, $th);
+                    columnUpdate(tag.id, tag.name, tag.desc, tag.owner, tokenName, $th);
                 }
             },
             'new_tag_default':tokenName}
@@ -204,10 +212,10 @@ $(function(){
     });
 
     // Update the tag icon
-    columnUpdate = function(tagId, tagName, tokenName, $th) {
+    columnUpdate = function(tagId, tagName, tagDesc, tagOwner, tokenName, $th) {
         var $input = $th.has('input').children('input');
         var $icon = $th.find('.tag_inner');
-        //If the input field (and thus by inference the tag icon) exists
+        //If the input field (and thus by inference the tag icon and tooltip) exists
         if($input.length > 0) {
             // If this is the same mapping as already exists, do nothing
             if ($input.val() == tokenName + '_' + tagId) {
@@ -218,12 +226,36 @@ $(function(){
                 //$icon.prop('href', '/webclient/usertags/?show=tag-' + tagId);
                 $icon.removeClass('tagInactive');
                 $icon.text(tagName);
+
+                // Update tooltip data and setup tooltip
+                $th.find('.tooltip_html').html('<b>ID:</b> ' + tagId + '<br><b>Description:</b> ' + tagDesc + '<br><b>Owner:</b> ' + tagOwner);
+
+                
+
             }
         } else {
             // Add the input if it's missing
             $th.append('<input name="tag-selector" type="hidden" value="' + tokenName + '_' + tagId + '">');
             $icon.removeClass('tagInactive');
             $icon.text(tagName);
+
+            // Update tooltip data and setup tooltip
+            $a = $th.find('.tag_inner');
+            $a.addClass('tooltip');
+            $a.parent().append('<span class="tooltip_html" style="display:none;"><b>ID:</b> ' + tagId + '<br><b>Description:</b> ' + tagDesc + '<br><b>Owner:</b> ' + tagOwner + '</spam>');
+            $a.parent().children(".tooltip_html").hide(); // hide tool tip source
+            $a.tooltip({
+                bodyHandler: function() {
+                        return $(this).parent().children(".tooltip_html").html();
+                    },
+                track: true,
+                delay: 0,
+                showURL: false,
+                fixPNG: true,
+                showBody: " - ",
+                top: 10,
+                left: -100
+            });
         }
 
         mappingChangeUpdate(tagId, tokenName, $th);
@@ -235,9 +267,11 @@ $(function(){
         var tokenName = $th.data('tokenname');
         var tagId = $(this).data('tagid');
         var tagName = $(this).data('tagname');
+        var tagDesc = $(this).data('tagdesc');
+        var tagOwner = $(this).data('tagowner');
 
         //Run update
-        columnUpdate(tagId, tagName, tokenName, $th);
+        columnUpdate(tagId, tagName, tagDesc, tagOwner, tokenName, $th);
     });
     
     // On a change to the 'all' checkbox, update the imagechecked checkboxes appropriately
@@ -383,7 +417,20 @@ $(function(){
         });
     }
 
-    
+    // Set up tooltip support
+    $(".tooltip").parent().children(".tooltip_html").hide(); // hide tool tip source
+    $(".tooltip").tooltip({
+        bodyHandler: function() {
+                return $(this).parent().children(".tooltip_html").html();
+            },
+        track: true,
+        delay: 0,
+        showURL: false,
+        fixPNG: true,
+        showBody: " - ",
+        top: 10,
+        left: -100
+    });
 
     // Bootstrap doesn't need this the first time that bootstrap.js is loaded,
     // but is needed when we reload this plugin (and bootstrap.js is already cached)

@@ -128,7 +128,7 @@ def build_table_data(conn, images, ignoreFirstFileToken=False, ignoreLastFileTok
             # For each of the matching tags
             for matchingTag in matchingTags:
                 # Add dictionary of details
-                tags.append({'name':matchingTag.getValue(), 'id':matchingTag.getId(), 'desc':matchingTag.getDescription()})
+                tags.append({'name':matchingTag.getValue(), 'id':matchingTag.getId(), 'desc':matchingTag.getDescription(), 'ownerName':matchingTag.getOwnerFullName()})
 
             tokenTagMap = {'name':token}
 
@@ -221,7 +221,6 @@ def process_update(request, conn=None, **kwargs):
         for tokenTag in tagSelector:
             tokenName,tagId = tokenTag.rsplit(r'_', 1)
             tokenTags[tokenName] = long(tagId)
-        print 'tokenTags:', tokenTags     #PRINT
 
         # serverSelected = { imageId: [tokenName]}
         serverSelected = {}
@@ -272,8 +271,6 @@ def process_update(request, conn=None, **kwargs):
                 tagId = tokenTags[tokenName]
                 removals.append((imageId, tagId, tokenName))
                 
-        print 'additions:', additions   #PRINT 
-        print 'removals:', removals     #PRINT
         #TODO Return success/failure of each addition/removal
         #TODO The success/failure need not contain the tagId like these additions/removals do, html will be indexing so will need to change there also.
         createTagAnnotationsLinks(conn, additions, removals)
@@ -289,10 +286,17 @@ def list_tags(request, conn=None, **kwargs):
     """
     List all tags in the current group
     """
+    if not request.POST:
+        return {"error": "need to POST"}
+
+    current_tags = request.POST.getlist("current_tags[]")
+    current_tags = map(long, current_tags)
+
     tags = []
     for t in conn.getObjects("TagAnnotation"):
-        tags.append({'id':t.id,
-            'name':t.getTextValue()})
+        if t.id not in current_tags:
+            tags.append({'id':t.id, 'name':t.getTextValue(), 'desc':t.getDescription(), 'owner':t.getOwnerFullName()})
+
     return {'template': 'webtagging/tag_dialog_form.html', 'tags':tags}
 
 
@@ -314,8 +318,9 @@ def create_tag(request, conn=None, **kwargs):
         tag.description = rstring(str(tag_desc))
 
     tag = conn.getUpdateService().saveAndReturnObject(tag, conn.SERVICE_OPTS)
+    tag = conn.getObject("TagAnnotation", tag.id.val)
 
-    return {'id':tag.id.val, 'name':tag.textValue.val}
+    return {'id':tag.id, 'name':tag.getTextValue(), 'desc':tag.getDescription(), 'owner':tag.getOwnerFullName()}
 
 @login_required(setGroupContext=True)
 @render_response()

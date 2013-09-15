@@ -27,7 +27,7 @@ OME.show_tags_dialog = function(options) {
                 var rv = []
                 $("#tag_chooser_select option:selected").each(function(){
                     var $select = $(this);
-                    rv.push({'id':$select.attr('value'), 'name':$(this).text()});
+                    rv.push({'id':$select.attr('value'), 'name':$(this).text(), 'desc':$select.data('desc'), 'owner':$select.data('owner')});
                 });
                 // If no existing tags are selected
                 if (rv.length == 0) {
@@ -54,7 +54,6 @@ OME.show_tags_dialog = function(options) {
     $("#tag_chooser_form").ajaxForm({
         dataType: 'json',
         success: function(data) {
-            console.log("ajax success", data);
             if (options.success) {
                 options.success([data]);
             }
@@ -63,7 +62,7 @@ OME.show_tags_dialog = function(options) {
     });
 
     // load form via AJAX...
-    $("#tag_chooser_form").load(options.list_tags, function() {
+    $("#tag_chooser_form").load(options.list_tags, {'current_tags':options.current_tags}, function() {
         if (options.multiple) {
             $("#tag_chooser_select").attr('multiple', true);
         }

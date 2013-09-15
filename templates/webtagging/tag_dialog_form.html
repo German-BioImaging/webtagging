@@ -6,7 +6,7 @@
     <select id="tag_chooser_select" class="existing" name="tags" size="6">
         <option></option>   <!-- empty option allows user to unselect -->
     {% for t in tags %}
-        <option value="{{ t.id }}">{{ t.name }}</option>
+        <option value="{{ t.id }}" data-desc="{{ t.desc }}" data-owner="{{ t.owner }}">{{ t.name }}</option>
     {% endfor %}
     </select>
 
