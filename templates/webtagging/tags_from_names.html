@@ -190,7 +190,7 @@ $(function(){
                             // Update the dropdown menu
                             $ul = $th.find("ul.dropdown-menu");
                             $li = $("<li></li>").append("<a class='tag-select' data-tagname='" + tag.name + "' data-tagid='" + tag.id + "' data-tagdesc='" + tag.desc + "' data-tagowner='" + tag.owner + "'>" + tag.name + "(" + tag.id + ")</a>");
-                            $ul.append($li);
+                            $ul.prepend($li);
 
                             // Update the column
                             columnUpdate(tag.id, tag.name, tag.desc, tag.owner, tokenName, $th);
@@ -200,7 +200,7 @@ $(function(){
                     // Update the dropdown menu
                     $ul = $th.find("ul.dropdown-menu");
                     $li = $("<li></li>").append("<a class='tag-select' data-tagname='" + tag.name + "' data-tagid='" + tag.id + "' data-tagdesc='" + tag.desc + "' data-tagowner='" + tag.owner + "'>" + tag.name + "(" + tag.id + ")</a>");
-                    $ul.append($li);
+                    $ul.prepend($li);
 
                     // Update the column
                     columnUpdate(tag.id, tag.name, tag.desc, tag.owner, tokenName, $th);
