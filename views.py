@@ -290,6 +290,7 @@ def list_tags(request, conn=None, **kwargs):
         return {"error": "need to POST"}
 
     current_tags = request.POST.getlist("current_tags[]")
+    print 'current_tags: ', current_tags
     current_tags = map(long, current_tags)
 
     tags = []

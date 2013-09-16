@@ -49,6 +49,7 @@
                                     <li><a class="tag-select" data-tagname="{{ tag.name }}" data-tagid="{{ tag.id }}" data-tagdesc="{{ tag.desc }}" data-tagowner="{{ tag.ownerName }}">{{ tag.name }}({{ tag.id }})</a></li>
                                 {% endfor %}
                             {% endif %}
+                            <li><a class="tag-select tag-select-none"> (Select None) </a></li>
                             <li class="divider"></li>
                             <li><a class="token-map">New/Existing Tag</a></li>
                         </ul>
@@ -65,7 +66,7 @@
 
                 {# In the case when there is exactly one tag associated with a token #}
                 {% ifequal tokenTag.tags|length 1 %}
-                    <input name="tag-selector" type="hidden" value="{{ tokenTag.name }}_{{ tokenTag.tags.0.id }}"/>
+                    <input class="tag-selector" name="tag-selector" type="hidden" value="{{ tokenTag.name }}_{{ tokenTag.tags.0.id }}"/>
                 {% endifequal %}
             </th>
         {% endfor %}

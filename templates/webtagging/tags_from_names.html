@@ -145,7 +145,7 @@ $(function(){
         var $th = $(this).parents("th");
         var tokenName = $th.data("tokenname");
         var currentTags = [];
-        $('.tag-select').each(function(k,v) {
+        $('.tag-select:not(.tag-select-none)').each(function(k,v) {
             currentTags.push($(v).data('tagid'));
         });
         console.log('currentTags' + currentTags);
@@ -213,56 +213,74 @@ $(function(){
 
     // Update the tag icon
     columnUpdate = function(tagId, tagName, tagDesc, tagOwner, tokenName, $th) {
+        console.log('columnUpdate');
         var $input = $th.has('input').children('input');
         var $icon = $th.find('.tag_inner');
-        //If the input field (and thus by inference the tag icon and tooltip) exists
-        if($input.length > 0) {
-            // If this is the same mapping as already exists, do nothing
-            if ($input.val() == tokenName + '_' + tagId) {
-                // return here as the below update should not occur in this case (unless this is made into a 'refresh' type thing
-                return true;
+
+        if (!tagId) {
+            console.log('!tagId - setting inactive');
+            //Remove input
+            console.log('not tagId');
+            $th.find('.tag-selector').remove();
+            $icon.addClass('tagInactive');
+            $icon.html('&nbsp;');
+
+            // Remove tooltip
+            $a = $th.find('.tag_inner');
+            $a.removeClass('.tooltip');
+            $a.parent().children('.tooltip_html').remove();
+
+        } else {
+            console.log('tagId - setting active');
+            //If the input field (and thus by inference the tag icon and tooltip) exists
+            if($input.length > 0) {
+                console.log('Active to Active');
+                // If this is the same mapping as already exists, do nothing
+                if ($input.val() == tokenName + '_' + tagId) {
+                    // return here as the below update should not occur in this case (unless this is made into a 'refresh' type thing
+                    return true;
+                } else {
+                    $input.val(tokenName + '_' + tagId);
+                    //$icon.prop('href', '/webclient/usertags/?show=tag-' + tagId);
+                    $icon.removeClass('tagInactive');
+                    $icon.text(tagName);
+
+                    // Update tooltip data and setup tooltip
+                    $th.find('.tooltip_html').html('<b>ID:</b> ' + tagId + '<br><b>Description:</b> ' + tagDesc + '<br><b>Owner:</b> ' + tagOwner);
+                }
+
             } else {
-                $input.val(tokenName + '_' + tagId);
-                //$icon.prop('href', '/webclient/usertags/?show=tag-' + tagId);
+                console.log('Inactive to Active');
+                // Add the input if it's missing
+                $th.append('<input class="tag-selector" name="tag-selector" type="hidden" value="' + tokenName + '_' + tagId + '">');
                 $icon.removeClass('tagInactive');
                 $icon.text(tagName);
 
                 // Update tooltip data and setup tooltip
-                $th.find('.tooltip_html').html('<b>ID:</b> ' + tagId + '<br><b>Description:</b> ' + tagDesc + '<br><b>Owner:</b> ' + tagOwner);
-
-                
-
+                $a = $th.find('.tag_inner');
+                $a.addClass('tooltip');
+                $a.parent().append('<span class="tooltip_html" style="display:none;"><b>ID:</b> ' + tagId + '<br><b>Description:</b> ' + tagDesc + '<br><b>Owner:</b> ' + tagOwner + '</spam>');
+                $a.parent().children(".tooltip_html").hide(); // hide tool tip source
+                $a.tooltip({
+                    bodyHandler: function() {
+                            return $(this).parent().children(".tooltip_html").html();
+                        },
+                    track: true,
+                    delay: 0,
+                    showURL: false,
+                    fixPNG: true,
+                    showBody: " - ",
+                    top: 10,
+                    left: -100
+                });
             }
-        } else {
-            // Add the input if it's missing
-            $th.append('<input name="tag-selector" type="hidden" value="' + tokenName + '_' + tagId + '">');
-            $icon.removeClass('tagInactive');
-            $icon.text(tagName);
-
-            // Update tooltip data and setup tooltip
-            $a = $th.find('.tag_inner');
-            $a.addClass('tooltip');
-            $a.parent().append('<span class="tooltip_html" style="display:none;"><b>ID:</b> ' + tagId + '<br><b>Description:</b> ' + tagDesc + '<br><b>Owner:</b> ' + tagOwner + '</spam>');
-            $a.parent().children(".tooltip_html").hide(); // hide tool tip source
-            $a.tooltip({
-                bodyHandler: function() {
-                        return $(this).parent().children(".tooltip_html").html();
-                    },
-                track: true,
-                delay: 0,
-                showURL: false,
-                fixPNG: true,
-                showBody: " - ",
-                top: 10,
-                left: -100
-            });
         }
-
         mappingChangeUpdate(tagId, tokenName, $th);
     }
 
     // Click tag mapping in dropdown
     $("#updateAllForm").on("click", "a.tag-select", function(event){
+        console.log('click a.tag-select');
         var $th = $(this).parents('th');
         var tokenName = $th.data('tokenname');
         var tagId = $(this).data('tagid');
@@ -356,8 +374,11 @@ $(function(){
         // Get the position of the th element in which the selector is
         var colIndex = $th.index( $thUpdated );
 
-        if (tokenName != '') {
+        // Enable/Disable 'all' checkboxes
+        if (tagId) {
             $thUpdated.find('.imagechecked-all').prop('disabled', false);
+        } else {
+            $thUpdated.find('.imagechecked-all').prop('disabled', true);
         }
 
         // For each row
@@ -373,7 +394,7 @@ $(function(){
             // Remove any serverselected markers
             $td.children('.serverselected').remove();
 
-            if (tokenName != '') {
+            if (tagId) {
 
                 // Query the JSON State object to determine if the new mapping should be marked selected or not for this image
                 //var selectedValueSplit = selectedValue.split('_');
