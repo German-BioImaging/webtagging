@@ -286,12 +286,11 @@ def list_tags(request, conn=None, **kwargs):
     """
     List all tags in the current group
     """
-    if not request.POST:
-        return {"error": "need to POST"}
+    current_tags = []
+    if request.POST:
 
-    current_tags = request.POST.getlist("current_tags[]")
-    print 'current_tags: ', current_tags
-    current_tags = map(long, current_tags)
+        current_tags = request.POST.getlist("current_tags[]")
+        current_tags = map(long, current_tags)
 
     tags = []
     for t in conn.getObjects("TagAnnotation"):
