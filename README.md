@@ -16,3 +16,8 @@ Clone the repository in to your OMERO.web installation:
     path/to/bin/omero config set omero.web.apps '["webtagging"]'
 
 Now start up OMERO.web as normal in your development environment.
+
+Documentation
+=============
+
+http://www.openmicroscopy.org/site/support/partner/omero.webtagging
