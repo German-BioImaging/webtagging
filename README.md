@@ -11,7 +11,7 @@ Installation
 
 Clone the repository in to your OMERO.web installation:
 
-    cd components/tools/OmeroWeb/omeroweb/   # or <dist>/lib/python/omeroweb
+    cd <dist>/lib/python/omeroweb # for production, or for development: <openmicroscopy checkout>components/tools/OmeroWeb/omeroweb/
     git clone git://github.com/dpwrussell/webtagging.git
     path/to/bin/omero config set omero.web.apps '["webtagging"]'
 
