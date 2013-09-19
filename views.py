@@ -289,7 +289,7 @@ def list_tags(request, conn=None, **kwargs):
     current_tags = []
     if request.POST:
 
-        current_tags = request.POST.getlist("current_tags[]")
+        current_tags = request.POST.getlist("current_tag_ids[]")
         current_tags = map(long, current_tags)
 
     tags = []
