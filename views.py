@@ -107,10 +107,9 @@ def build_table_data(conn, images, ignoreFirstFileToken=False, ignoreLastFileTok
 
     tokens = {'pathTokens' : pathTokens, 'fileTokens' : fileTokens, 'extTokens' : extTokens}
 
-    tokenTags = {}
+    tokenTags = []
     # find which tokens match existing Tags
     for tokenType in ['pathTokens', 'fileTokens','extTokens']:
-        tt = []
         for token in tokens[tokenType]:
 
             # Skip zero length tokens
@@ -130,16 +129,14 @@ def build_table_data(conn, images, ignoreFirstFileToken=False, ignoreLastFileTok
                 # Add dictionary of details
                 tags.append({'name':matchingTag.getValue(), 'id':matchingTag.getId(), 'desc':matchingTag.getDescription(), 'ownerName':matchingTag.getOwnerFullName()})
 
-            tokenTagMap = {'name':token}
+            tokenTagMap = {'name':token, 'tokenType':tokenType}
 
             # Assign the matching tags to the token dictionary (only if there are any)
             if len(tags) > 0:
                 tokenTagMap['tags'] = tags
 
             # Add the token with any tag mappings to the list
-            tt.append(tokenTagMap)
-
-        tokenTags[tokenType] = tt
+            tokenTags.append(tokenTagMap)
 
     # Populate the images with details
     imageDetails = []
@@ -158,36 +155,34 @@ def build_table_data(conn, images, ignoreFirstFileToken=False, ignoreLastFileTok
         imageTokens = []
         imageTokenStates = {}
         # For each token that exists (tokens from all images)
-        for tokenType in ['pathTokens', 'fileTokens','extTokens']:
-            for token in tokenTags[tokenType]:
-                imageToken = {'name':token['name']}
-                # If the token is present in the image
-                if token['name'] in allTokens:
-                    # Get the tags (if any) that are relevant
-                    if 'tags' in token:
-                        tags = token['tags']
-                    # Mark the token for autoselect (Do this even if the token is not matched)
-                    imageToken['autoselect'] = True
+        for token in tokenTags:
+            imageToken = {'name':token['name'], 'tokenType':token['tokenType']}
+            # If the token is present in the image
+            if token['name'] in allTokens:
+                # Get the tags (if any) that are relevant
+                if 'tags' in token:
+                    tags = token['tags']
+                # Mark the token for autoselect (Do this even if the token is not matched)
+                imageToken['autoselect'] = True
 
-                # Assign token type
-                imageToken['tokenType'] = tokenType
+            # Assign token type
 
-                # Add all the matching tags 
-                if token['name'] in imageTags:
-                    # Add the tagIds that match to this token
-                    imageToken['tags'] = imageTags[token['name']]
+            # Add all the matching tags 
+            if token['name'] in imageTags:
+                # Add the tagIds that match to this token
+                imageToken['tags'] = imageTags[token['name']]
 
-                    # If there is just the one matching tag for this column, mark the token selected
-                    #TODO This could be removed in favor of a simple filter in django?
-                    if len(token['tags']) == 1:
-                        imageToken['selected'] = True
+                # If there is just the one matching tag for this column, mark the token selected
+                #TODO This could be removed in favor of a simple filter in django?
+                if len(token['tags']) == 1:
+                    imageToken['selected'] = True
 
-                # If the token has no matching tags or more than 1
-                if 'tags' not in token or len(token['tags']) != 1:
-                    imageToken['disabled'] = True 
+            # If the token has no matching tags or more than 1
+            if 'tags' not in token or len(token['tags']) != 1:
+                imageToken['disabled'] = True 
 
-                imageTokens.append(imageToken)
-                imageTokenStates[token['name']] = imageToken
+            imageTokens.append(imageToken)
+            imageTokenStates[token['name']] = imageToken
 
         imageDetail = {'id':image.getId(), 'name':image.getName(), 'tokens':imageTokens}
         imageStates[image.getId()] = {'name':image.getName(), 'tokens':imageTokenStates}

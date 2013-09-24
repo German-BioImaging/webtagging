@@ -2,42 +2,8 @@
     <tr>
         {#TODO Condense these 3 sections into 1 as they are very similar #}
 
-        {% for tokenTag in tokenTags.pathTokens %}
-            <th class="pathTokens" data-tokenname="{{ tokenTag.name }}">
-                <div class="token">{{ tokenTag.name }}</div>
-                <div class="tag">
-                    <span style="position: relative;">
-                        <a class="tag_inner{% ifnotequal tokenTag.tags|length 1 %} tagInactive{% else %} tooltip{% endifnotequal %}">{% ifequal tokenTag.tags|length 1 %}{{ tokenTag.tags.0.name }}{% else %}&nbsp;{% endifequal %}</a>
-                        <span class="showTag dropdown-toggle" data-toggle="dropdown" style="display:none">X</span>
-                        <ul class="dropdown-menu" role="menu">
-                            {% if tokenTag.tags %}
-                                {% for tag in tokenTag.tags %}
-                                    <li><a class="tag-select" data-tagname="{{ tag.name }}" data-tagid="{{ tag.id }}" data-tagdesc="{{ tag.desc }}" data-tagowner="{{ tag.ownerName }}">{{ tag.name }}({{ tag.id }})</a></li>
-                                {% endfor %}
-                            {% endif %}
-                            <li class="divider"></li>
-                            <li><a class="token-map">New/Existing Tag</a></li>
-                        </ul>
-                        {% ifequal tokenTag.tags|length 1 %}
-                            <span class="tooltip_html" style="display: none;">
-                                <b>ID:</b> {{ tokenTag.tags.0.id }}<br>
-                                <b>Description:</b> {{ tokenTag.tags.0.desc }}<br>
-                                <b>Owner:</b> {{ tokenTag.tags.0.ownerName }}
-                            </span>
-                        {% endifequal %}
-                    </span>
-                    <input class="imagechecked-all" type="checkbox"{% ifnotequal tokenTag.tags|length 1 %} disabled{% endifnotequal %}/>
-                </div>
-
-                {# In the case when there is exactly one tag associated with a token #}
-                {% ifequal tokenTag.tags|length 1 %}
-                    <input name="tag-selector" type="hidden" value="{{ tokenTag.name }}_{{ tokenTag.tags.0.id }}"/>
-                {% endifequal %}
-            </th>
-        {% endfor %}
-
-        {% for tokenTag in tokenTags.fileTokens %}
-            <th class="fileTokens" data-tokenname="{{ tokenTag.name }}">
+        {% for tokenTag in tokenTags %}
+            <th class="{{ tokenTag.tokenType }}" data-tokenname="{{ tokenTag.name }}">
                 <div class="token">{{ tokenTag.name }}</div>
                 <div class="tag">
                     <span style="position: relative;">
@@ -67,40 +33,6 @@
                 {# In the case when there is exactly one tag associated with a token #}
                 {% ifequal tokenTag.tags|length 1 %}
                     <input class="tag-selector" name="tag-selector" type="hidden" value="{{ tokenTag.name }}_{{ tokenTag.tags.0.id }}"/>
-                {% endifequal %}
-            </th>
-        {% endfor %}
-
-        {% for tokenTag in tokenTags.extTokens %}
-            <th class="extTokens" data-tokenname="{{ tokenTag.name }}">
-                <div class="token">{{ tokenTag.name }}</div>
-                <div class="tag">
-                    <span style="position: relative;">
-                        <a class="tag_inner{% ifnotequal tokenTag.tags|length 1 %} tagInactive{% else %} tooltip{% endifnotequal %}">{% ifequal tokenTag.tags|length 1 %}{{ tokenTag.tags.0.name }}{% else %}&nbsp;{% endifequal %}</a>
-                        <span class="showTag dropdown-toggle" data-toggle="dropdown" style="display:none">X</span>
-                        <ul class="dropdown-menu" role="menu">
-                            {% if tokenTag.tags %}
-                                {% for tag in tokenTag.tags %}
-                                    <li><a class="tag-select" data-tagname="{{ tag.name }}" data-tagid="{{ tag.id }}" data-tagdesc="{{ tag.desc }}" data-tagowner="{{ tag.ownerName }}">{{ tag.name }}({{ tag.id }})</a></li>
-                                {% endfor %}
-                            {% endif %}
-                            <li class="divider"></li>
-                            <li><a class="token-map">New/Existing Tag</a></li>
-                        </ul>
-                        {% ifequal tokenTag.tags|length 1 %}
-                            <span class="tooltip_html" style="display: none;">
-                                <b>ID:</b> {{ tokenTag.tags.0.id }}<br>
-                                <b>Description:</b> {{ tokenTag.tags.0.desc }}<br>
-                                <b>Owner:</b> {{ tokenTag.tags.0.ownerName }}
-                            </span>
-                        {% endifequal %}
-                    </span>
-                    <input class="imagechecked-all" type="checkbox"{% ifnotequal tokenTag.tags|length 1 %} disabled{% endifnotequal %}/>
-                </div>
-
-                {# In the case when there is exactly one tag associated with a token #}
-                {% ifequal tokenTag.tags|length 1 %}
-                    <input name="tag-selector" type="hidden" value="{{ tokenTag.name }}_{{ tokenTag.tags.0.id }}"/>
                 {% endifequal %}
             </th>
         {% endfor %}
