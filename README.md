@@ -5,6 +5,7 @@ Requirements
 ============
 
 * OMERO 4.4.0 or later
+* Python 2.6 or later
 
 Installation
 ============
