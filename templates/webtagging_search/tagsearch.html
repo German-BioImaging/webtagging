@@ -1,0 +1,92 @@
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+
+<script type="text/javascript">
+
+  // Parse the tag-intersections
+  tagIntersections = {{ tag_intersections|safe }}
+  //tagIntersections = {"51": [52, 55], "52": [51, 53, 55], "53": [52, 55], "54": [55], "55": [51, 52, 53, 54]}
+
+  $( document ).ready(function() {
+
+    $( "#id_availableTags" ).change(function() {
+      var selected = $("option:selected", this);
+      // Add this option to the selectTags field
+      //$( "id_selectedTags" ).
+      $('#id_selectedTags')
+         .append($("<option></option>")
+         .attr("value",selected.val())
+         .text(selected.text()));
+
+      // Remove this option from the availableTags field
+      selected.remove();
+
+
+      // Remove any options which do not intersect with the resulting selectTags set
+      var intersection = tagIntersections[selected.val()];
+      for ( var i = 0; i < intersection.length; i++) {
+        // alert(intersection[i])
+        $('#id_availableTags option[value="' + intersection[i] + '"]').remove();
+      }
+      
+        // AjaxQuery may be required (at least the first time) to get this information
+        // In an AND only world, the first AjaxQuery can probably calculate the possible intersections so no more are required
+
+          // Results
+          // image1 - tag1, tag2, tag3
+          // imaeg2 - tag1
+          // image3 - tag2
+          // image4 - tag2, tag3
+          // image5 - tag3, tag4
+
+          // Yields
+          // tag1 - tag2, tag3
+          // tag2 - tag1, tag3
+          // tag3 - tag1, tag2, tag4
+          // tag4 - tag3
+
+          // Thus a query could be performed:
+          // Assuming no selected tags
+          // newlySelectedTag = tag1
+          // availableTags = set([tag1, tag2, tag3, tag4]) # All tags are available
+          // Lookup the newlySelectedTag in the yields. Union with available to reduce set
+          // yield = yields[tag] # E.g. for tag1, this adds tag2 and tag3
+          // availableTags = availableTags.union(yield) # Reduce set
+          
+          // Second selection
+          // newlySelectedTag = tag3
+          // availableTags = set([tag2, tag3])
+          // yield = yields[tag] # For tag3, this is tag1, tag2 and tag4
+          // availableTags = availableTags.union(yield) # Reduce. set[tag2,tag3].union(set[tag1,tag2,tag4])
+
+          // Actually that's not what would happen as the first query would not have returned image3,4,5 so the yield would actually have been:
+
+          // tag1 - tag2, tag3
+          // tag2 - tag1, tag3
+          // tag3 - tag1, tag2
+
+      // Submit - Actually return the results of the query. 
+      // Options
+        // Don't precalculate intersections at all, rely on doing more queries - Expensive, necessary if more than AND allowed (and all intersections are not precalculated).
+        // Calculate Intersections button. Processes all intersections and caches it for performance - Will need to be manually updated by the user. Where to store it?
+        // What details/previews to show at each new selection level. Nothing? Number of images matching? List of matching images? List of matching images below some threshold?
+
+
+
+    });
+
+  });
+
+</script>
+
+<h1>Tag Search Prototype</h1>
+<h3Note on search responsiveness:</h3>
+<p>For performance reasons, it is unrealistic to calculate all possible tag intersections up-front. The first selection made will cause the intersections to be calculated for that selection. Removing all selections will cause an expensive query to again be run on a fresh selection. This is true even if the new selection is one which was previously available in the intersecting subset with the original choice because there are likely to be tags in the new subset which were precluded by the original choice.</p>
+
+<p>The larger the number of images that contain a tag, the slower the original query will be and to a lesser extent, the slower the overall performance of this page. If possible, start a search with a tag that is the most specific.</p>
+
+<p>E.g. if you have a tag 'processed' which you apply to all processed images, this will likely be on a great deal of images. Say the objective of the search is to initially find processed images which have been selected for publication and then whittle down from there.
+As the 'selected' tag will likely have less images than 'processed', it will give a good performance benefit.</p>
+
+
+
+{{ form.as_p }}
