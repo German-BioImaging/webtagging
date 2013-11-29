@@ -73,6 +73,10 @@ class TagSearchFormView(FormView):
         kwargs['conn'] = self.conn
         return kwargs
 
+    def form_valid(self, form):
+        print('called form_valid')
+        return super(TagSearchFormView, self).form_valid(form)
+
     @method_decorator(login_required(setGroupContext=True))
     def dispatch(self, *args, **kwargs):
         # Get OMERO connection

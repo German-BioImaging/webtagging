@@ -1,82 +1,199 @@
+<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/chosen/1.0/chosen.css" type="text/css" media="screen"/>
+
 <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/chosen/1.0/chosen.jquery.js"></script>
+<script src="{% static 'webtagging_search/3rd-party/arrayUtilities/jquery.arrayUtilities.min.js' %}"></script>
+<script src="http://malsup.github.com/jquery.form.js"></script> 
 
 <script type="text/javascript">
 
   // Parse the tag-intersections
   tagIntersections = {{ tag_intersections|safe }}
-  //tagIntersections = {"51": [52, 55], "52": [51, 53, 55], "53": [52, 55], "54": [55], "55": [51, 52, 53, 54]}
 
   $( document ).ready(function() {
 
-    $( "#id_availableTags" ).change(function() {
-      var selected = $("option:selected", this);
-      // Add this option to the selectTags field
-      //$( "id_selectedTags" ).
-      $('#id_selectedTags')
-         .append($("<option></option>")
-         .attr("value",selected.val())
-         .text(selected.text()));
+    $("#id_selectedTags").chosen({placeholder_text:'Choose tags', width: "50%"});
 
-      // Remove this option from the availableTags field
-      selected.remove();
+    // Form Submission
+    $("#updateAllForm").ajaxForm({
+        beforeSubmit: function() {
+            // prevent submitting the form again while waiting
+            $submitButton.attr('disabled', true);
+        },
+        dataType: "json",
+        success: function(data) {
 
+/*
+            // For each update, find the cell and update it's selected status
+            for (var i in data.additions) {
+                var imageId = data.additions[i][0];
+                var tagId = data.additions[i][1];
+                var tokenName = data.additions[i][2];
+                $td = $('tr#image_' + imageId + ' .token_' + tokenName);
+                $td.addClass('success');
+                $td.append('<input class="serverselected" name="serverselected" type="hidden" value="' + imageId + '_' + tokenName + '"/>');
 
-      // Remove any options which do not intersect with the resulting selectTags set
-      var intersection = tagIntersections[selected.val()];
-      for ( var i = 0; i < intersection.length; i++) {
-        // alert(intersection[i])
-        $('#id_availableTags option[value="' + intersection[i] + '"]').remove();
-      }
-      
-        // AjaxQuery may be required (at least the first time) to get this information
-        // In an AND only world, the first AjaxQuery can probably calculate the possible intersections so no more are required
+                // Get the tags from state and update
+                var image = imageStates[imageId];
+                var token = image.tokens[tokenName];
+                var tags = [];
+                if (token.tags) {
+                    tags = token.tags;
+                }
+                tags.push(tagId);
+                token.tags = tags;
+            }
 
-          // Results
-          // image1 - tag1, tag2, tag3
-          // imaeg2 - tag1
-          // image3 - tag2
-          // image4 - tag2, tag3
-          // image5 - tag3, tag4
+            for (var i in data.removals) {
+                var imageId = data.removals[i][0];
+                var tagId = data.removals[i][1];
+                var tokenName = data.removals[i][2];
+                $td = $('tr#image_' + imageId + ' .token_' + tokenName);
+                $td.removeClass('success');
+                $td.children('.serverselected').remove();
 
-          // Yields
-          // tag1 - tag2, tag3
-          // tag2 - tag1, tag3
-          // tag3 - tag1, tag2, tag4
-          // tag4 - tag3
+                // Get the tags from state and update
+                var image = imageStates[imageId];
+                var token = image.tokens[tokenName];
+                var tags = token.tags;
 
-          // Thus a query could be performed:
-          // Assuming no selected tags
-          // newlySelectedTag = tag1
-          // availableTags = set([tag1, tag2, tag3, tag4]) # All tags are available
-          // Lookup the newlySelectedTag in the yields. Union with available to reduce set
-          // yield = yields[tag] # E.g. for tag1, this adds tag2 and tag3
-          // availableTags = availableTags.union(yield) # Reduce set
-          
-          // Second selection
-          // newlySelectedTag = tag3
-          // availableTags = set([tag2, tag3])
-          // yield = yields[tag] # For tag3, this is tag1, tag2 and tag4
-          // availableTags = availableTags.union(yield) # Reduce. set[tag2,tag3].union(set[tag1,tag2,tag4])
-
-          // Actually that's not what would happen as the first query would not have returned image3,4,5 so the yield would actually have been:
-
-          // tag1 - tag2, tag3
-          // tag2 - tag1, tag3
-          // tag3 - tag1, tag2
-
-      // Submit - Actually return the results of the query. 
-      // Options
-        // Don't precalculate intersections at all, rely on doing more queries - Expensive, necessary if more than AND allowed (and all intersections are not precalculated).
-        // Calculate Intersections button. Processes all intersections and caches it for performance - Will need to be manually updated by the user. Where to store it?
-        // What details/previews to show at each new selection level. Nothing? Number of images matching? List of matching images? List of matching images below some threshold?
-
-
-
+                // Check the list of tags for a match
+                if ( tags ) {
+                    $.each(tags, function(k,v){
+                        if (v == tagId) {
+                            tags.splice(k,1);
+                            return false;
+                        }
+                    });
+                }
+                
+            }
+  */
+            $submitButton.removeAttr('disabled');
+        }
     });
 
-  });
 
+
+
+
+
+
+    $( "#id_selectedTags" ).chosen().change(function(event, params) {
+      // Array of selected values, not sure it's possible to get just the latest selcted item here
+      // would it would be safe to handle just the latest selection/deseclection anyway?
+      // alert($(this).val());
+
+      // Selection made
+      if (params.selected) {
+
+        // Hide any options which do not intersect with the resulting selectTags set
+        var doNotHide = tagIntersections[params.selected];
+        // Don't hide the item that was just selected either
+        doNotHide.push(parseInt(params.selected))
+
+        // Find any options not in the doNotHide list and hide them
+        $("#id_selectedTags option").each(function(){
+          if ($.inArray(parseInt(this.value), doNotHide) == -1) {
+            $(this).hide();
+          }
+        });
+
+      // Deselection made
+      } else if (params.deselected) {
+
+        // Get the list of remaining selections
+        var remainingSelected = $(this).val();
+
+        // Only if there are still selected tags
+        if (remainingSelected) {
+          var doNotHide = [];
+          for (var i=0; i<remainingSelected.length; i++) {
+            // In order for selectedIntersection to exist outside of this function it needs to be previously declared
+            // Thus the first intersection would always return nothing unless it is special cased
+            if (i==0) {
+              doNotHide = tagIntersections[remainingSelected[i]];
+            } else {
+              doNotHide = $.intersect(doNotHide, tagIntersections[remainingSelected[i]]);
+            }
+          }
+
+          // Unhide any tags on the doNotHide list
+          for (var i = 0; i < doNotHide.length; i++) {
+            // Only 'show' hidden options
+            if ($('#id_selectedTags option[value="' + doNotHide[i] +  '"]').css("display") == 'none') {
+              // $('#id_selectedTags option[value="' + doNotHide[i] +  '"]').show(); // This results in display:inline which breaks the formatting
+              $('#id_selectedTags option[value="' + doNotHide[i] +  '"]').css('display', '');
+            }
+          }
+
+        // If there are no remaining selected tags then nothing should be hidden
+        } else {
+          //Unhide all
+          $("#id_selectedTags option").each(function(){
+            // Only 'show' hidden options
+            if ($(this).css("display") == 'none') {
+              // $(this).show(); // This results in display:inline which breaks the formatting
+              $(this).css('display', '');
+            }
+
+          });
+        }
+      }
+
+      // Update the chosen selector
+      $("#id_selectedTags").trigger("chosen:updated");
+    });
+  });
 </script>
+<!--
+        AjaxQuery may be required (at least the first time) to get this information
+        In an AND only world, the first AjaxQuery can probably calculate the possible intersections so no more are required
+
+           Results
+           image1 - tag1, tag2, tag3
+           imaeg2 - tag1
+           image3 - tag2
+           image4 - tag2, tag3
+           image5 - tag3, tag4
+
+           Yields
+           tag1 - tag2, tag3
+           tag2 - tag1, tag3
+           tag3 - tag1, tag2, tag4
+           tag4 - tag3
+
+           Thus a query could be performed:
+           Assuming no selected tags
+           newlySelectedTag = tag1
+           availableTags = set([tag1, tag2, tag3, tag4]) # All tags are available
+           Lookup the newlySelectedTag in the yields. Union with available to reduce set
+           yield = yields[tag] # E.g. for tag1, this adds tag2 and tag3
+           availableTags = availableTags.union(yield) # Reduce set
+          
+           Second selection
+           newlySelectedTag = tag3
+           availableTags = set([tag2, tag3])
+           yield = yields[tag] # For tag3, this is tag1, tag2 and tag4
+           availableTags = availableTags.union(yield) # Reduce. set[tag2,tag3].union(set[tag1,tag2,tag4])
+
+           Actually that's not what would happen as the first query would not have returned image3,4,5 so the yield would actually have been:
+
+           tag1 - tag2, tag3
+           tag2 - tag1, tag3
+           tag3 - tag1, tag2
+
+       Submit - Actually return the results of the query. 
+       Options
+         Don't precalculate intersections at all, rely on doing more queries - Expensive, necessary if more than AND allowed (and all intersections are not precalculated).
+         Calculate Intersections button. Processes all intersections and caches it for performance - Will need to be manually updated by the user. Where to store it?
+         What details/previews to show at each new selection level. Nothing? Number of images matching? List of matching images? List of matching images below some threshold?
+-->
+
+
+
+
+
 
 <h1>Tag Search Prototype</h1>
 <h3Note on search responsiveness:</h3>
@@ -87,6 +204,8 @@
 <p>E.g. if you have a tag 'processed' which you apply to all processed images, this will likely be on a great deal of images. Say the objective of the search is to initially find processed images which have been selected for publication and then whittle down from there.
 As the 'selected' tag will likely have less images than 'processed', it will give a good performance benefit.</p>
 
-
-
+<!--TODO I should really use another view to process the data as there is no need to call the heavy operations invoked by get_form_kwargs in the TagSearchFormView. Also, it will be a bit awkward to return the data from there as that's not really the form views function. A standard TemplateView should be sufficient, returning html results to display -->
+<form id="tagSearchForm" action="{% url wtsindex %}" method="POST">{% csrf_token %}
 {{ form.as_p }}
+<input type="submit" value="Submit" />
+ </form>
