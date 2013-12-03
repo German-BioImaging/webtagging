@@ -8,6 +8,8 @@ from django.core.urlresolvers import reverse
 
 from omeroweb.webclient.decorators import render_response, login_required
 from omero.gateway import TagAnnotationWrapper
+from omero.sys import Parameters
+from omero.rtypes import rlong, rlist
 
 from .forms import TagSearchForm
 
@@ -74,6 +76,7 @@ class TagSearchFormView(FormView):
         return kwargs
 
     def form_valid(self, form):
+        # Actually unlikely we'll ever submit this form
         print('called form_valid')
         return super(TagSearchFormView, self).form_valid(form)
 
@@ -84,42 +87,62 @@ class TagSearchFormView(FormView):
         return super(TagSearchFormView, self).dispatch(*args, **kwargs)
 
 
-class TagSearchView(TemplateView):
-    template_name = 'webtagging_search/index.html'
+class TagImageSearchView(TemplateView):
+    template_name = 'webtagging_search/image_results.html'
 
-    def get_context_data(self, **kwargs):
-        print('getting_tags')
-        tags = self.conn.getObjects('TagAnnotation')
-        tag_names = []
-        for tag in tags:
-            tag_names.append(tag.getValue())
-
-        context = super(TagSearchView, self).get_context_data(**kwargs)
-        context['tags'] = tag_names
-        # context['latest_articles'] = Article.objects.all()[:5]
-        return context
-
-    @method_decorator(login_required(setGroupContext=True))
-    def dispatch(self, *args, **kwargs):
-        # Get OMERO connection
-        self.conn = kwargs.get('conn', None)
-        return super(TagSearchView, self).dispatch(*args, **kwargs)
-
-
-class TagSubsetView(View):
-
-    def get(self, request, *args, **kwargs):
-        print('get args: %s' %  request.POST['content'])
-        context = self.get_context_data(**kwargs)
-        return self.sender_to_response(context)
+    # def get(self, request, *args, **kwargs):
+    #     print('Probably should never be GET here')
+    #     print('get args: %s' %  request.POST['selectedTags'])
+    #     context = self.get_context_data(**kwargs)
+    #     return self.sender_to_response(context)
 
     def post(self, request, *args, **kwargs):
-        print('post args: %s' %  request.POST['content'])
+        selected_tags = [long(x) for x in request.POST.getlist('selectedTags')]
+        results_preview = bool(request.POST.get('results_preview'))
+
+        def getObjectsWithAllAnnotations(conn, obj_type, annids):
+            # Get the images that match
+            hql = "select link.parent.id from %sAnnotationLink link " \
+                  "inner join link.child as ann " \
+                  "where ann.id in (:oids) " \
+                  "group by link.parent.id " \
+                  "having count(link.child.id) = %s" %  (obj_type, len(annids))
+            params = Parameters()
+            params.map = {}
+            params.map["oids"] = rlist([rlong(o) for o in set(annids)])
+
+            qs = conn.getQueryService()
+            return [x[0].getValue() for x in qs.projection(hql,params)]
+
         context = self.get_context_data(**kwargs)
+        if selected_tags:
+            image_ids = getObjectsWithAllAnnotations(self.conn, 'Image', selected_tags)
+            context['image_count'] = len(image_ids)
+            dataset_ids = getObjectsWithAllAnnotations(self.conn, 'Dataset', selected_tags)
+            context['dataset_count'] = len(dataset_ids)
+            project_ids = getObjectsWithAllAnnotations(self.conn, 'Project', selected_tags)
+            context['project_count'] = len(project_ids)
+
+
+            if results_preview:
+                if image_ids:
+                    images = self.conn.getObjects('Image', ids = image_ids)
+                    context['images'] = [x.getName() for x in images]
+
+                if dataset_ids:
+                    datasets = self.conn.getObjects('Dataset', ids = dataset_ids)
+                    context['datasets'] = [x.getName() for x in datasets]
+
+                if project_ids:
+                    projects = self.conn.getObjects('Project', ids = project_ids)
+                    context['projects'] = [x.getName() for x in projects]
+
+        print 'returning'
         return self.render_to_response(context)
 
     @method_decorator(login_required(setGroupContext=True))
     def dispatch(self, *args, **kwargs):
         # Get OMERO connection
         self.conn = kwargs.get('conn', None)
-        return super(TagSearchView, self).dispatch(*args, **kwargs)
+        return super(TagImageSearchView, self).dispatch(*args, **kwargs)
+

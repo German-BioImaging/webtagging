@@ -1,0 +1,37 @@
+{% if image_count %}
+<div>Image Count: {{ image_count }}</div>
+{% endif %}
+{% if dataset_count %}
+<div>Dataset Count: {{ dataset_count }}</div>
+{% endif %}
+{% if project_count %}
+<div>Project Count: {{ project_count }}</div>
+{% endif %}
+
+{% if images %}
+<div>Images:
+  <ul>
+    {% for image in images %}
+      <li>{{ image }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% if datasets %}
+<div>Datasets:
+  <ul>
+    {% for dataset in datasets %}
+      <li>{{ dataset }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% if projects %}
+<div>Projects:
+  <ul>
+    {% for project in projects %}
+      <li>{{ project }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}

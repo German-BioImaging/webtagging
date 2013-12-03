@@ -14,75 +14,22 @@
 
     $("#id_selectedTags").chosen({placeholder_text:'Choose tags', width: "50%"});
 
+    var $submitButton = $("#tagSearchForm input[type='submit']");
     // Form Submission
-    $("#updateAllForm").ajaxForm({
-        beforeSubmit: function() {
-            // prevent submitting the form again while waiting
-            $submitButton.attr('disabled', true);
-        },
-        dataType: "json",
-        success: function(data) {
-
-/*
-            // For each update, find the cell and update it's selected status
-            for (var i in data.additions) {
-                var imageId = data.additions[i][0];
-                var tagId = data.additions[i][1];
-                var tokenName = data.additions[i][2];
-                $td = $('tr#image_' + imageId + ' .token_' + tokenName);
-                $td.addClass('success');
-                $td.append('<input class="serverselected" name="serverselected" type="hidden" value="' + imageId + '_' + tokenName + '"/>');
-
-                // Get the tags from state and update
-                var image = imageStates[imageId];
-                var token = image.tokens[tokenName];
-                var tags = [];
-                if (token.tags) {
-                    tags = token.tags;
-                }
-                tags.push(tagId);
-                token.tags = tags;
-            }
-
-            for (var i in data.removals) {
-                var imageId = data.removals[i][0];
-                var tagId = data.removals[i][1];
-                var tokenName = data.removals[i][2];
-                $td = $('tr#image_' + imageId + ' .token_' + tokenName);
-                $td.removeClass('success');
-                $td.children('.serverselected').remove();
-
-                // Get the tags from state and update
-                var image = imageStates[imageId];
-                var token = image.tokens[tokenName];
-                var tags = token.tags;
-
-                // Check the list of tags for a match
-                if ( tags ) {
-                    $.each(tags, function(k,v){
-                        if (v == tagId) {
-                            tags.splice(k,1);
-                            return false;
-                        }
-                    });
-                }
-                
-            }
-  */
-            $submitButton.removeAttr('disabled');
-        }
+    $("#tagSearchForm").ajaxForm({
+      beforeSubmit: function() {
+        // prevent submitting the form again while waiting
+        $submitButton.attr('disabled', true);
+      },
+      success: function(data) {
+        $("#searchResults").html(data);
+        $submitButton.removeAttr('disabled');
+      }
     });
 
 
-
-
-
-
-
+    // Selection change
     $( "#id_selectedTags" ).chosen().change(function(event, params) {
-      // Array of selected values, not sure it's possible to get just the latest selcted item here
-      // would it would be safe to handle just the latest selection/deseclection anyway?
-      // alert($(this).val());
 
       // Selection made
       if (params.selected) {
@@ -196,16 +143,16 @@
 
 
 <h1>Tag Search Prototype</h1>
-<h3Note on search responsiveness:</h3>
-<p>For performance reasons, it is unrealistic to calculate all possible tag intersections up-front. The first selection made will cause the intersections to be calculated for that selection. Removing all selections will cause an expensive query to again be run on a fresh selection. This is true even if the new selection is one which was previously available in the intersecting subset with the original choice because there are likely to be tags in the new subset which were precluded by the original choice.</p>
+<h3>Note on search responsiveness:</h3>
+<p>Currently, on first load of this page, the intersection set for all possible tags that the user can access is calculated, so this may be a little slow. Once on the page though, this should facilitate quick construction of tag search criteria.</p>
+<p>On form submit, the number of projects/datasets/images that match the search are returned. The results preview will (on submit) grab the names of the projects/datasets/images as well as the counts.</p>
 
-<p>The larger the number of images that contain a tag, the slower the original query will be and to a lesser extent, the slower the overall performance of this page. If possible, start a search with a tag that is the most specific.</p>
-
-<p>E.g. if you have a tag 'processed' which you apply to all processed images, this will likely be on a great deal of images. Say the objective of the search is to initially find processed images which have been selected for publication and then whittle down from there.
-As the 'selected' tag will likely have less images than 'processed', it will give a good performance benefit.</p>
+<p>The larger the number of images that contain a set of tags, the slower the counts query will be, so it is always beneficial to add the least common tags as early in the search as possible. E.g. if you have a tag 'processed' which you apply to all processed images, this will likely be on a great deal of images. Say the objective of the search is to initially find processed images which have been selected for publication and then whittle down from there. As the 'selected' tag will likely have less images than 'processed', it will give a good performance benefit to select this first.</p>
 
 <!--TODO I should really use another view to process the data as there is no need to call the heavy operations invoked by get_form_kwargs in the TagSearchFormView. Also, it will be a bit awkward to return the data from there as that's not really the form views function. A standard TemplateView should be sufficient, returning html results to display -->
-<form id="tagSearchForm" action="{% url wtsindex %}" method="POST">{% csrf_token %}
+<form id="tagSearchForm" action="{% url wtsimages %}" method="post">{% csrf_token %}
 {{ form.as_p }}
 <input type="submit" value="Submit" />
- </form>
+</form>
+
+<div id="searchResults"></div>
