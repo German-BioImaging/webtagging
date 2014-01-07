@@ -16,10 +16,10 @@ $(function() {
             //             iids.push(selected[i]['id'].split("-")[1]);
             //         };
             //     }
-            //     auto_tag_url = '{% url webtest_split_view_figure_plugin %}?imageIds='+ iids.join(",") + "&width=120";
+            //     auto_tag_url = '{% url 'webtest_split_view_figure_plugin' %}?imageIds='+ iids.join(",") + "&width=120";
             // // if it's a dataset, show 2 rendering settings side by side.
             // } else if (dtype=="dataset") {
-                auto_tag_url = '{% url webtagging_index %}auto_tag/dataset/'+oid+'/';
+                auto_tag_url = '{% url 'webtagging_index' %}auto_tag/dataset/'+oid+'/';
             // }
             $(this).load(auto_tag_url);
         },

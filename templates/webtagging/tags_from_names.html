@@ -1,3 +1,4 @@
+{% load url from future %}
 <html>
 
 <link rel="stylesheet" type="text/css" href="{% static 'webtagging/css/bootstrap.css' %}" />
@@ -66,7 +67,7 @@ $(function(){
             }
         }
 
-        var auto_tag_url = '{% url webtagging_index %}auto_tag/dataset/'+oid+'/' + params;
+        var auto_tag_url = '{% url 'webtagging_index' %}auto_tag/dataset/'+oid+'/' + params;
 
         $("#auto_tag_panel").load(auto_tag_url);
     });
@@ -133,7 +134,7 @@ $(function(){
 
     // Example how to use tags dialog
     // OME.show_tags_dialog(
-    //     "{% url webtagging_list_tags %}",
+    //     "{% url 'webtagging_list_tags' %}",
     //     function(tags){
     //         console.log(tags);
     //     },
@@ -152,10 +153,10 @@ $(function(){
         });
 
         OME.show_tags_dialog({
-            list_tags: "{% url webtagging_list_tags %}",
+            list_tags: "{% url 'webtagging_list_tags' %}",
             current_tag_ids: currentTagIds,
             current_tag_names: currentTagNames,
-            create_tag: "{% url webtagging_create_tag %}",
+            create_tag: "{% url 'webtagging_create_tag' %}",
             success: function(tags){
                 var tag = tags[0];
                 
@@ -173,7 +174,7 @@ $(function(){
                 // AJAX query to find out if this new tag is on the images
                     $.ajax({
                         type: "POST",
-                        url: "{% url webtagging_get_tag_on_images %}",
+                        url: "{% url 'webtagging_get_tag_on_images' %}",
                         data: { image_ids: imageList, tag_id: tag.id },
                         dataType: "json",
                         success: function(imagesPresent) {
@@ -464,7 +465,7 @@ $(function(){
 
 </script>
 
-<form id="updateAllForm" action="{% url webtagging_process_update %}" method="post">
+<form id="updateAllForm" action="{% url 'webtagging_process_update' %}" method="post">
     <div style="position:absolute; top:0px; left:0px; right:0px; height: 29px; border-right:0px" class="toolbar">
         Path: <input id="hidePathTokensToggle" name="hidePathTokensToggle" value="hidePathTokensToggle" type="checkbox" />
         Extensions: <input id="hideExtTokensToggle" name="hideExtTokensToggle" value="hideExtTokensToggle" type="checkbox" />
