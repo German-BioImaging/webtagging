@@ -67,7 +67,7 @@ $(function(){
             }
         }
 
-        var auto_tag_url = '{% url 'webtagging_index' %}auto_tag/dataset/'+oid+'/' + params;
+        var auto_tag_url = "{% url 'webtagging_index' %}auto_tag/dataset/"+oid+'/' + params;
 
         $("#auto_tag_panel").load(auto_tag_url);
     });
