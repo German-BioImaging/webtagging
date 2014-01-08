@@ -2,7 +2,7 @@
 import django
 
 # Old style
-if django.get_version < 1.6:
+if django.VERSION < (1, 6):
     from django.conf import settings
 
     # We can directly manipulate the settings
