@@ -1,4 +1,8 @@
-from django.conf.urls import *
+import django
+if django.get_version < 1.6:
+    from django.conf.urls.defaults import *
+else:
+    from django.conf.urls import *
 
 from . import views
 
