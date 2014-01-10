@@ -116,12 +116,12 @@ def build_table_data(conn, images, ignoreFirstFileToken=False, ignoreLastFileTok
             if len(token) == 0:
                 continue
 
-            # Skip (at least for now) tokens that are simply numbers
-            if token.isdigit():
-                continue
-
             # Get all tags matching the token
             matchingTags = list(conn.getObjects("TagAnnotation", attributes={'textValue':token}))
+
+            # Skip any tokens that are simply numbers that are not already tags
+            if token.isdigit() and len(matchingTags) == 0:
+                continue
 
             tags = []
             # For each of the matching tags
