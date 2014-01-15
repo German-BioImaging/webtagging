@@ -40,35 +40,41 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
     ignoreLastFileToken = bool(request.GET.get('ignoreLastFileToken', False))
 
     tokenTags, imageDetails, imageStates = build_table_data(conn, images, ignoreFirstFileToken=ignoreFirstFileToken, ignoreLastFileToken=ignoreLastFileToken)
+
     # We only need to return a dict - the @render_response() decorator does the rest...
     context = {'template': 'webtagging/tags_from_names.html'}
-    context['tokenTags'] = tokenTags
-    context['imageDetails'] = imageDetails
+    context['token_details'] = tokenTags
+    context['image_details'] = imageDetails
     context['imageStates'] = json.dumps(imageStates)
     context['ignoreFirstFileToken'] = ignoreFirstFileToken
     context['ignoreLastFileToken'] = ignoreLastFileToken
     return context
 
 
-def build_table_data(conn, images, ignoreFirstFileToken=False, ignoreLastFileToken=False):
+def build_table_data(conn, images, ignoreFirstFileToken=False,
+                      ignoreLastFileToken=False):
     """
     We need to build tagging table data when the page originally loads 
     """
 
     def listTags(image):
         """ This should be in the BlitzGateway! """
-        return [a for a in image.listAnnotations() if a.__class__.__name__ == "TagAnnotationWrapper"]
+        return [a for a in image.listAnnotations() if a.__class__.__name__ ==
+                "TagAnnotationWrapper"]
 
-    # Need to build our table...
+    # Reference Variables
+    all_tags = set([])
 
     # First go through all images, getting all the tokens
     # Each set of tokens must be separate so that they can be distinguished
     pathTokens = []
     fileTokens = []
     extTokens = []
-    # Also record which tokens are in which images to avoid reparsing later per-image
-    imagesTokens = {}
+    # Also record which tokens are in which images to avoid reparsing later
+    # per-image
+    images_tokens = {}
 
+    # Process the images to extract tokens only
     for image in images:
         name = image.getName()
  
@@ -84,7 +90,7 @@ def build_table_data(conn, images, ignoreFirstFileToken=False, ignoreLastFileTok
         pathTokens.extend(pt)
         fileTokens.extend(ft)
         extTokens.extend(et)
-        imagesTokens[image] = set(pt + et + ft)
+        images_tokens[image] = set(pt + et + ft)
 
     # Remove duplicates from each set
     pathTokens = set(pathTokens)
@@ -99,16 +105,19 @@ def build_table_data(conn, images, ignoreFirstFileToken=False, ignoreLastFileTok
     pathTokens = list(pathTokens)
     fileTokens = list(fileTokens)
     extTokens = list(extTokens)
-    
+
     # Order the lists by name
     pathTokens.sort(key=lambda name: name.lower())
     fileTokens.sort(key=lambda name: name.lower())
     extTokens.sort(key=lambda name: name.lower())
 
-    tokens = {'pathTokens' : pathTokens, 'fileTokens' : fileTokens, 'extTokens' : extTokens}
+    tokens = {'pathTokens': pathTokens, 'fileTokens': fileTokens,
+              'extTokens': extTokens}
 
-    tokenTags = []
-    # find which tokens match existing Tags
+    # List of all token details: [{name, tokenType, tagList}, ... ]
+    # TODO Not Indexed as it is not used in lookups?
+    token_details = []
+    # Find which tokens match existing Tags
     for tokenType in ['pathTokens', 'fileTokens','extTokens']:
         for token in tokens[tokenType]:
 
@@ -117,89 +126,165 @@ def build_table_data(conn, images, ignoreFirstFileToken=False, ignoreLastFileTok
                 continue
 
             # Get all tags matching the token
-            matchingTags = list(conn.getObjects("TagAnnotation", attributes={'textValue':token}))
+            # TODO Could I reduce this to one query which takes all the tokens?
+            tags = list(conn.getObjects("TagAnnotation",
+                                                attributes={'textValue':token}))
 
             # Skip any tokens that are simply numbers that are not already tags
-            if token.isdigit() and len(matchingTags) == 0:
+            if token.isdigit() and len(tags) == 0:
                 continue
 
-            tags = []
-            # For each of the matching tags
-            for matchingTag in matchingTags:
-                # Add dictionary of details
-                tags.append({'name':matchingTag.getValue(), 'id':matchingTag.getId(), 'desc':matchingTag.getDescription(), 'ownerName':matchingTag.getOwnerFullName()})
+            # Update the tag reference variable
+            all_tags.update(tags)
 
-            tokenTagMap = {'name':token, 'tokenType':tokenType}
-
-            # Assign the matching tags to the token dictionary (only if there are any)
+            # Dictionary storing the token's name and type, plus the
+            # corresponding tags (if any)
+            token_detail = {'name': token, 'tokenType': tokenType}
             if len(tags) > 0:
-                tokenTagMap['tags'] = tags
+                token_detail['tags'] = tags
+            token_details.append(token_detail)
 
-            # Add the token with any tag mappings to the list
-            tokenTags.append(tokenTagMap)
+    # Populate a variable with details that need to be passed to build the table
+    image_details = []
 
-    # Populate the images with details
-    imageDetails = []
-    imageStates = {}
+    # Dictionaries of dictionaries of dictionaries was beginning to 
+    # get a bit confusing so these helper classes keep things
+    # organised.
+    class ImageTokenDetail(object):
+        def __init__(self, name, tokentype):
+            self.name = name
+            self.tokentype = tokentype
+            self.autoselect = False
+            self.applied = False
+            self.disabled = False
+            self.tags = None
 
-    for image, allTokens in imagesTokens.iteritems():
+        def set_autoselect(self):
+            self.autoselect = True
 
-        # Create mapping of tags that exist already on this image (tagValue : [ids])
-        imageTags = {}
-        for tag in listTags(image):
-            if tag.getValue() in imageTags:
-                imageTags[tag.getValue()].append(tag.getId())
-            else:
-                imageTags[tag.getValue()] = [tag.getId()]
+        def set_applied(self):
+            self.applied = True
 
-        imageTokens = []
-        imageTokenStates = {}
-        # For each token that exists (tokens from all images)
-        for token in tokenTags:
-            imageToken = {'name':token['name'], 'tokenType':token['tokenType']}
+        def set_disabled(self):
+            self.disabled = True
+
+        def set_tags(self, tags):
+            self.tags = tags
+
+        def generate_state(self):
+            state_token = {'name': self.name,
+                           'autoselect': self.autoselect}
+
+            # Add the tag_ids (if there are any)
+            if self.tags:
+                state_token['tags'] = [tag.getId() for tag in self.tags]
+
+            return state_token
+
+
+    class ImageDetail(object):
+        def __init__(self, image):
+            self.image = image
+            self.tokens = []
+
+        def add_token(self, token):
+            self.tokens.append(token)
+
+        def generate_state(self):
+            state_image = {'name': image.getName()}
+
+            # Add the tokens if there are any
+            if self.tokens:
+                state_image['tokens'] = {token.name: token.generate_state() for 
+                                         token in self.tokens}
+
+            return state_image
+
+
+    # Process the images again using the images_tokens lookup to avoid reparsing
+    # all the tokens from the images
+    image_details = []
+    for image, image_tokens in images_tokens.iteritems():
+
+        # Set the basic details
+        image_detail = ImageDetail(image)
+
+        # Which tags are already applied to this image?
+        tags = listTags(image)
+
+        # Update the tag reference variable
+        all_tags.update(tags)
+
+
+        # Reference of tags that are on this image
+        # indexed by value which is the match for tokens
+        tags_on_image = {}
+        for tag in tags:
+            tags_on_image.setdefault(tag.getValue(),[]).append(tag)
+
+        # Now determine what should be done for every token appearing in this
+        # set of results, for this image. Some will be relevant, others will
+        # now be, but they have to be included in the results anyway to denote
+        # that.
+        for token_detail in token_details:
+            # Details object of how this token is treated for this image
+            # 'name' and 'tokentype' could be looked up in the template, but
+            # it is much easier just to include them here.
+            image_token_detail = ImageTokenDetail(token_detail['name'],
+                                                  token_detail['tokenType'])
+
             # If the token is present in the image
-            if token['name'] in allTokens:
-                # Get the tags (if any) that are relevant
-                if 'tags' in token:
-                    tags = token['tags']
-                # Mark the token for autoselect (Do this even if the token is not matched)
-                imageToken['autoselect'] = True
+            if token_detail['name'] in image_tokens:
+                # TODO What did this do (1)?
+                # # Get the tags (if any) that are relevant
+                # if 'tags' in token_detail:
 
-            # Assign token type
+                # Mark the token for autoselect (Do this even if the token is
+                # not matched as a visual aid to the user)
+                image_token_detail.set_autoselect()
 
-            # Add all the matching tags 
-            if token['name'] in imageTags:
-                # Add the tagIds that match to this token
-                imageToken['tags'] = imageTags[token['name']]
+            # TODO What did this do (2)?
+            # Add all the matching tags
 
-                # If there is just the one matching tag for this column, mark the token selected
-                #TODO This could be removed in favor of a simple filter in django?
-                if len(token['tags']) == 1:
-                    imageToken['selected'] = True
+            # Does this token have a single tag match that is already
+            # applied to this image?
 
-            # If the token has no matching tags or more than 1
-            if 'tags' not in token or len(token['tags']) != 1:
-                imageToken['disabled'] = True 
+            # If there are any any tags associated with this token
+            if token_detail['name'] in tags_on_image:
+                # If this image has tags and actually exactly 1
+                if ('tags' in token_detail and
+                        len(token_detail['tags']) == 1 ):
+                    # Set the image as having this token (and its one
+                    # corresponding tag) applied
+                    image_token_detail.set_applied()
 
-            imageTokens.append(imageToken)
-            imageTokenStates[token['name']] = imageToken
 
-        imageDetail = {'id':image.getId(), 'name':image.getName(), 'tokens':imageTokens}
-        imageStates[image.getId()] = {'name':image.getName(), 'tokens':imageTokenStates}
-        imageDetails.append(imageDetail)
-    # Sort imageDetails
-    imageDetails.sort(key=lambda name: name['name'].lower())
+                # For the purposes of the state, add the tags that match
+                # to this token
+                image_token_detail.set_tags(tags_on_image[token_detail['name']])
 
-    # How this works:
-    # tokenTags is a list of the tokens involved in all the images. These contain details of the tags that match
-    # imageDetails is a list of the images, each one has details per-above tokens. e.g. If the token is matched,
-    # has a tag already selected or if it should be auto-selected 
 
-    #print 'tokenTags: ', tokenTags          #PRINT
-    #print 'imageDetails: ', imageDetails    #PRINT
+            # Does this token have a number of matching tags other
+            # than 1, then the column is disabled
+            # 'disabled' could be looked up in the template, but it is
+            # much easier to include it here.
+            if 'tags' not in token_detail or len(token_detail['tags']) != 1:
+                image_token_detail.set_disabled()
 
-    return tokenTags, imageDetails, imageStates
+            # Add the populated details about this token for this image
+            image_detail.add_token(image_token_detail)
 
+        # Add the populated details about this image to the list
+        image_details.append(image_detail)
+
+    # Sort the list of images
+    image_details.sort(
+        key=lambda image_detail: image_detail.image.getName().lower()
+    )
+
+    return token_details, image_details, {image_detail.image.getId():
+                                          image_detail.generate_state() for
+                                          image_detail in image_details}
 
 @login_required(setGroupContext=True)
 @render_response()
@@ -271,6 +356,7 @@ def process_update(request, conn=None, **kwargs):
         createTagAnnotationsLinks(conn, additions, removals)
     
     successfulUpdates = {'additions': additions, 'removals': removals}
+
     # We only need to return a dict - the @render_response() decorator does the rest...
     return successfulUpdates
 

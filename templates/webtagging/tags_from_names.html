@@ -82,7 +82,6 @@ $(function(){
         dataType: "json",
         success: function(data) {
 
-
             // For each update, find the cell and update it's selected status
             for (var i in data.additions) {
                 var imageId = data.additions[i][0];
@@ -92,7 +91,6 @@ $(function(){
                 $td.addClass('success');
                 $td.append('<input class="serverselected" name="serverselected" type="hidden" value="' + imageId + '_' + tokenName + '"/>');
 
-                // Get the tags from state and update
                 var image = imageStates[imageId];
                 var token = image.tokens[tokenName];
                 var tags = [];

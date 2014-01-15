@@ -1,38 +1,36 @@
 <thead>
     <tr>
-        {#TODO Condense these 3 sections into 1 as they are very similar #}
-
-        {% for tokenTag in tokenTags %}
-            <th class="{{ tokenTag.tokenType }}" data-tokenname="{{ tokenTag.name }}">
-                <div class="token">{{ tokenTag.name }}</div>
+        {% for token_detail in token_details %}
+            <th class="{{ token_detail.tokenType }}" data-tokenname="{{ token_detail.name }}">
+                <div class="token">{{ token_detail.name }}</div>
                 <div class="tag">
                     <span style="position: relative;">
-                        <a class="tag_inner{% ifnotequal tokenTag.tags|length 1 %} tagInactive{% else %} tooltip{% endifnotequal %}">{% ifequal tokenTag.tags|length 1 %}{{ tokenTag.tags.0.name }}{% else %}&nbsp;{% endifequal %}</a>
+                        <a class="tag_inner{% ifnotequal token_detail.tags|length 1 %} tagInactive{% else %} tooltip{% endifnotequal %}">{% ifequal token_detail.tags|length 1 %}{{ token_detail.tags.0.getValue }}{% else %}&nbsp;{% endifequal %}</a>
                         <span class="showTag dropdown-toggle" data-toggle="dropdown" style="display:none">X</span>
                         <ul class="dropdown-menu" role="menu">
-                            {% if tokenTag.tags %}
-                                {% for tag in tokenTag.tags %}
-                                    <li><a class="tag-select" data-tagname="{{ tag.name }}" data-tagid="{{ tag.id }}" data-tagdesc="{{ tag.desc }}" data-tagowner="{{ tag.ownerName }}">{{ tag.name }}({{ tag.id }})</a></li>
+                            {% if token_detail.tags %}
+                                {% for tag in token_detail.tags %}
+                                    <li><a class="tag-select" data-tagname="{{ tag.getValue }}" data-tagid="{{ tag.getId }}" data-tagdesc="{{ tag.getDescription }}" data-tagowner="{{ tag.getOwnerFullName }}">{{ tag.getValue }}({{ tag.getId }})</a></li>
                                 {% endfor %}
                             {% endif %}
                             <li><a class="tag-select tag-select-none"> (Select None) </a></li>
                             <li class="divider"></li>
                             <li><a class="token-map">New/Existing Tag</a></li>
                         </ul>
-                        {% ifequal tokenTag.tags|length 1 %}
+                        {% ifequal token_detail.tags|length 1 %}
                             <span class="tooltip_html" style="display: none;">
-                                <b>ID:</b> {{ tokenTag.tags.0.id }}<br>
-                                <b>Description:</b> {{ tokenTag.tags.0.desc }}<br>
-                                <b>Owner:</b> {{ tokenTag.tags.0.ownerName }}
+                                <b>ID:</b> {{ token_detail.tags.0.getId }}<br>
+                                <b>Description:</b> {{ token_detail.tags.0.getDescription }}<br>
+                                <b>Owner:</b> {{ token_detail.tags.0.getOwnerFullName }}
                             </span>
                         {% endifequal %}
                     </span>
-                    <input class="imagechecked-all" type="checkbox"{% ifnotequal tokenTag.tags|length 1 %} disabled{% endifnotequal %}/>
+                    <input class="imagechecked-all" type="checkbox"{% ifnotequal token_detail.tags|length 1 %} disabled{% endifnotequal %}/>
                 </div>
 
                 {# In the case when there is exactly one tag associated with a token #}
-                {% ifequal tokenTag.tags|length 1 %}
-                    <input class="tag-selector" name="tag-selector" type="hidden" value="{{ tokenTag.name }}_{{ tokenTag.tags.0.id }}"/>
+                {% ifequal token_detail.tags|length 1 %}
+                    <input class="tag-selector" name="tag-selector" type="hidden" value="{{ token_detail.name }}_{{ token_detail.tags.0.getId }}"/>
                 {% endifequal %}
             </th>
         {% endfor %}
@@ -42,22 +40,22 @@
 </thead>
 
 <tbody>
-    {% for imageDetail in imageDetails %}
-        <tr id="image_{{ imageDetail.id }}" data-imageid="{{ imageDetail.id }}">
-            {% for imageToken in imageDetail.tokens %}
-                {# Display special case background color for server selected tokens #}
-                <td class="{{ imageToken.tokenType }} token_{{ imageToken.name }}{% if imageToken.selected %} success{% endif %}">
+    {% for image_detail in image_details %}
+        <tr id="image_{{ image_detail.image.getId }}" data-imageid="{{ image_detail.image.getId }}">
+            {% for image_detail_token in image_detail.tokens %}
+                {# Display special case background color for server applied tokens #}
+                <td class="{{ image_detail_token.tokentype }} token_{{ image_detail_token.name }}{% if image_detail_token.applied %} success{% endif %}">
 
-                <input class="imagechecked" name="imagechecked" value="{{ imageDetail.id }}_{{ imageToken.name }}" type="checkbox"{% if imageToken.autoselect or imageToken.selected %} checked{% endif %}{% if imageToken.disabled %} disabled{% endif %}/>
+                <input class="imagechecked" name="imagechecked" value="{{ image_detail.image.getId }}_{{ image_detail_token.name }}" type="checkbox"{% if image_detail_token.autoselect or image_detail_token.applied %} checked{% endif %}{% if image_detail_token.disabled %} disabled{% endif %}/>
 
                 {# Create a hidden field to indicate that for the current mapping, this image is tagged server side #}
-                {% if imageToken.selected %}
-                    <input class="serverselected" name="serverselected" type="hidden" value="{{ imageDetail.id }}_{{ imageToken.name }}"/>
+                {% if image_detail_token.applied %}
+                    <input class="serverselected" name="serverselected" type="hidden" value="{{ image_detail.image.getId }}_{{ image_detail_token.name }}"/>
                 {% endif %}
                 </td>
             {% endfor %}
             <td>
-                {{ imageDetail.name }} ({{ imageDetail.id }})
+                {{ image_detail.image.getName }} ({{ image_detail.image.getId }})
             </td>
         </tr>
     {% endfor %}
