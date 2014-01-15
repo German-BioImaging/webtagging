@@ -146,10 +146,15 @@ $(function(){
         var $th = $(this).parents("th");
         var tokenName = $th.data("tokenname");
         var currentTagIds = [];
+        // Compile a list of current tag names. These are removed from the list
+        // of potential candidates in the add/map dialog
         var currentTagNames = [];
         $('.tag-select:not(.tag-select-none)').each(function(k,v) {
             currentTagIds.push($(v).data('tagid'));
-            currentTagNames.push($(v).data('tagname').toLowerCase());
+            // It is necessary to convert this 'tagname' data to string as it
+            // is possible for it to be a number which toLowerCase can not
+            // deal with
+            currentTagNames.push($(v).data('tagname').toString().toLowerCase());
         });
 
         OME.show_tags_dialog({
