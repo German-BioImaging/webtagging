@@ -1,3 +1,5 @@
+import itertools
+
 from django.http import HttpResponse
 from django.shortcuts import render
 
@@ -63,7 +65,10 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
                 "TagAnnotationWrapper"]
 
     # Reference Variables
+    # All tags (either matched to a token, or applied on an image)
     all_tags = set([])
+    # Tags matched to a token only
+    matched_tags = set([])
 
     # First go through all images, getting all the tokens
     # Each set of tokens must be separate so that they can be distinguished
@@ -136,6 +141,7 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
 
             # Update the tag reference variable
             all_tags.update(tags)
+            matched_tags.update(tags)
 
             # Dictionary storing the token's name and type, plus the
             # corresponding tags (if any)
@@ -186,9 +192,16 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
         def __init__(self, image):
             self.image = image
             self.tokens = []
+            self.tags = []
 
         def add_token(self, token):
             self.tokens.append(token)
+
+        def add_tag(self, tag):
+            self.tags.append(tag)
+
+        def set_tags(self, tags):
+            self.tags = tags
 
         def generate_state(self):
             state_image = {'name': image.getName()}
@@ -219,9 +232,11 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
         # Update the tag reference variable
         all_tags.update(tags)
 
-
         # Reference of tags that are on this image
         # indexed by value which is the match for tokens
+        # tags_on_image is modified later to remove token:tag entries
+        # as they are found. This is to determine the resultant list
+        # of unused tags.
         tags_on_image = {}
         for tag in tags:
             tags_on_image.setdefault(tag.getValue(),[]).append(tag)
@@ -255,11 +270,13 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
                     # corresponding tag) applied
                     image_token_detail.set_applied()
 
-
                 # For the purposes of the state, add the tags that match
                 # to this token
                 image_token_detail.set_tags(tags_on_image[token_detail['name']])
 
+                # Modify tags_on_image to remove this token:tags entry
+                # now it has been used
+                tags_on_image.pop(token_detail['name'])
 
             # Does this token have a number of matching tags other
             # than 1, then the column is disabled
@@ -270,6 +287,31 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
 
             # Add the populated details about this token for this image
             image_detail.add_token(image_token_detail)
+
+        # Which tags are on images that are not matched to tokens
+        for tag in itertools.chain.from_iterable(tags_on_image.values()):
+            # Add the unmatched tag to this image
+            # TODO This is a problem. The way things are done in the template
+            # is to rely on a complete list of tokens (tags in this case). Even
+            # if there are no details about the token they are still included.
+            # The reason for this is that the template just creates a table
+            # cell for each token so if they are missing it doesn't know to
+            # create a cell and thus the table is not correctly aligned with
+            # the headers.
+
+            # The solution to this is to modify the template. In the template,
+            # instead of iterating over the tokens in each image, iterate over
+            # a list of all tokens. If the token is present in the image, then
+            # get its details and display, otherwise display the default. The
+            # default would be not selected, no background highlight.
+            # Disabled should be handled as a part of the whole list of tokens
+            # rather than in the individual token details.
+            image_detail.add_tag(tag)
+
+
+    # Go through the images again, this time adding the extra tag data
+
+
 
         # Add the populated details about this image to the list
         image_details.append(image_detail)
