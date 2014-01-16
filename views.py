@@ -235,16 +235,9 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
 
             # If the token is present in the image
             if token_detail['name'] in image_tokens:
-                # TODO What did this do (1)?
-                # # Get the tags (if any) that are relevant
-                # if 'tags' in token_detail:
-
                 # Mark the token for autoselect (Do this even if the token is
                 # not matched as a visual aid to the user)
                 image_token_detail.set_autoselect()
-
-            # TODO What did this do (2)?
-            # Add all the matching tags
 
             # Does this token have a single tag match that is already
             # applied to this image?
