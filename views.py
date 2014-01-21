@@ -195,9 +195,13 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
 
             # Add the tokens if there are any
             if self.tokens:
-                state_image['tokens'] = {token.name: token.generate_state() for 
-                                         token in self.tokens}
-
+                state_image['tokens'] = dict(
+                    (token.name, token.generate_state()) for
+                     token in self.tokens
+                )
+                # Pre Python 2.7, dictionary comprehension is not possible
+                # state_image['tokens'] = {token.name: token.generate_state() for 
+                                         # token in self.tokens}
             return state_image
 
 
