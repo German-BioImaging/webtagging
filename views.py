@@ -279,9 +279,13 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
         key=lambda image_detail: image_detail.image.getName().lower()
     )
 
-    return token_details, image_details, {image_detail.image.getId():
-                                          image_detail.generate_state() for
-                                          image_detail in image_details}
+    # Pre Python 2.7, dictionary comprehension is not possible. Thus:
+    state_details = dict(
+        (image_detail.image.getId(), image_detail.generate_state()) for
+         image_detail in image_details
+    )
+
+    return token_details, image_details, state_details
 
 @login_required(setGroupContext=True)
 @render_response()
