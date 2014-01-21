@@ -35,6 +35,17 @@
             </th>
         {% endfor %}
 
+        {% for unmatched_tag in unmatched_tags %}
+            <th class="unmatchedTag" data-tagname="{{ unmatched_tag.getValue }}">
+                <div class="tag">
+                    <span style="position: relative;">
+                        <a class="tag_inner tag_unmatched">{{ unmatched_tag.getValue }}</a>
+                    </span>
+                    <input class="imagechecked-all" type="checkbox"/>
+                </div>
+            </th>
+        {% endfor %}
+
         <th>Image Name</th>
     </tr>
 </thead>
@@ -46,17 +57,34 @@
                 {# Display special case background color for server applied tokens #}
                 <td class="{{ image_detail_token.tokentype }} token_{{ image_detail_token.name }}{% if image_detail_token.applied %} success{% endif %}">
 
-                <input class="imagechecked" name="imagechecked" value="{{ image_detail.image.getId }}_{{ image_detail_token.name }}" type="checkbox"{% if image_detail_token.autoselect or image_detail_token.applied %} checked{% endif %}{% if image_detail_token.disabled %} disabled{% endif %}/>
+                <input class="imagechecked" name="imagechecked" value="token_{{ image_detail.image.getId }}_{{ image_detail_token.name }}" type="checkbox"{% if image_detail_token.autoselect or image_detail_token.applied %} checked{% endif %}{% if image_detail_token.disabled %} disabled{% endif %}/>
 
                 {# Create a hidden field to indicate that for the current mapping, this image is tagged server side #}
                 {% if image_detail_token.applied %}
-                    <input class="serverselected" name="serverselected" type="hidden" value="{{ image_detail.image.getId }}_{{ image_detail_token.name }}"/>
+                    <input class="serverselected" name="serverselected" type="hidden" value="token_{{ image_detail.image.getId }}_{{ image_detail_token.name }}"/>
                 {% endif %}
                 </td>
             {% endfor %}
+
+            {% for image_tag in image_detail.tags %}
+                {# Display special case background color for server applied tokens #}
+                <td class="unmatchedTag tag_{{ image_tag.tag.getId }}{% if image_tag.applied %} success{% endif %}">
+
+                <input class="imagechecked" name="imagechecked" value="tag_{{ image_detail.image.getId }}_{{ image_tag.tag.getId }}" type="checkbox"{% if image_tag.applied %} checked{% endif %}/>
+
+                {# Create a hidden field to indicate that for the current mapping, this image is tagged server side #}
+                {% if image_tag.applied %}
+                    <input class="serverselected" name="serverselected" type="hidden" value="tag_{{ image_detail.image.getId }}_{{ image_tag.tag.getId }}"/>
+                {% endif %}
+
+            {% endfor %}
+
             <td>
                 {{ image_detail.image.getName }} ({{ image_detail.image.getId }})
             </td>
         </tr>
     {% endfor %}
 </tbody>
+
+
+

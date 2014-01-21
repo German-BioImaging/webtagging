@@ -41,12 +41,13 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
     ignoreFirstFileToken = bool(request.GET.get('ignoreFirstFileToken', False))
     ignoreLastFileToken = bool(request.GET.get('ignoreLastFileToken', False))
 
-    tokenTags, imageDetails, imageStates = build_table_data(conn, images, ignoreFirstFileToken=ignoreFirstFileToken, ignoreLastFileToken=ignoreLastFileToken)
+    tokenTags, imageDetails, imageStates, unmatched_tags = build_table_data(conn, images, ignoreFirstFileToken=ignoreFirstFileToken, ignoreLastFileToken=ignoreLastFileToken)
 
     # We only need to return a dict - the @render_response() decorator does the rest...
     context = {'template': 'webtagging/tags_from_names.html'}
     context['token_details'] = tokenTags
     context['image_details'] = imageDetails
+    context['unmatched_tags'] = unmatched_tags
     context['imageStates'] = json.dumps(imageStates)
     context['ignoreFirstFileToken'] = ignoreFirstFileToken
     context['ignoreLastFileToken'] = ignoreLastFileToken
@@ -69,6 +70,10 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
     all_tags = set([])
     # Tags matched to a token only
     matched_tags = set([])
+    # Tags not matched to any token (calculated at the end of extracting
+    # the details from the images/tags)
+    unmatched_tags = []
+
 
     # First go through all images, getting all the tokens
     # Each set of tokens must be separate so that they can be distinguished
@@ -121,6 +126,9 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
 
     # List of all token details: [{name, tokenType, tagList}, ... ]
     # TODO Not Indexed as it is not used in lookups?
+    # TODO Maybe rename token_details as it is rather confusing given that
+    # I also use 'details' to mean a token's details in the context of an
+    # image.
     token_details = []
     # Find which tokens match existing Tags
     for tokenType in ['pathTokens', 'fileTokens','extTokens']:
@@ -150,8 +158,6 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
                 token_detail['tags'] = tags
             token_details.append(token_detail)
 
-    # Populate a variable with details that need to be passed to build the table
-    image_details = []
 
     # Dictionaries of dictionaries of dictionaries was beginning to 
     # get a bit confusing so these helper classes keep things
@@ -192,16 +198,27 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
         def __init__(self, image):
             self.image = image
             self.tokens = []
-            self.tags = []
+            self.__tags = []
 
         def add_token(self, token):
             self.tokens.append(token)
 
-        def add_tag(self, tag):
-            self.tags.append(tag)
-
         def set_tags(self, tags):
-            self.tags = tags
+            """Set tags that are already applied to this image"""
+            self.__tags = tags
+
+        def tags(self):
+            """
+            Get the details for all tags
+            Only return tags that are not token matched
+            """
+            unmatched_tags_details = []
+            for tag in unmatched_tags:
+                unmatched_tag_details = {'tag':tag}
+                if tag in self.__tags:
+                    unmatched_tag_details['applied'] = True
+                unmatched_tags_details.append(unmatched_tag_details)
+            return unmatched_tags_details
 
         def generate_state(self):
             state_image = {'name': image.getName()}
@@ -218,8 +235,10 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
             return state_image
 
 
-    # Process the images again using the images_tokens lookup to avoid reparsing
-    # all the tokens from the images
+    # Process the images again using the images_tokens lookup to avoid
+    # reparsing all the tokens from the images
+    # Populate a variable with details that need to be passed to build the
+    # table
     image_details = []
     for image, image_tokens in images_tokens.iteritems():
 
@@ -228,6 +247,11 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
 
         # Which tags are already applied to this image?
         tags = listTags(image)
+
+        # Add the tags that are applied to the image to image_detail
+        # This is necessary to determine later the applied status of
+        # unmatched tags
+        image_detail.set_tags(tags)
 
         # Update the tag reference variable
         all_tags.update(tags)
@@ -289,7 +313,7 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
             image_detail.add_token(image_token_detail)
 
         # Which tags are on images that are not matched to tokens
-        for tag in itertools.chain.from_iterable(tags_on_image.values()):
+        # for tag in itertools.chain.from_iterable(tags_on_image.values()):
             # Add the unmatched tag to this image
             # TODO This is a problem. The way things are done in the template
             # is to rely on a complete list of tokens (tags in this case). Even
@@ -306,7 +330,14 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
             # default would be not selected, no background highlight.
             # Disabled should be handled as a part of the whole list of tokens
             # rather than in the individual token details.
-            image_detail.add_tag(tag)
+
+            # Solution to tags
+            # Create a list of token matched tags as we go along
+            # In ImageDetail.tags() do all_tags - matched tags to get the
+            # unmatched tags. Then return autoselect for those that are on this
+            # image. We've been recording these already in the tags (soon to
+            # be __tags variable)
+            # image_detail.add_tag(tag)
 
 
     # Go through the images again, this time adding the extra tag data
@@ -321,13 +352,21 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
         key=lambda image_detail: image_detail.image.getName().lower()
     )
 
-    # Pre Python 2.7, dictionary comprehension is not possible. Thus:
+    # Create and sort the list of unmatched tags
+    unmatched_tags = list(all_tags - matched_tags)
+    unmatched_tags.sort(key=lambda tag: tag.getValue().lower())
+
     state_details = dict(
         (image_detail.image.getId(), image_detail.generate_state()) for
          image_detail in image_details
     )
 
-    return token_details, image_details, state_details
+    return (
+        token_details,
+        image_details,
+        state_details,
+        unmatched_tags
+    )
 
 @login_required(setGroupContext=True)
 @render_response()
@@ -347,22 +386,33 @@ def process_update(request, conn=None, **kwargs):
 
         # serverSelected = { imageId: [tokenName]}
         serverSelected = {}
+        server_selected_tag_ids = {}
         for s in serverSelectedPost:
-            imageId,tokenName = s.split(r'_',1)
-            serverSelected.setdefault(long(imageId), []).append(tokenName)
+            tag_or_token, imageId, token_name_or_tag_id = s.split(r'_',2)
+            if tag_or_token == 'token':
+                serverSelected.setdefault(long(imageId), []).append(token_name_or_tag_id)
+            elif tag_or_token == 'tag':
+                server_selected_tag_ids.setdefault(long(imageId), []).append(token_name_or_tag_id)
+
         # checked = { imageId: [tokenName] }
         checked = {}
+        checked_tag_ids = {}
         for c in checkedPost:
-            imageId,tokenName = c.split(r'_', 1)
-            # Ignore submissions from unmapped tokens
-            if tokenName in tokenTags:
-                checked.setdefault(long(imageId), []).append(tokenName)
+            tag_or_token, imageId, token_name_or_tag_id = c.split(r'_', 2)
+            if tag_or_token == 'token':
+                # Ignore submissions from unmapped tokens
+                if token_name_or_tag_id in tokenTags:
+                    checked.setdefault(long(imageId), []).append(token_name_or_tag_id)
+            elif tag_or_token == 'tag':
+                checked_tag_ids.setdefault(long(imageId), []).append(token_name_or_tag_id)
 
         # Get the list of images that may require operations as they have some selections or checks
         imageIds = list(set(serverSelected.keys() + checked.keys()))
 
-        additions = []  # [(imageID, tagId, tokenName)]
-        removals = []   # [(imageId, tagId, tokenName)]
+        # tokenName can be None in these to denote a unmatched tag
+        additions = []      # [(imageID, tagId, tokenName)]
+        removals = []       # [(imageId, tagId, tokenName)]
+
         # Create a list of tags to add on images and one to remove tags from images
         for imageId in imageIds:
 
@@ -393,6 +443,31 @@ def process_update(request, conn=None, **kwargs):
                 # Resolve tokenName to a tagId
                 tagId = tokenTags[tokenName]
                 removals.append((imageId, tagId, tokenName))
+
+            # Now do the same for the tag fields
+
+            # Not every image will have both of these so have to default to empty list
+            checked_tags = []
+            selected_tags = []
+
+            #if there are checked tag checkboxes for this image
+            if imageId in checked_tag_ids:
+                checked_tags = checked_tag_ids[imageId]
+
+            # If there are server selected tags for this image
+            if imageId in server_selected_tag_ids:
+                selected_tags = server_selected_tag_ids[imageId]
+
+            # Add any tags (for addition) that are not prexisting
+            additions_tags = list(set(checked_tags) - set(selected_tags))
+            # Add any tags (for removal) that are prexisting, but not checked
+            removals_tags = list(set(selected_tags) - set(checked_tags))
+
+            for tag_id in additions_tags:
+                additions.append((imageId, tag_id, None))
+
+            for tag_id in removals_tags:
+                removals.append((imageId, tag_id, None))
                 
         #TODO Return success/failure of each addition/removal
         #TODO The success/failure need not contain the tagId like these additions/removals do, html will be indexing so will need to change there also.

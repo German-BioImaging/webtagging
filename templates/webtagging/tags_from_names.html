@@ -81,49 +81,67 @@ $(function(){
         },
         dataType: "json",
         success: function(data) {
-
             // For each update, find the cell and update it's selected status
             for (var i in data.additions) {
                 var imageId = data.additions[i][0];
                 var tagId = data.additions[i][1];
                 var tokenName = data.additions[i][2];
-                $td = $('tr#image_' + imageId + ' .token_' + tokenName);
-                $td.addClass('success');
-                $td.append('<input class="serverselected" name="serverselected" type="hidden" value="' + imageId + '_' + tokenName + '"/>');
 
-                var image = imageStates[imageId];
-                var token = image.tokens[tokenName];
-                var tags = [];
-                if (token.tags) {
-                    tags = token.tags;
+                // If tokenName is null then this is an unmatched tag, not a
+                // token
+                if (tokenName == null) {
+                    $td = $('tr#image_' + imageId + ' .tag_' + tagId);
+                    $td.addClass('success');
+                    $td.append('<input class="serverselected" name="serverselected" type="hidden" value="tag_' + imageId + '_' + tagId + '"/>');
+                } else {
+                    $td = $('tr#image_' + imageId + ' .token_' + tokenName);
+                    $td.addClass('success');
+                    $td.append('<input class="serverselected" name="serverselected" type="hidden" value="token_' + imageId + '_' + tokenName + '"/>');
+
+                    // Update imageStates (only for token updates, not tag updates)
+                    var image = imageStates[imageId];
+                    var token = image.tokens[tokenName];
+                    var tags = [];
+                    if (token.tags) {
+                        tags = token.tags;
+                    }
+                    tags.push(tagId);
+                    token.tags = tags;
                 }
-                tags.push(tagId);
-                token.tags = tags;
             }
 
             for (var i in data.removals) {
                 var imageId = data.removals[i][0];
                 var tagId = data.removals[i][1];
                 var tokenName = data.removals[i][2];
-                $td = $('tr#image_' + imageId + ' .token_' + tokenName);
-                $td.removeClass('success');
-                $td.children('.serverselected').remove();
 
-                // Get the tags from state and update
-                var image = imageStates[imageId];
-                var token = image.tokens[tokenName];
-                var tags = token.tags;
+                if (tokenName == null) {
+                    $td = $('tr#image_' + imageId + ' .tag_' + tagId);
+                    $td.removeClass('success');
+                    $td.children('.serverselected').remove();
+                } else {
+                    $td = $('tr#image_' + imageId + ' .token_' + tokenName);
+                    $td.removeClass('success');
+                    $td.children('.serverselected').remove();
 
-                // Check the list of tags for a match
-                if ( tags ) {
-                    $.each(tags, function(k,v){
-                        if (v == tagId) {
-                            tags.splice(k,1);
-                            return false;
-                        }
-                    });
+                    // Get the tags from state and update
+                    var image = imageStates[imageId];
+                    var token = image.tokens[tokenName];
+                    var tags = token.tags;
+
+                    // Update imageStates (only for token updates, not tag updates)
+                    // Check the list of tags for a match
+                    if ( tags ) {
+                        $.each(tags, function(k,v){
+                            if (v == tagId) {
+                                tags.splice(k,1);
+                                return false;
+                            }
+                        });
+                    }
+
                 }
-                
+   
             }
   
             $submitButton.removeAttr('disabled');
@@ -174,7 +192,26 @@ $(function(){
 
                 //TODO For efficiency only call this if an existing tag is being mapped to, not if a new tag is created, especially with default tokenName
                 if (true) {
-                // AJAX query to find out if this new tag is on the images
+                    // Check if this recently mapped to column was a unmatched tag
+                    // column. If it was, then remove that column.
+                    // START
+
+                    // Find out if the tag that was just mapped is one of the
+                    // unmatched tag columns
+                    $('.tag_inner.tag_unmatched').each(function(k,v) {
+
+                        if ($(v).text().toString().toLowerCase() == tag.name.toLowerCase()) {
+                            console.log($(v).text());
+                            // Remove the column
+                            // As this column already exists we could grab
+                            // the applied data from that column before
+                            // deleting it instead of running the below ajax
+                            // query
+                        }
+                    });
+                    // END
+
+                    // AJAX query to find out if this new tag is on the images
                     $.ajax({
                         type: "POST",
                         url: "{% url 'webtagging_get_tag_on_images' %}",
@@ -219,14 +256,11 @@ $(function(){
 
     // Update the tag icon
     columnUpdate = function(tagId, tagName, tagDesc, tagOwner, tokenName, $th) {
-        console.log('columnUpdate');
         var $input = $th.has('input').children('input');
         var $icon = $th.find('.tag_inner');
 
         if (!tagId) {
-            console.log('!tagId - setting inactive');
             //Remove input
-            console.log('not tagId');
             $th.find('.tag-selector').remove();
             $icon.addClass('tagInactive');
             $icon.html('&nbsp;');
@@ -238,10 +272,8 @@ $(function(){
             $a.parent().children('.tooltip_html').remove();
 
         } else {
-            console.log('tagId - setting active');
             //If the input field (and thus by inference the tag icon and tooltip) exists
             if($input.length > 0) {
-                console.log('Active to Active');
                 // If this is the same mapping as already exists, do nothing
                 if ($input.val() == tokenName + '_' + tagId) {
                     // return here as the below update should not occur in this case (unless this is made into a 'refresh' type thing
@@ -257,7 +289,6 @@ $(function(){
                 }
 
             } else {
-                console.log('Inactive to Active');
                 // Add the input if it's missing
                 $th.append('<input class="tag-selector" name="tag-selector" type="hidden" value="' + tokenName + '_' + tagId + '">');
                 $icon.removeClass('tagInactive');
@@ -287,7 +318,6 @@ $(function(){
 
     // Click tag mapping in dropdown
     $("#updateAllForm").on("click", "a.tag-select", function(event){
-        console.log('click a.tag-select');
         var $th = $(this).parents('th');
         var tokenName = $th.data('tokenname');
         var tagId = $(this).data('tagid');
