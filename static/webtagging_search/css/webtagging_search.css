@@ -1,0 +1,118 @@
+
+.toolbar {
+    text-align:right;
+}
+
+th.pathTokens {
+    background-color:#FFFFCC;
+}
+
+th.extTokens {
+    background-color:#FFFFCC;
+}
+
+
+table.pathTokens { display:table-cell; }
+table.hidePathTokens .pathTokens { display:none; }
+table.extTokens { display:table-cell; }
+table.hideExtTokens .extTokens { display:none; }
+
+.table td {
+    text-align:center;
+}
+
+.table tbody tr > td.success {
+  background-color: #dff0d8 !important;
+}
+
+.table tbody tr > td.error {
+  background-color: #f2dede !important;
+}
+
+.table tbody tr > td.warning {
+  background-color: #fcf8e3 !important;
+}
+
+.table tbody tr > td.info {
+  background-color: #d9edf7 !important;
+}
+
+.table-hover tbody tr:hover > td.success {
+  background-color: #d0e9c6 !important;
+}
+
+.table-hover tbody tr:hover > td.error {
+  background-color: #ebcccc !important;
+}
+
+.table-hover tbody tr:hover > td.warning {
+  background-color: #faf2cc !important;
+}
+
+.table-hover tbody tr:hover > td.info {
+  background-color: #c4e3f3 !important;
+}
+
+.btn-default {
+  border: 0;
+/*  width: 14px;
+  height: 20px;*/
+  background-color:transparent;
+}
+
+/* Adapted from dusty .removeTag and .removeTag:hover */
+.showTag {
+    color: #000;
+    cursor:pointer;
+    font-weight:bold; 
+    text-shadow: 0 1px 0 rgba(255,255,255,.7);
+    display:inline-block;
+    width:12px;
+    height:12px;
+    position:absolute;
+    z-index:90;
+    right:5px;
+    top:1px;
+    -webkit-border-radius:20px;
+    -moz-border-radius:20px;
+    border-radius:20px;
+    text-align:center;
+    margin-left:5px;
+    overflow:hidden;
+    display:block !important;
+    background:url(../images/tag_arrow_down.png) center center no-repeat;
+    text-indent:-99px;
+}
+
+
+.showTag:hover {
+    background-color:hsla(350,40%,60%,.7);
+    color:hsl(355,20%,30%);
+    text-shadow: 0 1px 0 rgba(255,255,255,.5);
+}
+
+.tagInactive {
+    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(350, 65%, 85%)), to(hsl(350, 60%, 90%))) !important;
+
+    background:blue !important; /* Old browsers */
+    background-image:-moz-linear-gradient(top, hsl(350,65%,80%) 0%, hsl(350,60%,90%) 100%) !important; /* FF3.6+ */
+    background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(350,65%,85%)), color-stop(100%,hsl(350,60%,90%))) !important; /* Chrome,Safari4+ */
+    background-image:-webkit-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100% !important); /* Chrome10+,Safari5.1+ */
+    background-image:-o-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* Opera11.10+ */
+    background-image:-ms-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* IE10+ */
+    filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#4795CC', endColorstr='#3987BF',GradientType=0 ) !important; /* IE6-9 */
+    background:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* W3C */ 
+    
+    text-decoration:none !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,.4) !important;
+    color:hsl(350,30%,30%) !important;
+}
+
+.token {
+    text-align:center;
+}
+
+.tag {
+    white-space:nowrap;
+}
+

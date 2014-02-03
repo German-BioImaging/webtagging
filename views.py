@@ -127,15 +127,15 @@ class TagImageSearchView(TemplateView):
             if results_preview:
                 if image_ids:
                     images = self.conn.getObjects('Image', ids = image_ids)
-                    context['images'] = [x.getName() for x in images]
+                    context['images'] = [ { 'id':x.getId(), 'name':x.getName() } for x in images]
 
                 if dataset_ids:
                     datasets = self.conn.getObjects('Dataset', ids = dataset_ids)
-                    context['datasets'] = [x.getName() for x in datasets]
+                    context['datasets'] = [{ 'id':x.getId(), 'name':x.getName() } for x in datasets]
 
                 if project_ids:
                     projects = self.conn.getObjects('Project', ids = project_ids)
-                    context['projects'] = [x.getName() for x in projects]
+                    context['projects'] = [{ 'id':x.getId(), 'name':x.getName() } for x in projects]
 
         print 'returning'
         return self.render_to_response(context)
