@@ -150,7 +150,7 @@
 <p>The larger the number of images that contain a set of tags, the slower the counts query will be, so it is always beneficial to add the least common tags as early in the search as possible. E.g. if you have a tag 'processed' which you apply to all processed images, this will likely be on a great deal of images. Say the objective of the search is to initially find processed images which have been selected for publication and then whittle down from there. As the 'selected' tag will likely have less images than 'processed', it will give a good performance benefit to select this first.</p>
 
 <!--TODO I should really use another view to process the data as there is no need to call the heavy operations invoked by get_form_kwargs in the TagSearchFormView. Also, it will be a bit awkward to return the data from there as that's not really the form views function. A standard TemplateView should be sufficient, returning html results to display -->
-<form id="tagSearchForm" action="{% url wtsimages %}" method="post">{% csrf_token %}
+<form id="tagSearchForm" action="{% url 'wtsimages' %}" method="post">{% csrf_token %}
 {{ form.as_p }}
 <input type="submit" value="Submit" />
 </form>
