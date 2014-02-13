@@ -25,7 +25,9 @@ class BlitzSet(object):
         return item.getId()
 
     def add(self, item):
-        self.__items[self.__item_key(item)] = item
+        # To be consistent with python set, do not overwrite existing items
+        if not self.__contains__(item):
+            self.__items[self.__item_key(item)] = item
 
     def remove(self, item):
         del self.__items[self.__item_key(item)]
