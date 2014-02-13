@@ -13,6 +13,32 @@ from omero.rtypes import rlong, rlist
 
 from .forms import TagSearchForm
 
+class BlitzSet(object):
+    def __init__(self, s=[]):
+
+        self.__items = dict(
+            (self.__item_key(i), i) for
+             i in s
+        )
+
+    def __item_key(self, item):
+        return item.getId()
+
+    def add(self, item):
+        self.__items[self.__item_key(item)] = item
+
+    def remove(self, item):
+        del self.__items[self.__item_key(item)]
+
+    def __str__(self):
+        return str(self.__items.values())
+
+    def __contains__(self, item):
+        return self.__item_key(item) in self.__items
+
+    def __iter__(self):
+        return self.__items.itervalues()
+
 class TagSearchFormView(FormView):
     """
     Form view to present form for tag--based navigation
