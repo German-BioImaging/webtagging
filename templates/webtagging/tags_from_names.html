@@ -163,7 +163,9 @@ $(function(){
         var tokenName = $th.data("tokenname");
         var currentTagIds = [];
         // Compile a list of current tag names. These are removed from the list
-        // of potential candidates in the add/map dialog
+        // of potential candidates in the add/map dialog. This does not include
+        // tags which are in the unmatched_tags. If an unmatched tag is selected
+        // in the mapping then the unmatched tag column must be.
         var currentTagNames = [];
         $('.tag-select:not(.tag-select-none)').each(function(k,v) {
             currentTagIds.push($(v).data('tagid'));
@@ -199,14 +201,29 @@ $(function(){
                     // Find out if the tag that was just mapped is one of the
                     // unmatched tag columns
                     $('.tag_inner.tag_unmatched').each(function(k,v) {
-
                         if ($(v).text().toString().toLowerCase() == tag.name.toLowerCase()) {
-                            console.log($(v).text());
                             // Remove the column
-                            // As this column already exists we could grab
+                            // TODO Refactor column operations
+                            
+                            // Create variables holding all the th elements so that this can be used to calculate the index
+                            var $ths = $('#token-table > thead > tr > th');
+                            var $rows = $('#token-table > tbody > tr');
+                            // Get the position of the th element in which the selector is
+                            var $thUpdated = $(this).parents('th');
+                            var colIndex = $ths.index( $thUpdated );
+                            // For each row
+                            $rows.each(function(i, v){
+
+                                // Get the checkbox which corresponds to the index of the th above
+                                var $cb = $(v).children().eq(colIndex).remove();
+                            });
+
+                            $(v).closest('th').remove();
+                            // TODO As this column already exists we could grab
                             // the applied data from that column before
                             // deleting it instead of running the below ajax
                             // query
+                            
                         }
                     });
                     // END
@@ -336,6 +353,7 @@ $(function(){
             check = true;
         }
 
+        // TODO Refactor column operations
         // Create variables holding all the th elements so that this can be used to calculate the index
         var $th = $('#token-table > thead > tr > th');
         var $rows = $('#token-table > tbody > tr');
