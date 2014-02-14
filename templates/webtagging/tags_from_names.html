@@ -348,6 +348,8 @@ $(function(){
             check = true;
         }
 
+        // TODO Refactor using column_operation
+
         // Create variables holding all the td elements so that this can be used to calculate the index
         var $td = $(this).parents('tr').children('td');
         // Get the position of the td element in which the selector is
@@ -395,6 +397,9 @@ $(function(){
 
     // Update the selections and checked states for a column
     mappingChangeUpdate = function(tagId, tokenName, $thUpdated){
+
+        //TODO Refactor using column_operation
+
         // Create variables holding all the th elements so that this can be used to calculate the index
         var $th = $('#token-table > thead > tr > th');
         var $rows = $('#token-table > tbody > tr');
@@ -408,6 +413,7 @@ $(function(){
             $thUpdated.find('.imagechecked-all').prop('disabled', true);
         }
 
+        var allSelected = true;
         // For each row
         $rows.each(function(i, v){
             // Get the imageId from the tr
@@ -457,12 +463,17 @@ $(function(){
                     $td.children('.imagechecked').prop('checked', true);
                 } else {
                     $td.children('.imagechecked').prop('checked', false);
+                    allSelected = false;
                 }
 
             } else {
                 $td.children('.imagechecked').prop('disabled', true);
             }
         });
+
+        // If the column is fully selected then select the all checkbox
+        $thUpdated.find('.imagechecked-all').prop('checked', allSelected);
+
     }
 
     // Set up tooltip support
