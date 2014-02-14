@@ -9,7 +9,7 @@ import omero
 from omero.model import TagAnnotationI
 from omero.rtypes import rstring, rlong
 
-from utils import parse_path, createTagAnnotationsLinks
+from utils import parse_path, createTagAnnotationsLinks, BlitzSet
 
 from urlparse import parse_qsl
 
@@ -67,9 +67,9 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
 
     # Reference Variables
     # All tags (either matched to a token, or applied on an image)
-    all_tags = set([])
+    all_tags = BlitzSet([])
     # Tags matched to a token only
-    matched_tags = set([])
+    matched_tags = BlitzSet([])
     # Tags not matched to any token (calculated at the end of extracting
     # the details from the images/tags)
     unmatched_tags = []
