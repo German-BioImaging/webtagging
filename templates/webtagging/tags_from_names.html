@@ -21,6 +21,7 @@
 <script src="{% static 'webtagging/3rd-party/bootstrap/bootstrap.js' %}"></script>
 <script src="{% static '3rdparty/jquery.chosen/chosen.jquery.js' %}"></script>
 <script src="{% static 'webtagging/js/show_tags_dialog.js' %}"></script>
+<script src="{% static 'webtagging/js/table_operations.js' %}"></script>
 <!-- In various places I could rely only on an HTML5 data- field, but testing shows that jQuery selection based on data field is much slower than class based (especially on IE)-->
 
 <script>
@@ -194,31 +195,13 @@ $(function(){
 
                 //TODO For efficiency only call this if an existing tag is being mapped to, not if a new tag is created, especially with default tokenName
                 if (true) {
-                    // Check if this recently mapped to column was a unmatched tag
-                    // column. If it was, then remove that column.
-                    // START
-
                     // Find out if the tag that was just mapped is one of the
-                    // unmatched tag columns
+                    // unmatched tag columns, as that should then be removed
                     $('.tag_inner.tag_unmatched').each(function(k,v) {
                         if ($(v).text().toString().toLowerCase() == tag.name.toLowerCase()) {
                             // Remove the column
-                            // TODO Refactor column operations
-                            
-                            // Create variables holding all the th elements so that this can be used to calculate the index
-                            var $ths = $('#token-table > thead > tr > th');
-                            var $rows = $('#token-table > tbody > tr');
-                            // Get the position of the th element in which the selector is
-                            var $thUpdated = $(this).parents('th');
-                            var colIndex = $ths.index( $thUpdated );
-                            // For each row
-                            $rows.each(function(i, v){
+                            OME.column_operation($(this), function(cell) { $(cell).remove(); });
 
-                                // Get the checkbox which corresponds to the index of the th above
-                                var $cb = $(v).children().eq(colIndex).remove();
-                            });
-
-                            $(v).closest('th').remove();
                             // TODO As this column already exists we could grab
                             // the applied data from that column before
                             // deleting it instead of running the below ajax
@@ -226,7 +209,6 @@ $(function(){
                             
                         }
                     });
-                    // END
 
                     // AJAX query to find out if this new tag is on the images
                     $.ajax({
@@ -353,20 +335,10 @@ $(function(){
             check = true;
         }
 
-        // TODO Refactor column operations
-        // Create variables holding all the th elements so that this can be used to calculate the index
-        var $th = $('#token-table > thead > tr > th');
-        var $rows = $('#token-table > tbody > tr');
-        // Get the position of the th element in which the selector is
-        var $thUpdated = $(this).parents('th');
-        var colIndex = $th.index( $thUpdated );
-        // For each row
-        $rows.each(function(i, v){
-
-            // Get the checkbox which corresponds to the index of the th above
-            var $cb = $(v).children().eq(colIndex).children('.imagechecked');
-            $cb.prop('checked',check);
+        OME.column_operation($(this), function(cell) {
+            $(cell).children('.imagechecked').prop('checked',check);
         });
+
     });
 
     //On a change of any checkbox, update the 'all' checkbox appropriately
