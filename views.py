@@ -129,6 +129,7 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
     # TODO Maybe rename token_details as it is rather confusing given that
     # I also use 'details' to mean a token's details in the context of an
     # image.
+
     token_details = []
     # Find which tokens match existing Tags
     for tokenType in ['pathTokens', 'fileTokens','extTokens']:
@@ -152,8 +153,11 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
             matched_tags.update(tags)
 
             # Dictionary storing the token's name and type, plus the
-            # corresponding tags (if any)
-            token_detail = {'name': token, 'tokenType': tokenType}
+            # corresponding tags (if any). Default to allselected unless
+            # overridden later
+            token_detail = {'name': token, 'tokenType': tokenType,
+                'allselected': True}
+
             if len(tags) > 0:
                 token_detail['tags'] = tags
             token_details.append(token_detail)
@@ -269,6 +273,7 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
         # set of results, for this image. Some will be relevant, others will
         # now be, but they have to be included in the results anyway to denote
         # that.
+
         for token_detail in token_details:
             # Details object of how this token is treated for this image
             # 'name' and 'tokentype' could be looked up in the template, but
@@ -281,6 +286,9 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
                 # Mark the token for autoselect (Do this even if the token is
                 # not matched as a visual aid to the user)
                 image_token_detail.set_autoselect()
+            else:
+                # Column should not be all_selected
+                token_detail['allselected'] = False
 
             # Does this token have a single tag match that is already
             # applied to this image?
@@ -311,38 +319,6 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
 
             # Add the populated details about this token for this image
             image_detail.add_token(image_token_detail)
-
-        # Which tags are on images that are not matched to tokens
-        # for tag in itertools.chain.from_iterable(tags_on_image.values()):
-            # Add the unmatched tag to this image
-            # TODO This is a problem. The way things are done in the template
-            # is to rely on a complete list of tokens (tags in this case). Even
-            # if there are no details about the token they are still included.
-            # The reason for this is that the template just creates a table
-            # cell for each token so if they are missing it doesn't know to
-            # create a cell and thus the table is not correctly aligned with
-            # the headers.
-
-            # The solution to this is to modify the template. In the template,
-            # instead of iterating over the tokens in each image, iterate over
-            # a list of all tokens. If the token is present in the image, then
-            # get its details and display, otherwise display the default. The
-            # default would be not selected, no background highlight.
-            # Disabled should be handled as a part of the whole list of tokens
-            # rather than in the individual token details.
-
-            # Solution to tags
-            # Create a list of token matched tags as we go along
-            # In ImageDetail.tags() do all_tags - matched tags to get the
-            # unmatched tags. Then return autoselect for those that are on this
-            # image. We've been recording these already in the tags (soon to
-            # be __tags variable)
-            # image_detail.add_tag(tag)
-
-
-    # Go through the images again, this time adding the extra tag data
-
-
 
         # Add the populated details about this image to the list
         image_details.append(image_detail)

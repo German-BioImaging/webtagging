@@ -25,7 +25,7 @@
                             </span>
                         {% endifequal %}
                     </span>
-                    <input class="imagechecked-all" type="checkbox"{% ifnotequal token_detail.tags|length 1 %} disabled{% endifnotequal %}/>
+                    <input class="imagechecked-all" type="checkbox"{% ifnotequal token_detail.tags|length 1 %} disabled{% endifnotequal %}{% if token_detail.allselected %} checked{% endif %}/>
                 </div>
 
                 {# In the case when there is exactly one tag associated with a token #}
@@ -66,6 +66,7 @@
                 </td>
             {% endfor %}
 
+            {# Unmatched Tags #}
             {% for image_tag in image_detail.tags %}
                 {# Display special case background color for server applied tokens #}
                 <td class="unmatchedTag tag_{{ image_tag.tag.getId }}{% if image_tag.applied %} success{% endif %}">
