@@ -15,6 +15,408 @@ from urlparse import parse_qsl
 
 import json
 
+class Token(object):
+    """
+    Token type to enable encapsulation of other token related data.
+    Can be used as a dictionary key as this is hashable
+    """
+
+    def __init__(self, value, tokentype):
+        self.value = value
+        self.tokentype = tokentype
+        self.tags = BlitzSet([])
+        self.rows = set([])
+
+    def __hash__(self):
+        return hash(self.value)
+
+    def __eq__(self, other):
+        return other.value == self.value
+
+    def __repr__(self):
+        return self.value
+
+    def add_tags(self, tags):
+        self.tags.update(tags)
+
+    def add_row(self, row):
+        self.rows.add(row)
+
+    def set_tokentype(self, tokentype):
+        """
+        Allow the tokentype to be overriden should the type of the token
+        be upgraded. This may happen when a token is found in a path of one
+        file, then subsequently in the file in another.
+        """
+        self.tokentype = tokentype
+
+
+class TableHeader(object):
+    def __init__(self, parent):
+        self.parent = parent
+
+
+class TableHeaderToken(TableHeader):
+    def __init__(self, parent, token):
+        super(TableHeaderToken, self).__init__(parent)
+        self.token = token      # Token value
+
+    def is_token_header(self):
+        """
+        Is this object a token_header
+
+        This is for the benefit of django templates
+        """
+
+        return True
+
+    def is_enabled(self):
+        """
+        A token header is disabled if there is not a 1-1 mapping
+        between token and tag. 0 or 2+ tags results in a disabled column
+        1 tag exactly enables it
+        """
+
+        return len(self.token.tags) == 1
+
+    def single_tag(self):
+        """
+        If this token header is enabled, then this returns the single tag
+        that corresponds to it. Returns nothing if the column is disabled
+        """
+        if self.is_enabled():
+            return iter(self.token.tags).next()
+
+    def is_checked(self):
+        # Iterate over this whole column to see if they are all checked
+        for row in self.parent.rows:
+            # If the row doesn't have this token present - unchecked
+            if self.token not in row.tokens:
+                return False
+            # If the row doesn't have the single_tag present - unchecked
+            if self.single_tag() not in row.tags:
+                return False
+        # Otherwise checked
+        return True
+
+
+class TableHeaderTag(TableHeader):
+    def __init__(self, parent, tag):
+        super(TableHeaderTag, self).__init__(parent)
+        self.tag = tag          # Tag Annotation
+
+    def is_tag_header(self):
+        """
+        Is this object a tag_header
+
+        This is for the benefit of django templates
+        """
+
+        return True
+
+    def is_checked(self):
+        # Iterate over this whole column to see if they are all checked
+        for row in self.parent.rows:
+            # If the row doesn't have the single_tag present - unchecked
+            if self.tag not in row.tags:
+                return False
+        # Otherwise checked
+        return True
+
+class TableCellToken(TableHeader):
+    def __init__(self, parent, token):
+        super(TableCellToken, self).__init__(parent)
+        self.token = token
+
+    def is_token_cell(self):
+        """
+        Is this object a token_cell
+
+        This is for the benefit of django templates
+        """
+
+        return True
+
+    def is_checked(self):
+        """
+        If this token is present in this row or the tag is applied
+        """
+        if self.token in self.parent.tokens:
+            return True
+        if self.is_tagged():
+            return True
+        return False
+
+    def is_enabled(self):
+        """
+        A token header is disabled if there is not a 1-1 mapping
+        between token and tag. 0 or 2+ tags results in a disabled column
+        1 tag exactly enables it
+        """
+        return len(self.token.tags) == 1
+
+    def single_tag(self):
+        """
+        If this token header is enabled, then this returns the single tag
+        that corresponds to it. Returns nothing if the column is disabled
+        """
+        if self.is_enabled():
+            return iter(self.token.tags).next()
+
+    def is_tagged(self):
+        """
+        If this column is enabled, then it might have the tag from the
+        token->tag mapping applied
+        """
+        if self.is_enabled():
+            return self.single_tag() in self.parent.tags
+
+
+class TableCellTag(TableHeader):
+    def __init__(self, parent, tag):
+        super(TableCellTag, self).__init__(parent)
+        self.tag = tag
+
+    def is_tag_cell(self):
+        """
+        Is this object a tag_cell
+
+        This is for the benefit of django templates
+        """
+        return True
+
+    def is_checked(self):
+        """
+        If this tag is applied
+        """
+        return self.is_tagged()
+
+    def is_tagged(self):
+        """
+        If this column is enabled, then it might have the tag from the
+        token->tag mapping applied
+        """
+        return self.tag in self.parent.tags
+
+
+class TableRow(object):
+    """
+    Row representing an image along which will, on-demand, return the 
+    token and tag information associated with that image
+    """
+
+    def __init__(self, parent, image):
+        self.parent = parent    # Parent table for referencing 'all' variables
+        self.image = image      # Details of the image
+        self.tokens = set([])   # The tokens present in this image name
+        self.tags = []          # The tags present on this image
+
+    def get_name(self):
+        return self.image.getName()
+
+    def get_id(self):
+        return self.image.getId()
+
+    def get_cells(self):
+        """
+        List of tokens in the same order as the header
+        """
+        # Use parent's list of tokens to create the order
+        for token in self.parent.all_tokens:
+            yield TableCellToken(self, token)
+
+        for tag in self.parent.get_unmatched_tags():
+            yield TableCellTag(self, tag)
+
+    def add_token(self, token):
+        """
+        Add token to this image
+        """
+        self.tokens.add(token)  # Add token as present in the row
+        token.add_row(self)     # Automatically add back-reference to this row
+        # TODO Should this not be automatically updating all_tokens in
+        # table_data???
+
+    def add_tags(self, tags):
+        """
+        Add tags that are present on this image
+        """
+        self.tags.extend(tags)              # Add tag as present in the row
+        self.parent.all_tags.update(tags)   # Automatically update all_tags
+
+    def __hash__(self):
+        return hash(self.image.getId())
+
+    def __eq__(self, other):
+        return other.image.getId() == self.image.getId()
+
+    def generate_state(self):
+        """
+        Generate a data object for conversion to JSON
+        """
+        state_image = {'name': self.get_name()}
+
+        # Add all the tokens if there are any
+        if self.parent.all_tokens:
+            state_image['tokens'] = {}
+            for token in self.parent.all_tokens:
+                state_image['tokens'][token.value] = {
+                    'name': token.value,
+                    'autoselect': token in self.tokens
+                }
+
+                # If there is just the one tag mapping
+                if len(token.tags) == 1:
+                    # Get the tag that is mapped to
+                    tag = iter(token.tags).next()
+                    # Check if it is applied to this row
+                    if tag in self.tags:
+                        state_image['tokens'][token.value]['autoselect'] = True
+
+                if token.tags:
+                    state_image['tokens'][token.value]['tags'] = [
+                        tag.getId() for tag in token.tags
+                    ]
+
+        return state_image
+
+
+class TableData(object):
+    """
+    Top level data object representing the full table of data to be displayed
+    Generates the data on-demand to return headers and rows
+    """
+
+    def __init__(self):
+        self.all_tags = BlitzSet([])    # Set of all tags
+        self.all_tokens = []            # List of all tokens
+
+        self.matched_tags = BlitzSet([])    # Set of matched tags for quickref
+
+        self.rows = []       # List of rows (images)
+
+
+    def get_rows(self):
+        """
+        Get the rows representing images and token/tag data
+
+        Also causes rows to be sorted before returning.
+        """
+
+        self.sort_rows()
+        return self.rows
+
+    def add_image(self, image):
+        """
+        Add a row for the specified image
+        """
+
+        # Create the row with the supplied image
+        row = TableRow(self, image)
+
+        # Add the row
+        self.rows.append(row)
+
+        # Return the row in case local manipulation is desired
+        return row
+
+    def set_tokens(self, tokens):
+        """
+        Set and sort the full list of tokens
+        """
+
+        self.all_tokens.extend(tokens)
+        # tokentype ordering should be: path > file > extension. This happens
+        # to be reverse alphabetical. If tokentypes get more complicated then
+        # this will need to be changed
+        self.all_tokens.sort(
+            key = lambda token : (token.tokentype, token.value),
+            reverse = True
+        )
+
+    def remove_token(self, token):
+        """
+        Remove token from all_tokens and from any rows in which it was used.
+
+        This is normally used when a token has been added on the condition
+        that it already has a preexisting tag. E.g. '5' is a valid token
+        only if there is a tag with that value already. If it is not valid
+        then this method is employed to remove the '5' token
+        """
+
+        # Remove from any rows where the token was used
+        for row in token.rows:
+            row.tokens.remove(token)
+        # Remove from all_tokens
+        self.all_tokens.remove(token)
+
+    def get_unmatched_tags(self):
+        """
+        Get all the unmatched tags from the set of all rows
+
+        Up until this point, unmatched_tags have not been calculated
+        or ordered. The first time this is called, calculate and sort
+        unmatched_tags. On subsequent calls, return this sorted list.
+        """
+
+        if not hasattr(self, 'unmatched_tags'):
+            self.unmatched_tags = list(self.all_tags - self.matched_tags)
+        return self.unmatched_tags
+
+    def headers(self):
+        """
+        Return the header row
+
+        The header row contains an ordered list of tokens/unmatched tags
+        """
+        
+        # Item per token
+        for token in self.all_tokens:
+            yield TableHeaderToken(self, token)
+
+        # Item per unmatched tag
+        for tag in self.get_unmatched_tags():
+            yield TableHeaderTag(self, tag)
+
+
+    def sort_rows(self):
+        """
+        Sort rows based upon the image name the row represents
+        """
+
+        self.rows.sort(
+            key=lambda row: row.image.getName().lower()
+        )
+
+    def generate_state(self):
+        """
+        Generate a data object for conversion to JSON
+
+        {
+            imageid: {
+                'name':imagename,
+                'tokens': {
+                    tokenname: {
+                        'name': tokenname,
+                        'autoselect': autoselect,
+                        'tags': [tagids]
+
+                        ]
+                    }
+                }
+            }
+        }
+
+        """
+
+        state_details = dict(
+            (row.get_id(), row.generate_state()) for
+            row in self.rows
+        )
+
+        return state_details
+
+
 def index(request):
     """
     Just a place-holder, base for creating urls etc
@@ -41,21 +443,25 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
     ignoreFirstFileToken = bool(request.GET.get('ignoreFirstFileToken', False))
     ignoreLastFileToken = bool(request.GET.get('ignoreLastFileToken', False))
 
-    tokenTags, imageDetails, imageStates, unmatched_tags = build_table_data(conn, images, ignoreFirstFileToken=ignoreFirstFileToken, ignoreLastFileToken=ignoreLastFileToken)
+    table_data = build_table_data(
+        conn,
+        images,
+        ignoreFirstFileToken=ignoreFirstFileToken,
+        ignoreLastFileToken=ignoreLastFileToken
+    )
 
-    # We only need to return a dict - the @render_response() decorator does the rest...
+    # We only need to return a dict - the @render_response() decorator does
+    # the rest...
     context = {'template': 'webtagging/tags_from_names.html'}
-    context['token_details'] = tokenTags
-    context['image_details'] = imageDetails
-    context['unmatched_tags'] = unmatched_tags
-    context['imageStates'] = json.dumps(imageStates)
+    context['table_data'] = table_data
+    context['imageStates'] = json.dumps(table_data.generate_state())
     context['ignoreFirstFileToken'] = ignoreFirstFileToken
     context['ignoreLastFileToken'] = ignoreLastFileToken
     return context
 
 
 def build_table_data(conn, images, ignoreFirstFileToken=False,
-                      ignoreLastFileToken=False):
+                     ignoreLastFileToken=False):
     """
     We need to build tagging table data when the page originally loads 
     """
@@ -65,284 +471,121 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
         return [a for a in image.listAnnotations() if a.__class__.__name__ ==
                 "TagAnnotationWrapper"]
 
-    # Reference Variables
-    # All tags (either matched to a token, or applied on an image)
-    all_tags = BlitzSet([])
-    # Tags matched to a token only
-    matched_tags = BlitzSet([])
-    # Tags not matched to any token (calculated at the end of extracting
-    # the details from the images/tags)
-    unmatched_tags = []
-
+    # New all_table data
+    table_data = TableData()
 
     # First go through all images, getting all the tokens
-    # Each set of tokens must be separate so that they can be distinguished
-    pathTokens = []
-    fileTokens = []
-    extTokens = []
-    # Also record which tokens are in which images to avoid reparsing later
-    # per-image
-    images_tokens = {}
+
+    # Complete list of Tokens. If a Token already exists it is read from here
+    # instead of being recreated. If necessary, it has its tokentype overriden
+    # if the type being added has a higher degree of precedence than before
+    #TODO If we ever need this later, it could be put straight into TableData
+    # in place of the all_tokens list that is currently stored there
+    all_tokens = {}
 
     # Process the images to extract tokens only
     for image in images:
+
+        # Create the TableRow for this image
+        row = table_data.add_image(image)
+        # row = TableRow(table_data, image)
+
         name = image.getName()
  
         pt, ft, et = parse_path(name)
         
         # Do discards
-        #TODO Incredibly primitive, replace with much, much smarter discarding system
+        #TODO Incredibly primitive, replace with much, much smarter discarding
+        # system
         if (ignoreFirstFileToken):
             ft.pop(0)
         if (ignoreLastFileToken):
             ft.pop()
 
-        pathTokens.extend(pt)
-        fileTokens.extend(ft)
-        extTokens.extend(et)
-        images_tokens[image] = set(pt + et + ft)
 
-    # Remove duplicates from each set
-    pathTokens = set(pathTokens)
-    fileTokens = set(fileTokens)
-    extTokens = set(extTokens)
-    # Remove duplicates that exist between sets (from path, then extenstion)
-    pathTokens = pathTokens - fileTokens
-    pathTokens = pathTokens - extTokens
-    extTokens = extTokens - fileTokens
+        # Convert tokens to Tokens
+        # TODO Refactor these into a function
 
-    # Convert back to list
-    pathTokens = list(pathTokens)
-    fileTokens = list(fileTokens)
-    extTokens = list(extTokens)
+        # Process path tokens (Lowest priorty so never override)
+        for t in pt:
+            # Skip zero length tokens
+            if len(t) == 0:
+                continue
+            if t in all_tokens:
+                token = all_tokens[t]
+            else:
+                token = Token(t, 'path')
+                all_tokens[t] = token
+            row.add_token(token)
 
-    # Order the lists by name
-    pathTokens.sort(key=lambda name: name.lower())
-    fileTokens.sort(key=lambda name: name.lower())
-    extTokens.sort(key=lambda name: name.lower())
+        # Process Extension tokens (Middle priority so only override if 
+        # current tokentype is 'path')
+        for t in et:
+            # Skip zero length tokens
+            if len(t) == 0:
+                continue
+            if t in all_tokens:
+                token = all_tokens[t]
+                if token.tokentype == 'path':
+                    token.set_tokentype('ext')
+            else:
+                token = Token(t, 'ext')
+                all_tokens[t] = token
+            row.add_token(token)
 
-    tokens = {'pathTokens': pathTokens, 'fileTokens': fileTokens,
-              'extTokens': extTokens}
+        # Process file tokens (highest priority so override all)
+        for t in ft:
+            # Skip zero length tokens
+            if len(t) == 0:
+                continue
+            if t in all_tokens:
+                token = all_tokens[t]
+                token.set_tokentype('file')
+            else:
+                token = Token(t, 'file')
+                all_tokens[t] = token
+            row.add_token(token)
+
+    # Update table_data with the full list of Tokens
+    table_data.set_tokens(all_tokens.values())
+
 
     # List of all token details: [{name, tokenType, tagList}, ... ]
-    # TODO Not Indexed as it is not used in lookups?
-    # TODO Maybe rename token_details as it is rather confusing given that
-    # I also use 'details' to mean a token's details in the context of an
-    # image.
+    # token_details = []
 
-    token_details = []
     # Find which tokens match existing Tags
-    for tokenType in ['pathTokens', 'fileTokens','extTokens']:
-        for token in tokens[tokenType]:
+    for token in table_data.all_tokens[:]:
 
-            # Skip zero length tokens
-            if len(token) == 0:
-                continue
+        # Get all tags matching the token
+        # TODO Could I reduce this to one query which takes all the tokens?
+        tags = list(conn.getObjects(
+            "TagAnnotation", 
+            attributes={'textValue':token.value})
+        )
 
-            # Get all tags matching the token
-            # TODO Could I reduce this to one query which takes all the tokens?
-            tags = list(conn.getObjects("TagAnnotation",
-                                                attributes={'textValue':token}))
+        # Any tokens that are simply numbers that are not already tags
+        if token.value.isdigit() and len(tags) == 0:
+            # these need to be removed from the all_list and the rows
+            table_data.remove_token(token)
+            # Then continue to the next token
+            continue
 
-            # Skip any tokens that are simply numbers that are not already tags
-            if token.isdigit() and len(tags) == 0:
-                continue
+        # Add the matching tags to this token
+        token.add_tags(tags)
 
-            # Update the tag reference variable
-            all_tags.update(tags)
-            matched_tags.update(tags)
+        # Update the matched_tags in table_data
+        table_data.matched_tags.update(tags)
+        # TODO Do I need to update the all_tags in table_data??
 
-            # Dictionary storing the token's name and type, plus the
-            # corresponding tags (if any). Default to allselected unless
-            # overridden later
-            token_detail = {'name': token, 'tokenType': tokenType,
-                'allselected': True}
+    # Find the tags that are prexisting on these images
+    for row in table_data.rows:
+        # Get the tags on this image
+        tags = listTags(row.image)
 
-            if len(tags) > 0:
-                token_detail['tags'] = tags
-            token_details.append(token_detail)
+        # Add the tags to this image's row and automatically the all_tags list
+        row.add_tags(tags)
 
-
-    # Dictionaries of dictionaries of dictionaries was beginning to 
-    # get a bit confusing so these helper classes keep things
-    # organised.
-    class ImageTokenDetail(object):
-        def __init__(self, name, tokentype):
-            self.name = name
-            self.tokentype = tokentype
-            self.autoselect = False
-            self.applied = False
-            self.disabled = False
-            self.tags = None
-
-        def set_autoselect(self):
-            self.autoselect = True
-
-        def set_applied(self):
-            self.applied = True
-
-        def set_disabled(self):
-            self.disabled = True
-
-        def set_tags(self, tags):
-            self.tags = tags
-
-        def generate_state(self):
-            state_token = {'name': self.name,
-                           'autoselect': self.autoselect}
-
-            # Add the tag_ids (if there are any)
-            if self.tags:
-                state_token['tags'] = [tag.getId() for tag in self.tags]
-
-            return state_token
-
-
-    class ImageDetail(object):
-        def __init__(self, image):
-            self.image = image
-            self.tokens = []
-            self.__tags = []
-
-        def add_token(self, token):
-            self.tokens.append(token)
-
-        def set_tags(self, tags):
-            """Set tags that are already applied to this image"""
-            self.__tags = tags
-
-        def tags(self):
-            """
-            Get the details for all tags
-            Only return tags that are not token matched
-            """
-            unmatched_tags_details = []
-            for tag in unmatched_tags:
-                unmatched_tag_details = {'tag':tag}
-                if tag in self.__tags:
-                    unmatched_tag_details['applied'] = True
-                unmatched_tags_details.append(unmatched_tag_details)
-            return unmatched_tags_details
-
-        def generate_state(self):
-            state_image = {'name': image.getName()}
-
-            # Add the tokens if there are any
-            if self.tokens:
-                state_image['tokens'] = dict(
-                    (token.name, token.generate_state()) for
-                     token in self.tokens
-                )
-                # Pre Python 2.7, dictionary comprehension is not possible
-                # state_image['tokens'] = {token.name: token.generate_state() for 
-                                         # token in self.tokens}
-            return state_image
-
-
-    # Process the images again using the images_tokens lookup to avoid
-    # reparsing all the tokens from the images
-    # Populate a variable with details that need to be passed to build the
-    # table
-    image_details = []
-    for image, image_tokens in images_tokens.iteritems():
-
-        # Set the basic details
-        image_detail = ImageDetail(image)
-
-        # Which tags are already applied to this image?
-        tags = listTags(image)
-
-        # Add the tags that are applied to the image to image_detail
-        # This is necessary to determine later the applied status of
-        # unmatched tags
-        image_detail.set_tags(tags)
-
-        # Update the tag reference variable
-        all_tags.update(tags)
-
-        # Reference of tags that are on this image
-        # indexed by value which is the match for tokens
-        # tags_on_image is modified later to remove token:tag entries
-        # as they are found. This is to determine the resultant list
-        # of unused tags.
-        tags_on_image = {}
-        for tag in tags:
-            tags_on_image.setdefault(tag.getValue(),[]).append(tag)
-
-        # Now determine what should be done for every token appearing in this
-        # set of results, for this image. Some will be relevant, others will
-        # now be, but they have to be included in the results anyway to denote
-        # that.
-
-        for token_detail in token_details:
-            # Details object of how this token is treated for this image
-            # 'name' and 'tokentype' could be looked up in the template, but
-            # it is much easier just to include them here.
-            image_token_detail = ImageTokenDetail(token_detail['name'],
-                                                  token_detail['tokenType'])
-
-            # If the token is present in the image
-            if token_detail['name'] in image_tokens:
-                # Mark the token for autoselect (Do this even if the token is
-                # not matched as a visual aid to the user)
-                image_token_detail.set_autoselect()
-            else:
-                # Column should not be all_selected
-                token_detail['allselected'] = False
-
-            # Does this token have a single tag match that is already
-            # applied to this image?
-
-            # If there are any any tags associated with this token
-            if token_detail['name'] in tags_on_image:
-                # If this image has tags and actually exactly 1
-                if ('tags' in token_detail and
-                        len(token_detail['tags']) == 1 ):
-                    # Set the image as having this token (and its one
-                    # corresponding tag) applied
-                    image_token_detail.set_applied()
-
-                # For the purposes of the state, add the tags that match
-                # to this token
-                image_token_detail.set_tags(tags_on_image[token_detail['name']])
-
-                # Modify tags_on_image to remove this token:tags entry
-                # now it has been used
-                tags_on_image.pop(token_detail['name'])
-
-            # Does this token have a number of matching tags other
-            # than 1, then the column is disabled
-            # 'disabled' could be looked up in the template, but it is
-            # much easier to include it here.
-            if 'tags' not in token_detail or len(token_detail['tags']) != 1:
-                image_token_detail.set_disabled()
-
-            # Add the populated details about this token for this image
-            image_detail.add_token(image_token_detail)
-
-        # Add the populated details about this image to the list
-        image_details.append(image_detail)
-
-    # Sort the list of images
-    image_details.sort(
-        key=lambda image_detail: image_detail.image.getName().lower()
-    )
-
-    # Create and sort the list of unmatched tags
-    unmatched_tags = list(all_tags - matched_tags)
-    unmatched_tags.sort(key=lambda tag: tag.getValue().lower())
-
-    state_details = dict(
-        (image_detail.image.getId(), image_detail.generate_state()) for
-         image_detail in image_details
-    )
-
-    return (
-        token_details,
-        image_details,
-        state_details,
-        unmatched_tags
-    )
+    return table_data
 
 @login_required(setGroupContext=True)
 @render_response()
@@ -353,46 +596,63 @@ def process_update(request, conn=None, **kwargs):
         serverSelectedPost = request.POST.getlist('serverselected')
         checkedPost = request.POST.getlist('imagechecked')
 
-        # Convert the posted data into something more manageable
+        # Convert the posted data into something more manageable:
+
+        # Mappings between token and tags
         # tokenTags = { tokenName: tagId }
         tokenTags = {}
         for tokenTag in tagSelector:
             tokenName,tagId = tokenTag.rsplit(r'_', 1)
             tokenTags[tokenName] = long(tagId)
 
+        # tokens (with current token->tag mappings) that are already applied
         # serverSelected = { imageId: [tokenName]}
         serverSelected = {}
         server_selected_tag_ids = {}
         for s in serverSelectedPost:
             tag_or_token, imageId, token_name_or_tag_id = s.split(r'_',2)
             if tag_or_token == 'token':
-                serverSelected.setdefault(long(imageId), []).append(token_name_or_tag_id)
+                serverSelected.setdefault(long(imageId), []).append(
+                    token_name_or_tag_id
+                )
             elif tag_or_token == 'tag':
-                server_selected_tag_ids.setdefault(long(imageId), []).append(token_name_or_tag_id)
+                server_selected_tag_ids.setdefault(long(imageId), []).append(
+                    long(token_name_or_tag_id)
+                )
 
+        # tokens that are checked
         # checked = { imageId: [tokenName] }
         checked = {}
+        # unmatched tags that are checked
+        # checked_tag_ids = { imageId: [tagId]}
         checked_tag_ids = {}
         for c in checkedPost:
             tag_or_token, imageId, token_name_or_tag_id = c.split(r'_', 2)
             if tag_or_token == 'token':
                 # Ignore submissions from unmapped tokens
                 if token_name_or_tag_id in tokenTags:
-                    checked.setdefault(long(imageId), []).append(token_name_or_tag_id)
+                    checked.setdefault(long(imageId), []).append(
+                        token_name_or_tag_id
+                    )
             elif tag_or_token == 'tag':
-                checked_tag_ids.setdefault(long(imageId), []).append(token_name_or_tag_id)
+                checked_tag_ids.setdefault(long(imageId), []).append(
+                    long(token_name_or_tag_id)
+                )
 
-        # Get the list of images that may require operations as they have some selections or checks
+        # Get the list of images that may require operations as they have some
+        # selections (could be being removed) or checks (could be being added)
         imageIds = list(set(serverSelected.keys() + checked.keys()))
 
         # tokenName can be None in these to denote a unmatched tag
         additions = []      # [(imageID, tagId, tokenName)]
         removals = []       # [(imageId, tagId, tokenName)]
 
-        # Create a list of tags to add on images and one to remove tags from images
+        # Create a list of tags to add on images and one to remove tags from
+        # images
         for imageId in imageIds:
 
-            # Not every image will have both of these so have to default to empty list
+            # Not every image will have both of these so have to default to
+            # empty list
             checkedTokens = []
             selectedTokens = []
 
@@ -404,12 +664,15 @@ def process_update(request, conn=None, **kwargs):
             if imageId in serverSelected:
                 selectedTokens = serverSelected[imageId]
 
-            # Add any tokens (for addition) that are not preexisting (checked - serverSelected)
+            # Add any tokens (for addition) that are not preexisting
+            # (checked - serverSelected)
             additionsTokens = list(set(checkedTokens) - set(selectedTokens))
-            # Add any tokens (for removal) that are prexisiting but not checked (serverSelected - checked)
+            # Add any tokens (for removal) that are prexisiting but not
+            # checked (serverSelected - checked)
             removalsTokens = list(set(selectedTokens) - set(checkedTokens))
 
-            # Resolve tokenNames to tagIds, but keep tokenNames as the client needs these back to update the table
+            # Resolve tokenNames to tagIds, but keep tokenNames as the client
+            # needs these back to update the table
             for tokenName in additionsTokens:
                 # Resolve tokenName to a tagId
                 tagId = tokenTags[tokenName]
@@ -422,15 +685,16 @@ def process_update(request, conn=None, **kwargs):
 
             # Now do the same for the tag fields
 
-            # Not every image will have both of these so have to default to empty list
+            # Not every image will have both of these so have to default to
+            # empty list
             checked_tags = []
             selected_tags = []
 
-            #if there are checked tag checkboxes for this image
+            # if there are checked unmapped tag checkboxes for this image
             if imageId in checked_tag_ids:
                 checked_tags = checked_tag_ids[imageId]
 
-            # If there are server selected tags for this image
+            # If there are server selected unmapped tags for this image
             if imageId in server_selected_tag_ids:
                 selected_tags = server_selected_tag_ids[imageId]
 
@@ -445,13 +709,19 @@ def process_update(request, conn=None, **kwargs):
             for tag_id in removals_tags:
                 removals.append((imageId, tag_id, None))
                 
+        # TODO Problem is that unmatched tags are being marked for addition
+        # even if they are already tagged
+
         #TODO Return success/failure of each addition/removal
-        #TODO The success/failure need not contain the tagId like these additions/removals do, html will be indexing so will need to change there also.
+        #TODO The success/failure need not contain the tagId like these
+        # additions/removals do, html will be indexing so will need to change
+        # there also.
         createTagAnnotationsLinks(conn, additions, removals)
     
     successfulUpdates = {'additions': additions, 'removals': removals}
 
-    # We only need to return a dict - the @render_response() decorator does the rest...
+    # We only need to return a dict - the @render_response() decorator does
+    # the rest...
     return successfulUpdates
 
 
@@ -470,7 +740,12 @@ def list_tags(request, conn=None, **kwargs):
     tags = []
     for t in conn.getObjects("TagAnnotation"):
         if t.id not in current_tags:
-            tags.append({'id':t.id, 'name':t.getTextValue(), 'desc':t.getDescription(), 'owner':t.getOwnerFullName()})
+            tags.append({
+                'id':t.id,
+                'name':t.getTextValue(),
+                'desc':t.getDescription(),
+                'owner':t.getOwnerFullName()
+            })
 
     return {'template': 'webtagging/tag_dialog_form.html', 'tags':tags}
 
@@ -495,7 +770,10 @@ def create_tag(request, conn=None, **kwargs):
     tag = conn.getUpdateService().saveAndReturnObject(tag, conn.SERVICE_OPTS)
     tag = conn.getObject("TagAnnotation", tag.id.val)
 
-    return {'id':tag.id, 'name':tag.getTextValue(), 'desc':tag.getDescription(), 'owner':tag.getOwnerFullName()}
+    return {'id':tag.id,
+            'name':tag.getTextValue(),
+            'desc':tag.getDescription(),
+            'owner':tag.getOwnerFullName()}
 
 @login_required(setGroupContext=True)
 @render_response()
@@ -517,7 +795,10 @@ def get_tag_on_images(request, conn=None, **kwargs):
     imageIdList = map(long, imageIdList)
 
     params = omero.sys.Parameters()
-    links = conn.getAnnotationLinks("Image", parent_ids=imageIdList, ann_ids=[tagId], params=params)
+    links = conn.getAnnotationLinks("Image",
+                                    parent_ids=imageIdList,
+                                    ann_ids=[tagId],
+                                    params=params)
 
     tagOnImages = []
     # Only return imageIds

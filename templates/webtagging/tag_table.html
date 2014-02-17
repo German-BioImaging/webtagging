@@ -1,91 +1,120 @@
 <thead>
     <tr>
-        {% for token_detail in token_details %}
-            <th class="{{ token_detail.tokenType }}" data-tokenname="{{ token_detail.name }}">
-                <div class="token">{{ token_detail.name }}</div>
-                <div class="tag">
-                    <span style="position: relative;">
-                        <a class="tag_inner{% ifnotequal token_detail.tags|length 1 %} tagInactive{% else %} tooltip{% endifnotequal %}">{% ifequal token_detail.tags|length 1 %}{{ token_detail.tags.0.getValue }}{% else %}&nbsp;{% endifequal %}</a>
-                        <span class="showTag dropdown-toggle" data-toggle="dropdown" style="display:none">X</span>
-                        <ul class="dropdown-menu" role="menu">
-                            {% if token_detail.tags %}
-                                {% for tag in token_detail.tags %}
+        {% for header in table_data.headers %}
+            {% if header.is_token_header %}
+                <th class="{{ header.token.tokentype }}Tokens" data-tokenname="{{ header.token.value }}">
+                    <div class="token">{{ header.token.value }}</div>
+
+                    <div class="tag">
+                        <span style="position: relative;">
+
+                            <a class="tag_inner{% if not header.is_enabled %} tagInactive{% else %} tooltip{% endif %}">{% if header.is_enabled %}{{ header.single_tag.getValue }}{% else %}&nbsp;{% endif %}</a>
+
+                            <span class="showTag dropdown-toggle" data-toggle="dropdown" style="display:none">X</span>
+
+                            <ul class="dropdown-menu" role="menu">
+
+                                {% for tag in header.token.tags %}
                                     <li><a class="tag-select" data-tagname="{{ tag.getValue }}" data-tagid="{{ tag.getId }}" data-tagdesc="{{ tag.getDescription }}" data-tagowner="{{ tag.getOwnerFullName }}">{{ tag.getValue }}({{ tag.getId }})</a></li>
                                 {% endfor %}
+
+                                <li><a class="tag-select tag-select-none"> (Select None) </a></li>
+                                <li class="divider"></li>
+                                <li><a class="token-map">New/Existing Tag</a></li>
+                            </ul>
+
+                             {% if header.is_enabled %}
+                                <span class="tooltip_html" style="display: none;">
+                                    <b>ID:</b> {{ header.single_tag.getId }}<br>
+                                    <b>Description:</b> {{ header.single_tag.getId.getDescription }}<br>
+                                    <b>Owner:</b> {{ header.single_tag.getId.getOwnerFullName }}
+                                </span>
                             {% endif %}
-                            <li><a class="tag-select tag-select-none"> (Select None) </a></li>
-                            <li class="divider"></li>
-                            <li><a class="token-map">New/Existing Tag</a></li>
-                        </ul>
-                        {% ifequal token_detail.tags|length 1 %}
-                            <span class="tooltip_html" style="display: none;">
-                                <b>ID:</b> {{ token_detail.tags.0.getId }}<br>
-                                <b>Description:</b> {{ token_detail.tags.0.getDescription }}<br>
-                                <b>Owner:</b> {{ token_detail.tags.0.getOwnerFullName }}
-                            </span>
-                        {% endifequal %}
-                    </span>
-                    <input class="imagechecked-all" type="checkbox"{% ifnotequal token_detail.tags|length 1 %} disabled{% endifnotequal %}{% if token_detail.allselected %} checked{% endif %}/>
-                </div>
 
-                {# In the case when there is exactly one tag associated with a token #}
-                {% ifequal token_detail.tags|length 1 %}
-                    <input class="tag-selector" name="tag-selector" type="hidden" value="{{ token_detail.name }}_{{ token_detail.tags.0.getId }}"/>
-                {% endifequal %}
-            </th>
+                        </span>
+
+                        <input class="imagechecked-all" type="checkbox"{% if not header.is_enabled %} disabled{% endif %}{% if header.is_checked %} checked{% endif %}/>
+                    </div>
+
+                    {# Input field representing current token->tag mapping #}
+                    {% if header.is_enabled %}
+                        <input class="tag-selector" name="tag-selector" type="hidden" value="{{ header.token.value }}_{{ header.single_tag.getId }}"/>
+                    {% endif %}
+
+                </th>
+
+            {# Unmapped tags section here #}
+            {% elif header.is_tag_header %}
+                <th class="unmatchedTag" data-tagname="{{ header.tag.getValue }}">
+                    <div class="tag">
+                        <span style="position: relative;">
+                            <a class="tag_inner tag_unmatched">{{ header.tag.getValue }}</a>
+                        </span>
+                        <input class="imagechecked-all" type="checkbox" {% if header.is_checked %} checked{% endif %}/>
+                    </div>
+                </th>
+            {% endif %}
         {% endfor %}
 
-        {% for unmatched_tag in unmatched_tags %}
-            <th class="unmatchedTag" data-tagname="{{ unmatched_tag.getValue }}">
-                <div class="tag">
-                    <span style="position: relative;">
-                        <a class="tag_inner tag_unmatched">{{ unmatched_tag.getValue }}</a>
-                    </span>
-                    <input class="imagechecked-all" type="checkbox"/>
-                </div>
-            </th>
-        {% endfor %}
 
+
+        {# Image name column #}
         <th>Image Name</th>
     </tr>
 </thead>
 
 <tbody>
-    {% for image_detail in image_details %}
-        <tr id="image_{{ image_detail.image.getId }}" data-imageid="{{ image_detail.image.getId }}">
-            {% for image_detail_token in image_detail.tokens %}
-                {# Display special case background color for server applied tokens #}
-                <td class="{{ image_detail_token.tokentype }} token_{{ image_detail_token.name }}{% if image_detail_token.applied %} success{% endif %}">
+    {% for row in table_data.get_rows %}
+        <tr id="image_{{ row.get_id }}" data-imageid="{{ row.get_id }}">
 
-                <input class="imagechecked" name="imagechecked" value="token_{{ image_detail.image.getId }}_{{ image_detail_token.name }}" type="checkbox"{% if image_detail_token.autoselect or image_detail_token.applied %} checked{% endif %}{% if image_detail_token.disabled %} disabled{% endif %}/>
 
-                {# Create a hidden field to indicate that for the current mapping, this image is tagged server side #}
-                {% if image_detail_token.applied %}
-                    <input class="serverselected" name="serverselected" type="hidden" value="token_{{ image_detail.image.getId }}_{{ image_detail_token.name }}"/>
+            {% for cell in row.get_cells %}
+
+                {% if cell.is_token_cell %}
+                    {# Display special case background color for server applied tokens #}
+                    <td class="{{ cell.token.tokentype }}Tokens token_{{ cell.token.value }}{% if cell.is_tagged %} success{% endif %}">
+
+                        <input class="imagechecked" name="imagechecked" value="token_{{ row.get_id }}_{{ cell.token.value }}" type="checkbox"{% if cell.is_checked %} checked{% endif %}{% if not cell.is_enabled %} disabled{% endif %}/>
+
+                        {# Create a hidden field to indicate that for the current mapping, this image is tagged server side #}
+                        {% if cell.is_tagged %}
+                            <input class="serverselected" name="serverselected" type="hidden" value="token_{{ row.get_id }}_{{ cell.token.value }}"/>
+
+                        {% endif %}
+
+                    </td>
+
+                {# Unmapped tags section here #}
+                {% elif  cell.is_tag_cell %}
+
+                    {# Display special case background color for server applied tokens #}
+                    <td class="unmatchedTag tag_{{ cell.tag.getId }}{% if cell.is_tagged %} success{% endif %}">
+
+                        <input class="imagechecked" name="imagechecked" value="tag_{{ row.get_id }}_{{ cell.tag.getId }}" type="checkbox"{% if cell.is_checked %} checked{% endif %}/>
+
+                        {# Create a hidden field to indicate that for the current mapping, this image is tagged server side #}
+                        {% if cell.is_tagged %}
+                            <input class="serverselected" name="serverselected" type="hidden" value="tag_{{ row.get_id }}_{{ cell.tag.getId }}"/>
+                        {% endif %}
+
+                    </td>
+
                 {% endif %}
-                </td>
+
             {% endfor %}
 
-            {# Unmatched Tags #}
-            {% for image_tag in image_detail.tags %}
-                {# Display special case background color for server applied tokens #}
-                <td class="unmatchedTag tag_{{ image_tag.tag.getId }}{% if image_tag.applied %} success{% endif %}">
 
-                <input class="imagechecked" name="imagechecked" value="tag_{{ image_detail.image.getId }}_{{ image_tag.tag.getId }}" type="checkbox"{% if image_tag.applied %} checked{% endif %}/>
-
-                {# Create a hidden field to indicate that for the current mapping, this image is tagged server side #}
-                {% if image_tag.applied %}
-                    <input class="serverselected" name="serverselected" type="hidden" value="tag_{{ image_detail.image.getId }}_{{ image_tag.tag.getId }}"/>
-                {% endif %}
-
-            {% endfor %}
-
+            {# Image name column #}
             <td>
-                {{ image_detail.image.getName }} ({{ image_detail.image.getId }})
+                {{ row.get_name }} ({{ row.get_id }})
             </td>
+
         </tr>
     {% endfor %}
 </tbody>
 
 
 
+
+
+ 

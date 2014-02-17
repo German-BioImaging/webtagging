@@ -2,8 +2,8 @@ import omero
 from omero.rtypes import rlong
 
 def parse_path(path):
+    # TODO Should take arguments relating to regex
     """ 
-    TODO: Should take arguments relating to regex
     Splits the path up according to regex and returns lists of tokens
     per seperator.
     Hardcoded for now, one for the path, one for the name, one for the extension
@@ -42,29 +42,78 @@ def createTagAnnotationsLinks(conn, additions=[], removals=[]):
     savedLinks = []
     try:
         # will fail if any of the links already exist
-        savedLinks = conn.getUpdateService().saveAndReturnArray(newLinks, conn.SERVICE_OPTS)
+        savedLinks = conn.getUpdateService().saveAndReturnArray(
+            newLinks,
+            conn.SERVICE_OPTS
+        )
     except omero.ValidationException, x:
-        for l in newLinks:
+        # This will occur if the user has modified the tag landscape outside
+        # of the auto-tagger while using the auto-tagger. Not likely to often
+        # happen, but very possible.
+
+        for link in newLinks:
             try:
-                savedLinks.append(self.conn.getUpdateService().saveAndReturnObject(l, conn.SERVICE_OPTS))
-            except:
+                savedLinks.append(conn.getUpdateService().saveAndReturnObject(
+                    link,
+                    conn.SERVICE_OPTS)
+                )
+            except omero.ValidationException, x2:
                 failed+=1
 
     if len(removals) > 0:
-        # Get existing links belonging to current user (all at once to save on queries)
+        # Get existing links belonging to current user (all at once to save
+        # on queries)
         allImageIds, allTagIds, allTokenNames = zip(*removals)
-        # removalsCheck has to exist because the check to see if the image/tagId combo was in the list, there is no knowledge of the tokenName
+
+        # removalsCheck has to exist because the check to see if the
+        # image/tagId combo was in the list, there is no knowledge of the
+        # tokenName
         removalsCheck = zip(allImageIds, allTagIds)
         params = omero.sys.Parameters()
         params.theFilter = omero.sys.Filter()
         params.theFilter.ownerId = rlong(conn.getUserId())
-        links = conn.getAnnotationLinks("Image", parent_ids=list(allImageIds), ann_ids=list(allTagIds), params=params)
-        # The above returns image->tag links that were not specified for deletion, so only delete the appropriate ones 
+        links = conn.getAnnotationLinks("Image",
+                                        parent_ids=list(allImageIds),
+                                        ann_ids=list(allTagIds),
+                                        params=params)
+
+        # The above returns image->tag links that were not specified for
+        # deletion, so only delete the appropriate ones 
         for link in links:
             if (link.parent.id.val, link.child.id.val) in removalsCheck:
                 conn.deleteObjectDirect(link._obj)
 
+
 class BlitzSet(object):
+    """
+    Custom set to contain omero blitz objects using the id as the unique
+    identifier.
+
+    This has a subset of set operations
+
+    Warning: This should not be used as-is for sets of objects that do not
+    have ids yet (i.e. new objects). It should also not be used if there is
+    any manipulation of the ids within the blitz objects although I'm unsure
+    if there is ever likely to be any reason to do this.
+
+    Effort has been made to ensure that BlitzSet behaves the same as the python
+    built-in set. For example, adding an item to a set which already exists
+    results in the original item being kept and the new item being discarded.
+    This could be important if using this set and manipulating the contents of
+    blitz objects. For example, the following example could happen:
+
+    tags = BlitzSet([])
+    tag1 = conn.getObject('TagAnnotation', 1)
+    tags.add(tag1)
+    tag2 = conn.getObject('TagAnnotation', 1)
+    tag2.setValue("TEST")
+    tags.add(tag2)
+
+    tag1 and tag2 are 2 completely separate objects that to BlitzSet are seen
+    as identical. In this case, the single item in the set would be tag1, not
+    tag2.
+
+    """
     def __init__(self, s=[]):
 
         self.__items = dict(
@@ -76,37 +125,64 @@ class BlitzSet(object):
         return item.getId()
 
     def add(self, item):
-        # To be consistent with python set, do not overwrite existing items
+        """
+        Add item to set
+
+        To be consistent with python set, do not overwrite existing items
+        """
+
         if not self.__contains__(item):
             self.__items[self.__item_key(item)] = item
 
     def remove(self, item):
+        """
+        Remove item from set
+        """
+
         del self.__items[self.__item_key(item)]
 
     def update(self, items):
+        """
+        Add a collection of items to the set
+
+        Unlike add, update overwrites existing items
+        """
+
         for item in items:
-            # Unlike add, update overwrites existing items
             self.__items[self.__item_key(item)] = item
 
-    def union(self, s):
-        # To be consistent with python set, self overrides s
+    def union(self, other):
+        """
+        Union of this set with specified other set
+
+        To be consistent with python set, self overrides other
+        """
+
         uni = BlitzSet()
-        uni.__items = dict(s.__items, **self.__items)
+        uni.__items = dict(other.__items, **self.__items)
         return uni
 
-    def __or__(self, s):
-        return self.union(s)
+    def __or__(self, other):
+        """
+        Union using || operator
+        """
 
-    def intersection(self, s):
-        # To be consistent with python set, shorter list overrides
-        # or s if equal length
+        return self.union(other)
+
+    def intersection(self, other):
+        """
+        Intersection of this set with specified other set
+
+        To be consistent with python set, shorter list overrides
+        or the other set if equal length
+        """
 
         # Determine shorter list for iteration
-        if len(self.__items) < len(s.__items):
+        if len(self.__items) < len(other.__items):
             s1 = self.__items
-            s2 = s.__items
+            s2 = other.__items
         else:
-            s1 = s.__items
+            s1 = other.__items
             s2 = self.__items
 
         # Compute the intersection
@@ -116,27 +192,47 @@ class BlitzSet(object):
                 inter.add(s1[k])
         return inter
 
-    def __and__(self, s):
-        return self.intersection(s)
+    def __and__(self, other):
+        """
+        Intersection using && operator
+        """
 
-    def difference(self, s):
+        return self.intersection(other)
+
+    def difference(self, other):
+        """
+        Difference of this set and specified other set
+        """
+
         inter = BlitzSet()
         for k in self.__items.iterkeys():
-            if k not in s.__items:
+            if k not in other.__items:
                 inter.add(self.__items[k])
         return inter
 
-    def __sub__(self, s):
-        return self.difference(s)
+    def __sub__(self, other):
+        """
+        Difference using - operator
+        """
 
-    def symmetric_difference(self, s):
+        return self.difference(other)
+
+    def symmetric_difference(self, other):
+        """
+        Symmetric difference of this set and specified other set
+        """
+
         # TODO Performance wise, probably not optimal
-        diff1 = self.difference(s)
-        diff2 = s.difference(self)
+        diff1 = self.difference(other)
+        diff2 = other.difference(self)
         return diff1.union(diff2)
 
-    def __xor__(self, s):
-        return self.symmetric_difference(s)
+    def __xor__(self, other):
+        """
+        Symmetric difference using ^ operator
+        """
+
+        return self.symmetric_difference(other)
 
     def __str__(self):
         return str(self.__items.values())
@@ -146,3 +242,6 @@ class BlitzSet(object):
 
     def __iter__(self):
         return self.__items.itervalues()
+
+    def __len__(self):
+        return len(self.__items)
