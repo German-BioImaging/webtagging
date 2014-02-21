@@ -26,8 +26,8 @@
                              {% if header.is_enabled %}
                                 <span class="tooltip_html" style="display: none;">
                                     <b>ID:</b> {{ header.single_tag.getId }}<br>
-                                    <b>Description:</b> {{ header.single_tag.getId.getDescription }}<br>
-                                    <b>Owner:</b> {{ header.single_tag.getId.getOwnerFullName }}
+                                    <b>Description:</b> {{ header.single_tag.getDescription }}<br>
+                                    <b>Owner:</b> {{ header.single_tag.getOwnerFullName }}
                                 </span>
                             {% endif %}
 
@@ -48,7 +48,14 @@
                 <th class="unmatchedTag" data-tagname="{{ header.tag.getValue }}">
                     <div class="tag">
                         <span style="position: relative;">
-                            <a class="tag_inner tag_unmatched">{{ header.tag.getValue }}</a>
+                            <a class="tag_inner tag_unmatched tooltip">{{ header.tag.getValue }}</a>
+
+                            <span class="tooltip_html" style="display: none;">
+                                <b>ID:</b> {{ header.tag.getId }}<br>
+                                <b>Description:</b> {{ header.tag.getDescription }}<br>
+                                <b>Owner:</b> {{ header.tag.getOwnerFullName }}
+                            </span>
+
                         </span>
                         <input class="imagechecked-all" type="checkbox" {% if header.is_checked %} checked{% endif %}/>
                     </div>
