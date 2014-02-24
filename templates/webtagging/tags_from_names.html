@@ -335,6 +335,9 @@ $(function(){
             check = true;
         }
 
+        //TODO This operation is being executed for the th as well as all the tds, this
+        // does not do any harm, but it accomplishes nothing.
+        
         OME.column_operation($(this), function(cell) {
             $(cell).children('.imagechecked').prop('checked',check);
         });
@@ -348,14 +351,16 @@ $(function(){
             check = true;
         }
 
-        // TODO Refactor using column_operation
+        // This can not be refactored into column_operation as
+        // it is a series of checks followed by one operation
+        // rather than a series of operations on each td in a
+        // column.
 
         // Create variables holding all the td elements so that this can be used to calculate the index
         var $td = $(this).parents('tr').children('td');
         // Get the position of the td element in which the selector is
         var $tdUpdated = $(this).parents('td');
         var colIndex = $td.index( $tdUpdated );
-
         
         // Check the other tds in this column for fully-checked status
         if (check) {
@@ -398,20 +403,23 @@ $(function(){
     // Update the selections and checked states for a column
     mappingChangeUpdate = function(tagId, tokenName, $thUpdated){
 
-        //TODO Refactor using column_operation
-
-        // Create variables holding all the th elements so that this can be used to calculate the index
-        var $th = $('#token-table > thead > tr > th');
-        var $rows = $('#token-table > tbody > tr');
-        // Get the position of the th element in which the selector is
-        var colIndex = $th.index( $thUpdated );
-
         // Enable/Disable 'all' checkboxes
         if (tagId) {
             $thUpdated.find('.imagechecked-all').prop('disabled', false);
         } else {
             $thUpdated.find('.imagechecked-all').prop('disabled', true);
         }
+
+        // This can not be refactored into column_operation as
+        // it is a series of checks followed by some operations
+        // rather than a series of operations on each td in a
+        // column.
+
+        // Create variables holding all the th elements so that this can be used to calculate the index
+        var $th = $('#token-table > thead > tr > th');
+        var $rows = $('#token-table > tbody > tr');
+        // Get the position of the th element in which the selector is
+        var colIndex = $th.index( $thUpdated );
 
         var allSelected = true;
         // For each row
