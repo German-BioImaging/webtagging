@@ -48,8 +48,11 @@ $(function(){
             imageIds.push($(v).data('imageid'));
         });
 
-        var datasetId = $("body").data("selected_objects.ome")[0].id
-        var oid = datasetId.split('dataset-')[1];
+        // This uses the dataset selected and save as 'rel'
+        // Not blindly using the current tree selection which
+        // could be an image or dataset
+        var crel = $("div#auto_tag_panel").attr('rel');
+        var oid = crel.split("-")[1];
 
         var params = "";
         var first = true;
