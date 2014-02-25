@@ -147,7 +147,39 @@ $(function(){
                 }
    
             }
-  
+
+            // Determine if any of the currently selected images was modified
+            // as this necessitates an update of the right-hand panel.
+
+            // this may have been called before datatree was initialised...
+            var datatree = $.jstree._focused();
+            if (datatree) {
+                // we use the tree to access selected objects, since we can traverse to check parents etc...
+                var selected = datatree.data.ui.selected;
+
+                // For each selection, ensure it is an image
+                selected.filter( "li:[id|=image]" ).each(function(k,v) {
+                    var s = $(v).attr('id').split("-")[1];
+                    for (var i in data.additions) {
+                        var imageId = data.additions[i][0];
+                        if (imageId == s) {
+                            // Trigger the right-panel update
+                            $("body").trigger("selection_change.ome");
+                            return;
+                        }
+                    }
+                    for (var i in data.removals) {
+                        var imageId = data.removals[i][0];
+                        if (imageId == s) {
+                            // Trigger the right-panel update
+                            $("body").trigger("selection_change.ome");
+                            return;
+                        }
+                    }
+
+                });
+            }
+
             $submitButton.removeAttr('disabled');
         }
     });
