@@ -1,4 +1,5 @@
 import omero
+import os
 from omero.rtypes import rlong
 
 def parse_path(path):
@@ -82,6 +83,26 @@ def createTagAnnotationsLinks(conn, additions=[], removals=[]):
         for link in links:
             if (link.parent.id.val, link.child.id.val) in removalsCheck:
                 conn.deleteObjectDirect(link._obj)
+
+
+class ImageWrapper (omero.gateway.ImageWrapper):
+    """
+    omero_model_ImageI class wrapper overwrite omero.gateway.ImageWrapper
+    """
+
+    def getClientPath(self):
+        qs = self._conn.getQueryService()
+        params = omero.sys.ParametersI()
+        params.addLong("iid", self.getId())
+        query = "select fse from FilesetEntry fse join fse.fileset as fs "\
+                "left outer join fs.images as image where image.id=:iid"
+        r = qs.findAllByQuery(query, params, self._conn.SERVICE_OPTS)
+        paths = [fs.clientPath.val for fs in r]
+        path = os.path.commonprefix(paths)
+        return path
+
+# Update the ref to ImageWrapper in BlitzGateway
+omero.gateway.ImageWrapper = ImageWrapper
 
 
 class BlitzSet(object):
