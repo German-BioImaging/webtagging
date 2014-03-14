@@ -96,9 +96,14 @@ class ImageWrapper (omero.gateway.ImageWrapper):
         params.addLong("iid", self.getId())
         query = "select fse from FilesetEntry fse join fse.fileset as fs "\
                 "left outer join fs.images as image where image.id=:iid"
-        r = qs.findAllByQuery(query, params, self._conn.SERVICE_OPTS)
-        paths = [fs.clientPath.val for fs in r]
-        path = os.path.commonprefix(paths)
+
+        # this could be OMERO 4, so handle that
+        try:
+            r = qs.findAllByQuery(query, params, self._conn.SERVICE_OPTS)
+            paths = [fs.clientPath.val for fs in r]
+            path = os.path.commonprefix(paths)
+        except:
+            path = ""
         return path
 
 # Update the ref to ImageWrapper in BlitzGateway
