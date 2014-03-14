@@ -493,6 +493,10 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
         name = image.getName()
  
         pt, ft, et = parse_path(name)
+
+        if len(pt) == 0:
+            clientPath = image.getClientPath()
+            pt = clientPath.split(r'/')[0:-1]
         
         # Do discards
         #TODO Incredibly primitive, replace with much, much smarter discarding
