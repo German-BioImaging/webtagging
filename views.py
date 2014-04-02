@@ -42,7 +42,15 @@ class TagSearchFormView(FormView):
         kwargs = super(TagSearchFormView, self).get_form_kwargs()
 
         # Get all images
-        images = list(self.conn.getObjects("Image"))
+        # images = list(self.conn.getObjects("Image"))
+
+        hql = "select annLink from ImageAnnotationLink as annLink " \
+              "join fetch annLink.child as ann " \
+              "where ann.class = TagAnnotation"
+        params = Parameters()
+        qs = self.conn.getQueryService()
+        # TODO Investigate how big returned data is for large datasets?
+        ann_links = qs.findAllByQuery(hql, params)
 
         # TODO If there are huge number of tags and images, could look at
         # avoiding duplication temporarily by using a generator. Probably if
@@ -50,19 +58,24 @@ class TagSearchFormView(FormView):
         self.tag_intersections = {}
         tags = set()
 
-        # Get tags in those images
-        for image in images:
-            # Turn only the TagAnnotations into a set
-            tag_ids_in_image = set([])
-            for tag in image.listAnnotations():
-                if isinstance(tag, TagAnnotationWrapper):
-                    tag_ids_in_image.add(tag.getId())
-                    tags.add((tag.getId(), tag.getValue()))
+        # Build a mapping of images to tags and update the tag set
+        images = {}
+        for ann_link in ann_links:
+            images.setdefault(
+                ann_link.getParent().getId().val,
+                set([])
+            ).add(ann_link.getChild().getId().val)
+
+            tags.add( (ann_link.getChild().getId().val,
+                       ann_link.child.getTextValue().val) )
+
+        # Use the mapping to add the intersections
+        for image_id, image_tag_ids in images.iteritems():
             # For each item in the set, append all the other items to it's entry
-            for tag_id in tag_ids_in_image:
+            for tag_id in image_tag_ids:
                 # Add the other tags to the set of intersections for this tag
                 self.tag_intersections.setdefault(tag_id, set([])).update(
-                    tag_ids_in_image.symmetric_difference([tag_id]))
+                    image_tag_ids.symmetric_difference([tag_id]))
 
         # Get tags
         # tags = list(self.conn.getObjects("TagAnnotation"))
