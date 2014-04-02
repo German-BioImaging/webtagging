@@ -41,41 +41,44 @@ class TagSearchFormView(FormView):
     def get_form_kwargs(self):
         kwargs = super(TagSearchFormView, self).get_form_kwargs()
 
-        # Get all images
-        # images = list(self.conn.getObjects("Image"))
-
-        hql = "select annLink from ImageAnnotationLink as annLink " \
-              "join fetch annLink.child as ann " \
-              "where ann.class = TagAnnotation"
-        params = Parameters()
-        qs = self.conn.getQueryService()
-        # TODO Investigate how big returned data is for large datasets?
-        ann_links = qs.findAllByQuery(hql, params)
-
-        # TODO If there are huge number of tags and images, could look at
-        # avoiding duplication temporarily by using a generator. Probably if
-        # that is the case, a whole new approach will be needed anyway.
         self.tag_intersections = {}
         tags = set()
 
-        # Build a mapping of images to tags and update the tag set
-        images = {}
-        for ann_link in ann_links:
-            images.setdefault(
-                ann_link.getParent().getId().val,
-                set([])
-            ).add(ann_link.getChild().getId().val)
+        params = Parameters()
+        qs = self.conn.getQueryService()
 
-            tags.add( (ann_link.getChild().getId().val,
-                       ann_link.child.getTextValue().val) )
+        def process_links(class_name):
 
-        # Use the mapping to add the intersections
-        for image_id, image_tag_ids in images.iteritems():
-            # For each item in the set, append all the other items to it's entry
-            for tag_id in image_tag_ids:
-                # Add the other tags to the set of intersections for this tag
-                self.tag_intersections.setdefault(tag_id, set([])).update(
-                    image_tag_ids.symmetric_difference([tag_id]))
+            hql = "select annLink from %sAnnotationLink as annLink " \
+                  "join fetch annLink.child as ann " \
+                  "where ann.class = TagAnnotation" % class_name
+            # TODO Investigate how big returned data is for large datasets?
+            ann_links = qs.findAllByQuery(hql, params)
+
+            # Build a mapping of images to tags and update the tag set
+            containers = {}
+
+            for ann_link in ann_links:
+                containers.setdefault(
+                    ann_link.getParent().getId().val,
+                    set([])
+                ).add(ann_link.getChild().getId().val)
+
+                tags.add( (ann_link.getChild().getId().val,
+                           ann_link.child.getTextValue().val) )
+
+            # Use the mapping to add the intersections
+            for container_id, container_tag_ids in containers.iteritems():
+                # For each item in the set, append all the other items to it's entry
+                for tag_id in container_tag_ids:
+                    # Add the other tags to the set of intersections for this tag
+                    self.tag_intersections.setdefault(tag_id, set([])).update(
+                        container_tag_ids.symmetric_difference([tag_id]))
+
+        # There is no hibernate union, so it is necessary to do 3 queries
+        process_links('Image')
+        process_links('Dataset')
+        process_links('Project')
 
         # Get tags
         # tags = list(self.conn.getObjects("TagAnnotation"))
