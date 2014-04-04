@@ -153,4 +153,37 @@ def tag_image_search(request, conn=None, **kwargs):
 
         html_response = render_to_string("webtagging_search/image_results.html", context)
 
-        return {"navdata": [1,2,3,4,5], "html": html_response}
+
+        # Calculate remaining possible tag navigations
+        # TODO Remove above queries and instead use/modify this query to get
+        # the data
+        annids = selected_tags
+
+        sub_hql = "select parent from ImageAnnotationLink link " \
+                  "join link.child as child " \
+                  "join link.parent as parent " \
+                  "where child.id in (:oids) " \
+                  "group by parent.id " \
+                  "having count(link) = %s" % len(annids)
+
+        hql = "select image from Image image " \
+              "join fetch image.annotationLinks as annLink " \
+              "join fetch annLink.child as ann " \
+              "where image in (%s)" % sub_hql
+
+
+        params = Parameters()
+        params.map = {}
+        params.map["oids"] = rlist([rlong(o) for o in set(annids)])
+
+        qs = conn.getQueryService()
+        results = qs.findAllByQuery(hql, params)
+
+        # Calculate the remaining possible tags
+        remaining = set([])
+        for result in results:
+            for ann in result.iterateAnnotationLinks():
+                remaining.add(ann.getChild().getId().val)
+
+        # Return the navigation data and the html preview for display
+        return {"navdata": list(remaining), "html": html_response}

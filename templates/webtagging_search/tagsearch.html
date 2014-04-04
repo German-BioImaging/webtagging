@@ -26,6 +26,18 @@
       success: function(data) {
         $("#searchResults").html(data.html);
         $submitButton.removeAttr('disabled');
+
+        console.log('removing all but:')
+        console.log(data.navdata)
+        // Hide any options that are no longer possible
+        $("#id_selectedTags option").each(function(){
+          if ($.inArray(parseInt(this.value), data.navdata) == -1) {
+            $(this).hide();
+          }
+        });
+        
+        // Update the chosen selector
+        $("#id_selectedTags").trigger("chosen:updated");
       }
     });
 
@@ -37,16 +49,16 @@
       if (params.selected) {
 
         // Hide any options which do not intersect with the resulting selectTags set
-        var doNotHide = tagIntersections[params.selected];
+        // var doNotHide = tagIntersections[params.selected];
         // Don't hide the item that was just selected either
-        doNotHide.push(parseInt(params.selected))
+        // doNotHide.push(parseInt(params.selected))
 
-        // Find any options not in the doNotHide list and hide them
-        $("#id_selectedTags option").each(function(){
-          if ($.inArray(parseInt(this.value), doNotHide) == -1) {
-            $(this).hide();
-          }
-        });
+        // // Find any options not in the doNotHide list and hide them
+        // $("#id_selectedTags option").each(function(){
+        //   if ($.inArray(parseInt(this.value), doNotHide) == -1) {
+        //     $(this).hide();
+        //   }
+        // });
 
       $("#tagSearchForm").submit();
 
