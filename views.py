@@ -109,7 +109,7 @@ class TagSearchFormView(FormView):
         return super(TagSearchFormView, self).dispatch(*args, **kwargs)
 
 @login_required(setGroupContext=True)
-@render_response()
+# @render_response()
 def tag_image_search(request, conn=None, **kwargs):
     if request.method == "POST":
 
@@ -192,4 +192,4 @@ def tag_image_search(request, conn=None, **kwargs):
         logger.error("HERE3")
         # Return the navigation data and the html preview for display
         # return {"navdata": list(remaining), "html": html_response}
-        return {"navdata": [1,2,3], "html": html_response}
+        return HttpResponse(json.dumps({"navdata": [1,2,3], "html": html_response}), content_type="application/json")
