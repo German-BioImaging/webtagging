@@ -190,12 +190,14 @@ def tag_image_search(request, conn=None, **kwargs):
         inter2 = time.time()
         results = qs.findAllByQuery(hql, params)
         
+        
         # Calculate the remaining possible tags
         remaining = set([])
+        """
         for result in results:
             for ann in result.iterateAnnotationLinks():
                 remaining.add(ann.getChild().getId().val)
-
+        """
         end = time.time()
 
         logger.error('query: %s' % (inter1 - start))
