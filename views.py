@@ -187,4 +187,4 @@ def tag_image_search(request, conn=None, **kwargs):
         """
         # Return the navigation data and the html preview for display
         # return {"navdata": list(remaining), "html": html_response}
-        return {"navdata": [], "html": html_response}
+        return {"navdata": [1,2,3], "html": html_response}
