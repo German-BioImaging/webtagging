@@ -187,20 +187,19 @@ def tag_image_search(request, conn=None, **kwargs):
         params.map["oids"] = rlist([rlong(o) for o in set(annids)])
 
         qs = conn.getQueryService()
-        inter2 = time.time()
         results = qs.findAllByQuery(hql, params)
-        
+        inter2 = time.time()
         
         # Calculate the remaining possible tags
         remaining = set([])
-        """
+        
         for result in results:
             for ann in result.iterateAnnotationLinks():
                 remaining.add(ann.getChild().getId().val)
-        """
+        
         end = time.time()
 
-        logger.error('query: %s' % (inter1 - start))
+        logger.error('results: %s' % (inter1 - start))
         logger.error('query: %s' % (inter2 - inter1))
         logger.error('processing: %s' % (end - inter2))
 
