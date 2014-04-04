@@ -153,9 +153,7 @@ def tag_image_search(request, conn=None, **kwargs):
                     projects = conn.getObjects('Project', ids = project_ids)
                     context['projects'] = [{ 'id':x.getId(), 'name':x.getName() } for x in projects]
 
-        logger.error("HERE1")
         html_response = render_to_string("webtagging_search/image_results.html", context)
-        logger.error("HERE2")
 
         
         # Calculate remaining possible tag navigations
@@ -175,7 +173,6 @@ def tag_image_search(request, conn=None, **kwargs):
               "join fetch annLink.child as ann " \
               "where image in (%s)" % sub_hql
 
-
         params = Parameters()
         params.map = {}
         params.map["oids"] = rlist([rlong(o) for o in set(annids)])
@@ -188,8 +185,7 @@ def tag_image_search(request, conn=None, **kwargs):
         for result in results:
             for ann in result.iterateAnnotationLinks():
                 remaining.add(ann.getChild().getId().val)
-        
-        logger.error("HERE3")
+
         # Return the navigation data and the html preview for display
         # return {"navdata": list(remaining), "html": html_response}
-        return HttpResponse(json.dumps({"navdata": [1,2,3], "html": html_response}), content_type="application/json")
+        return HttpResponse(json.dumps({"navdata": list(remaining), "html": html_response}), content_type="application/json")
