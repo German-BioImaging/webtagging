@@ -200,7 +200,7 @@ def tag_image_search(request, conn=None, **kwargs):
 
         logger.error('query: %s' % (inter1 - start))
         logger.error('query: %s' % (inter2 - inter1))
-        logger.error('processing: %s' % (end - inter))
+        logger.error('processing: %s' % (end - inter2))
 
         # Return the navigation data and the html preview for display
         # return {"navdata": list(remaining), "html": html_response}
