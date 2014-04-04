@@ -24,7 +24,7 @@
         $submitButton.attr('disabled', true);
       },
       success: function(data) {
-        $("#searchResults").html(data);
+        $("#searchResults").html(data.html);
         $submitButton.removeAttr('disabled');
       }
     });
@@ -32,7 +32,7 @@
 
     // Selection change
     $( "#id_selectedTags" ).chosen().change(function(event, params) {
-
+      
       // Selection made
       if (params.selected) {
 
@@ -47,6 +47,8 @@
             $(this).hide();
           }
         });
+
+      $("#tagSearchForm").submit();
 
       // Deselection made
       } else if (params.deselected) {

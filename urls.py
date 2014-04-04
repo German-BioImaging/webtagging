@@ -6,6 +6,6 @@ urlpatterns = patterns('django.views.generic.simple',
 
     # index 'home page' of the webtagging app
     url( r'^$', views.TagSearchFormView.as_view(), name='wtsindex' ),
-    url( r'^images$', views.TagImageSearchView.as_view(), name='wtsimages' ),
+    url( r'^images$', views.tag_image_search, name='wtsimages' ),
     
 )

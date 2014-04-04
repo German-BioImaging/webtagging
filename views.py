@@ -1,10 +1,13 @@
 import json
 
 from django.http import HttpResponse
+from omeroweb.webclient.decorators import login_required, render_response
 from django.views.generic.base import View
 from django.views.generic import TemplateView, FormView
 from django.utils.decorators import method_decorator
 from django.core.urlresolvers import reverse
+from django.shortcuts import render, render_to_response
+from django.template.loader import render_to_string
 
 from omeroweb.webclient.decorators import render_response, login_required
 from omero.gateway import TagAnnotationWrapper
@@ -103,21 +106,15 @@ class TagSearchFormView(FormView):
         self.conn = kwargs.get('conn', None)
         return super(TagSearchFormView, self).dispatch(*args, **kwargs)
 
+@login_required(setGroupContext=True)
+@render_response()
+def tag_image_search(request, conn=None, **kwargs):
+    if request.method == "POST":
 
-class TagImageSearchView(TemplateView):
-    template_name = 'webtagging_search/image_results.html'
-
-    # def get(self, request, *args, **kwargs):
-    #     print('Probably should never be GET here')
-    #     print('get args: %s' %  request.POST['selectedTags'])
-    #     context = self.get_context_data(**kwargs)
-    #     return self.sender_to_response(context)
-
-    def post(self, request, *args, **kwargs):
         selected_tags = [long(x) for x in request.POST.getlist('selectedTags')]
         results_preview = bool(request.POST.get('results_preview'))
 
-        def getObjectsWithAllAnnotations(conn, obj_type, annids):
+        def getObjectsWithAllAnnotations(obj_type, annids):
             # Get the images that match
             hql = "select link.parent.id from %sAnnotationLink link " \
                   "inner join link.child as ann " \
@@ -131,35 +128,29 @@ class TagImageSearchView(TemplateView):
             qs = conn.getQueryService()
             return [x[0].getValue() for x in qs.projection(hql,params)]
 
-        context = self.get_context_data(**kwargs)
+        context = {}
         if selected_tags:
-            image_ids = getObjectsWithAllAnnotations(self.conn, 'Image', selected_tags)
+            image_ids = getObjectsWithAllAnnotations('Image', selected_tags)
             context['image_count'] = len(image_ids)
-            dataset_ids = getObjectsWithAllAnnotations(self.conn, 'Dataset', selected_tags)
+            dataset_ids = getObjectsWithAllAnnotations('Dataset', selected_tags)
             context['dataset_count'] = len(dataset_ids)
-            project_ids = getObjectsWithAllAnnotations(self.conn, 'Project', selected_tags)
+            project_ids = getObjectsWithAllAnnotations('Project', selected_tags)
             context['project_count'] = len(project_ids)
 
 
             if results_preview:
                 if image_ids:
-                    images = self.conn.getObjects('Image', ids = image_ids)
+                    images = conn.getObjects('Image', ids = image_ids)
                     context['images'] = [ { 'id':x.getId(), 'name':x.getName() } for x in images]
 
                 if dataset_ids:
-                    datasets = self.conn.getObjects('Dataset', ids = dataset_ids)
+                    datasets = conn.getObjects('Dataset', ids = dataset_ids)
                     context['datasets'] = [{ 'id':x.getId(), 'name':x.getName() } for x in datasets]
 
                 if project_ids:
-                    projects = self.conn.getObjects('Project', ids = project_ids)
+                    projects = conn.getObjects('Project', ids = project_ids)
                     context['projects'] = [{ 'id':x.getId(), 'name':x.getName() } for x in projects]
 
-        print 'returning'
-        return self.render_to_response(context)
+        html_response = render_to_string("webtagging_search/image_results.html", context)
 
-    @method_decorator(login_required(setGroupContext=True))
-    def dispatch(self, *args, **kwargs):
-        # Get OMERO connection
-        self.conn = kwargs.get('conn', None)
-        return super(TagImageSearchView, self).dispatch(*args, **kwargs)
-
+        return {"navdata": [1,2,3,4,5], "html": html_response}
