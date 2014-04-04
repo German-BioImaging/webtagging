@@ -177,7 +177,7 @@ def tag_image_search(request, conn=None, **kwargs):
         params.map["oids"] = rlist([rlong(o) for o in set(annids)])
 
         qs = conn.getQueryService()
-        results = qs.findAllByQuery(hql, params)
+        # results = qs.findAllByQuery(hql, params)
         """
         # Calculate the remaining possible tags
         remaining = set([])
