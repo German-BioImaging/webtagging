@@ -156,6 +156,13 @@ def tag_image_search(request, conn=None, **kwargs):
         html_response = render_to_string("webtagging_search/image_results.html", context)
 
         
+        import time
+
+        start = time.time()
+
+        
+        
+
         # Calculate remaining possible tag navigations
         # TODO Remove above queries and instead use/modify this query to get
         # the data
@@ -178,6 +185,7 @@ def tag_image_search(request, conn=None, **kwargs):
         params.map["oids"] = rlist([rlong(o) for o in set(annids)])
 
         qs = conn.getQueryService()
+        inter = time.time()
         results = qs.findAllByQuery(hql, params)
         
         # Calculate the remaining possible tags
@@ -185,6 +193,11 @@ def tag_image_search(request, conn=None, **kwargs):
         for result in results:
             for ann in result.iterateAnnotationLinks():
                 remaining.add(ann.getChild().getId().val)
+
+        end = time.time()
+
+        logger.error('query: %s' % (inter - start))
+        logger.error('processing: %s' % (end - inter))
 
         # Return the navigation data and the html preview for display
         # return {"navdata": list(remaining), "html": html_response}
