@@ -18,7 +18,7 @@
 
     var $submitButton = $("#tagSearchForm input[type='submit']");
     // Form Submission
-    $("#tagSearchForm").ajaxForm({
+    $("#tagSearchForm").ajaxForm({  
       beforeSubmit: function() {
         // prevent submitting the form again while waiting
         $submitButton.attr('disabled', true);
@@ -158,7 +158,7 @@
 
 <h1>Tag Search Prototype</h1>
 <h3>Note on search responsiveness:</h3>
-<p>Currently, on first load of this page, the intersection set for all possible tags that the user can access is calculated, so this may be a little slow. Once on the page though, this should facilitate quick construction of tag search criteria.</p>
+<p>Each item added to the search criteria further reduces the search space and will be therefore more responsive, so it is desirable to pick criteria that refine the search space more significantly towards the beginning.</p>
 <p>On form submit, the number of projects/datasets/images that match the search are returned. The results preview will (on submit) grab the names of the projects/datasets/images as well as the counts.</p>
 
 <p>The larger the number of images that contain a set of tags, the slower the counts query will be, so it is always beneficial to add the least common tags as early in the search as possible. E.g. if you have a tag 'processed' which you apply to all processed images, this will likely be on a great deal of images. Say the objective of the search is to initially find processed images which have been selected for publication and then whittle down from there. As the 'selected' tag will likely have less images than 'processed', it will give a good performance benefit to select this first.</p>

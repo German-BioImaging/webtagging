@@ -1,7 +1,6 @@
 import json
 
 from django.http import HttpResponse
-from omeroweb.webclient.decorators import login_required, render_response
 from django.views.generic.base import View
 from django.views.generic import TemplateView, FormView
 from django.utils.decorators import method_decorator
