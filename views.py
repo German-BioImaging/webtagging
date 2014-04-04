@@ -15,6 +15,9 @@ from omero.rtypes import rlong, rlist
 
 from .forms import TagSearchForm
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class TagSearchFormView(FormView):
     """
@@ -150,7 +153,9 @@ def tag_image_search(request, conn=None, **kwargs):
                     projects = conn.getObjects('Project', ids = project_ids)
                     context['projects'] = [{ 'id':x.getId(), 'name':x.getName() } for x in projects]
 
+        logger.error("HERE1")
         html_response = render_to_string("webtagging_search/image_results.html", context)
+        logger.error("HERE2")
 
         """
         # Calculate remaining possible tag navigations
