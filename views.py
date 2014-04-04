@@ -157,7 +157,7 @@ def tag_image_search(request, conn=None, **kwargs):
         html_response = render_to_string("webtagging_search/image_results.html", context)
         logger.error("HERE2")
 
-        """
+        
         # Calculate remaining possible tag navigations
         # TODO Remove above queries and instead use/modify this query to get
         # the data
@@ -188,7 +188,8 @@ def tag_image_search(request, conn=None, **kwargs):
         for result in results:
             for ann in result.iterateAnnotationLinks():
                 remaining.add(ann.getChild().getId().val)
-        """
+        
+        logger.error("HERE3")
         # Return the navigation data and the html preview for display
         # return {"navdata": list(remaining), "html": html_response}
         return {"navdata": [1,2,3], "html": html_response}
