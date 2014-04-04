@@ -31,6 +31,8 @@
         $("#id_selectedTags option").each(function(){
           if ($.inArray(parseInt(this.value), data.navdata) == -1) {
             $(this).hide();
+          } else {
+            $(this).css('display', '');
           }
         });
 
@@ -47,63 +49,29 @@
       if (params.selected) {
 
         // Hide any options which do not intersect with the resulting selectTags set
-        // var doNotHide = tagIntersections[params.selected];
-        // Don't hide the item that was just selected either
-        // doNotHide.push(parseInt(params.selected))
 
-        // // Find any options not in the doNotHide list and hide them
-        // $("#id_selectedTags option").each(function(){
-        //   if ($.inArray(parseInt(this.value), doNotHide) == -1) {
-        //     $(this).hide();
-        //   }
-        // });
-
-      $("#tagSearchForm").submit();
+        $("#tagSearchForm").submit();
 
       // Deselection made
       } else if (params.deselected) {
 
-        // Get the list of remaining selections
-        var remainingSelected = $(this).val();
+        $("#tagSearchForm").submit();
 
-        // Only if there are still selected tags
-        if (remainingSelected) {
-          var doNotHide = [];
-          for (var i=0; i<remainingSelected.length; i++) {
-            // In order for selectedIntersection to exist outside of this function it needs to be previously declared
-            // Thus the first intersection would always return nothing unless it is special cased
-            if (i==0) {
-              doNotHide = tagIntersections[remainingSelected[i]];
-            } else {
-              doNotHide = $.intersect(doNotHide, tagIntersections[remainingSelected[i]]);
-            }
+      // If there are no remaining selected tags then nothing should be hidden
+      } else {
+        //Unhide all
+        $("#id_selectedTags option").each(function(){
+          if ($(this).css("display") == 'none') {
+            // $(this).show(); // This results in display:inline which breaks the formatting
+            $(this).css('display', '');
           }
 
-          // Unhide any tags on the doNotHide list
-          for (var i = 0; i < doNotHide.length; i++) {
-            // Only 'show' hidden options
-            if ($('#id_selectedTags option[value="' + doNotHide[i] +  '"]').css("display") == 'none') {
-              // $('#id_selectedTags option[value="' + doNotHide[i] +  '"]').show(); // This results in display:inline which breaks the formatting
-              $('#id_selectedTags option[value="' + doNotHide[i] +  '"]').css('display', '');
-            }
-          }
-
-        // If there are no remaining selected tags then nothing should be hidden
-        } else {
-          //Unhide all
-          $("#id_selectedTags option").each(function(){
-            // Only 'show' hidden options
-            if ($(this).css("display") == 'none') {
-              // $(this).show(); // This results in display:inline which breaks the formatting
-              $(this).css('display', '');
-            }
-
-          });
-        }
+        });
+        //TODO Remove preview
       }
 
       // Update the chosen selector
-      $("#id_selectedTags").trigger("chosen:updated");
+      // $("#id_selectedTags").trigger("chosen:updated");
     });
   });
 </script>
