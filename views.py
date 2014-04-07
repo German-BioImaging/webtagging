@@ -42,7 +42,10 @@ class TagSearchFormView(FormView):
         # It is not sufficient to simply get the objects as there may be tags
         # which are not applied which don't really make sense to display
         # tags = list(self.conn.getObjects("TagAnnotation"))
-        hql = "select distinct link.child.id, link.child.textValue from ImageAnnotationLink link"
+        hql = "select distinct link.child.id, link.child.textValue " \
+              "from ImageAnnotationLink link " \
+              "where link.child.class is TagAnnotation " \
+              "order by link.child.textValue"
         tags = [(result[0].val, result[1].val) for result in qs.projection(hql, params)]
 
         # Sort tags
