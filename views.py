@@ -29,71 +29,29 @@ class TagSearchFormView(FormView):
     def get_success_url(self):
         return reverse('wtsindex')
 
-    def get_context_data(self, **kwargs):
-        context = super(TagSearchFormView, self).get_context_data(**kwargs)
-
-        from json import JSONEncoder
-        class JSONSetEncoder(JSONEncoder):
-            def default(self, obj):
-                if isinstance(obj, set):
-                    return list(obj)
-                return JSONEncoder.default(self, obj)
-
-        context['tag_intersections'] = json.dumps(self.tag_intersections, cls=JSONSetEncoder)
-        return context
-
-
     def get_form_kwargs(self):
         kwargs = super(TagSearchFormView, self).get_form_kwargs()
 
-        self.tag_intersections = {}
-        tags = set()
+        # List of tuples (id, value)
+        tags = []
 
         params = Parameters()
         qs = self.conn.getQueryService()
 
-        def process_links(class_name):
-
-            hql = "select annLink from %sAnnotationLink as annLink " \
-                  "join fetch annLink.child as ann " \
-                  "where ann.class = TagAnnotation" % class_name
-            # TODO Investigate how big returned data is for large datasets?
-            ann_links = qs.findAllByQuery(hql, params)
-
-            # Build a mapping of images to tags and update the tag set
-            containers = {}
-
-            for ann_link in ann_links:
-                containers.setdefault(
-                    ann_link.getParent().getId().val,
-                    set([])
-                ).add(ann_link.getChild().getId().val)
-
-                tags.add( (ann_link.getChild().getId().val,
-                           ann_link.child.getTextValue().val) )
-
-            # Use the mapping to add the intersections
-            for container_id, container_tag_ids in containers.iteritems():
-                # For each item in the set, append all the other items to it's entry
-                for tag_id in container_tag_ids:
-                    # Add the other tags to the set of intersections for this tag
-                    self.tag_intersections.setdefault(tag_id, set([])).update(
-                        container_tag_ids.symmetric_difference([tag_id]))
-
-        # There is no hibernate union, so it is necessary to do 3 queries
-        process_links('Image')
-        process_links('Dataset')
-        process_links('Project')
-
         # Get tags
+        # It is not sufficient to simply get the objects as there may be tags
+        # which are not applied which don't really make sense to display
         # tags = list(self.conn.getObjects("TagAnnotation"))
-        # Convert the set to a list so it can be sorted
-        tags = list(tags)
+        hql = "select distinct link.child.id, link.child.textValue from ImageAnnotationLink link"
+        tags = [(result[0].val, result[1].val) for result in qs.projection(hql, params)]
+
         # Sort tags
+        # TODO Should be able to do this in the database query but for some 
+        # reason using lower on the order by requires that the select also be
+        # lower.
         tags.sort(key=lambda x: x[1].lower())
 
         kwargs['tags'] = tags
-        # kwargs['tag_intersections'] = tag_intersections
         kwargs['conn'] = self.conn
         return kwargs
 
@@ -109,6 +67,8 @@ class TagSearchFormView(FormView):
         return super(TagSearchFormView, self).dispatch(*args, **kwargs)
 
 @login_required(setGroupContext=True)
+# TODO Figure out what happened to render_response as it wasn't working on
+# production
 # @render_response()
 def tag_image_search(request, conn=None, **kwargs):
     if request.method == "POST":
@@ -129,10 +89,6 @@ def tag_image_search(request, conn=None, **kwargs):
 
             qs = conn.getQueryService()
             return [x[0].getValue() for x in qs.projection(hql,params)]
-
-        import time
-
-        start = time.time()
 
         context = {}
         if selected_tags:
@@ -159,59 +115,28 @@ def tag_image_search(request, conn=None, **kwargs):
 
         html_response = render_to_string("webtagging_search/image_results.html", context)
 
-
-        inter1 = time.time()
-
-        
-        
-
         # Calculate remaining possible tag navigations
-        # TODO Remove above queries and instead use/modify this query to get
-        # the data
-        annids = selected_tags
-
-        # sub_hql = "select parent from ImageAnnotationLink link " \
-        #           "join link.child as child " \
-        #           "join link.parent as parent " \
-        #           "where child.id in (:oids) " \
-        #           "group by parent.id " \
-        #           "having count(link) = %s" % len(annids)
-
-        # hql = "select image from Image image " \
-        #       "join fetch image.annotationLinks as annLink " \
-        #       "join fetch annLink.child as ann " \
-        #       "where image in (%s)" % sub_hql
-
         sub_hql = "select link.parent.id from ImageAnnotationLink link " \
                "where link.child.id in (:oids) " \
                "group by link.parent.id " \
-               "having count (link.parent) = %s" % len(annids)
+               "having count (link.parent) = %s" % len(selected_tags)
 
         hql = "select distinct link.child.id from ImageAnnotationLink link " \
            "where link.parent.id in (%s)" % sub_hql
 
         params = Parameters()
         params.map = {}
-        params.map["oids"] = rlist([rlong(o) for o in set(annids)])
+        params.map["oids"] = rlist([rlong(o) for o in set(selected_tags)])
 
         qs = conn.getQueryService()
         results = qs.projection(hql, params)
-        inter2 = time.time()
         
-        # Calculate the remaining possible tags
         remaining = []
-        
         for result in results:
             remaining.append(result[0].val)
-            # for ann in result.iterateAnnotationLinks():
-            #     remaining.add(ann.getChild().getId().val)
-        
-        end = time.time()
-
-        logger.error('results: %s' % (inter1 - start))
-        logger.error('query: %s' % (inter2 - inter1))
-        logger.error('processing: %s' % (end - inter2))
 
         # Return the navigation data and the html preview for display
         # return {"navdata": list(remaining), "html": html_response}
-        return HttpResponse(json.dumps({"navdata": remaining, "html": html_response}), content_type="application/json")
+        return HttpResponse(json.dumps({"navdata": remaining,
+                                        "html": html_response}),
+                            content_type="application/json")
