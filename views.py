@@ -170,32 +170,41 @@ def tag_image_search(request, conn=None, **kwargs):
         # the data
         annids = selected_tags
 
-        sub_hql = "select parent from ImageAnnotationLink link " \
-                  "join link.child as child " \
-                  "join link.parent as parent " \
-                  "where child.id in (:oids) " \
-                  "group by parent.id " \
-                  "having count(link) = %s" % len(annids)
+        # sub_hql = "select parent from ImageAnnotationLink link " \
+        #           "join link.child as child " \
+        #           "join link.parent as parent " \
+        #           "where child.id in (:oids) " \
+        #           "group by parent.id " \
+        #           "having count(link) = %s" % len(annids)
 
-        hql = "select image from Image image " \
-              "join fetch image.annotationLinks as annLink " \
-              "join fetch annLink.child as ann " \
-              "where image in (%s)" % sub_hql
+        # hql = "select image from Image image " \
+        #       "join fetch image.annotationLinks as annLink " \
+        #       "join fetch annLink.child as ann " \
+        #       "where image in (%s)" % sub_hql
+
+        sub_hql = "select link.parent.id from ImageAnnotationLink link " \
+               "where link.child.id in (:oids) " \
+               "group by link.parent.id " \
+               "having count (link.parent) = %s" % len(annids)
+
+        hql = "select distinct link.child.id from ImageAnnotationLink link " \
+           "where link.parent.id in (%s)" % sub_hql
 
         params = Parameters()
         params.map = {}
         params.map["oids"] = rlist([rlong(o) for o in set(annids)])
 
         qs = conn.getQueryService()
-        results = qs.findAllByQuery(hql, params)
+        results = qs.projection(hql, params)
         inter2 = time.time()
         
         # Calculate the remaining possible tags
-        remaining = set([])
+        remaining = []
         
         for result in results:
-            for ann in result.iterateAnnotationLinks():
-                remaining.add(ann.getChild().getId().val)
+            remaining.append(result[0].val)
+            # for ann in result.iterateAnnotationLinks():
+            #     remaining.add(ann.getChild().getId().val)
         
         end = time.time()
 
@@ -205,4 +214,4 @@ def tag_image_search(request, conn=None, **kwargs):
 
         # Return the navigation data and the html preview for display
         # return {"navdata": list(remaining), "html": html_response}
-        return HttpResponse(json.dumps({"navdata": list(remaining), "html": html_response}), content_type="application/json")
+        return HttpResponse(json.dumps({"navdata": remaining, "html": html_response}), content_type="application/json")
