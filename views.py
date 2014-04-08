@@ -76,6 +76,8 @@ class TagSearchFormView(FormView):
 def tag_image_search(request, conn=None, **kwargs):
     if request.method == "POST":
 
+        # TODO Special case where there are no selections just in case
+        # TODO Also, don't call this if there are no selections, merely clear the form
         selected_tags = [long(x) for x in request.POST.getlist('selectedTags')]
         results_preview = bool(request.POST.get('results_preview'))
 

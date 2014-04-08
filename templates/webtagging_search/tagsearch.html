@@ -1,20 +1,33 @@
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/chosen/1.0/chosen.css" type="text/css" media="screen"/>
+{% load url from future %}
+<html>
+
+{# <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/chosen/1.0/chosen.css" type="text/css" media="screen"/> #}
 <link rel="stylesheet" type="text/css" href="{% static 'webtagging_search/css/bootstrap.css' %}" />
 <link rel="stylesheet" type="text/css" href="{% static 'webtagging_search/css/webtagging_search.css' %}" />
 
-<script src="//code.jquery.com/jquery-1.10.1.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/chosen/1.0/chosen.jquery.js"></script>
+{# <script src="//code.jquery.com/jquery-1.10.1.min.js"></script> #}
+<script>window.jQuery || document.write('<script src="/static/3rdparty/jquery-1.7.2.js"><\/script><script src="{% static "webclient/javascript/jquery.form.js" %}"><\/script><script src="{% static "3rdparty/jquery-ui-1.8.19/jquery-ui-1.8.19.custom.min.js" %}"><\/script>')</script>
+<head>
+    <link rel="stylesheet" href="{% static "webgateway/css/reset.css" %}" type="text/css" />   
+    <link rel="stylesheet" href="{% static "webgateway/css/ome.body.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "webclient/css/dusty.css" %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static "webgateway/css/ome.header.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "webclient/css/layout.css" %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static "3rdparty/jquery-ui-1.8.19/themes/base/jquery.ui.base.css" %}" type="text/css" />
+</head>
+
+<link rel="stylesheet" href="{% static '3rdparty/jquery.chosen/chosen.css' %}" type="text/css" media="screen"/>
+
+<script src="{% static '3rdparty/jquery.chosen/chosen.jquery.js' %}"></script>
+{# <script src="//cdnjs.cloudflare.com/ajax/libs/chosen/1.0/chosen.jquery.js"></script> #}
 <script src="{% static 'webtagging_search/3rd-party/arrayUtilities/jquery.arrayUtilities.min.js' %}"></script>
 <script src="{% static 'webtagging_search/3rd-party/jquery.form.js' %}"></script> 
 
-<script type="text/javascript">
+<script>
 
-  // Parse the tag-intersections
-  tagIntersections = {{ tag_intersections|safe }}
-
-  $( document ).ready(function() {
-
-    $("#id_selectedTags").chosen({placeholder_text:'Choose tags', width: "50%"});
+  $(function(){
+  // $( document ).ready(function() {
+    $("#id_selectedTags").chosen({placeholder_text:'Choose tags'});
 
     var $submitButton = $("#tagSearchForm input[type='submit']");
     // Form Submission
@@ -37,7 +50,9 @@
         });
 
         // Update the chosen selector
-        $("#id_selectedTags").trigger("chosen:updated");
+        // $("#id_selectedTags").trigger("chosen:updated");
+        $("#id_selectedTags").trigger("liszt:updated");
+        
       }
     });
 
@@ -121,15 +136,7 @@
 
 
 
-
-
-
-<h1>Tag Search Prototype</h1>
-<h3>Note on search responsiveness:</h3>
 <p>Each item added to the search criteria further reduces the search space and will be therefore more responsive, so it is desirable to pick criteria that refine the search space more significantly towards the beginning.</p>
-<p>On form submit, the number of projects/datasets/images that match the search are returned. The results preview will (on submit) grab the names of the projects/datasets/images as well as the counts.</p>
-
-<p>The larger the number of images that contain a set of tags, the slower the counts query will be, so it is always beneficial to add the least common tags as early in the search as possible. E.g. if you have a tag 'processed' which you apply to all processed images, this will likely be on a great deal of images. Say the objective of the search is to initially find processed images which have been selected for publication and then whittle down from there. As the 'selected' tag will likely have less images than 'processed', it will give a good performance benefit to select this first.</p>
 
 <!--TODO I should really use another view to process the data as there is no need to call the heavy operations invoked by get_form_kwargs in the TagSearchFormView. Also, it will be a bit awkward to return the data from there as that's not really the form views function. A standard TemplateView should be sufficient, returning html results to display -->
 <form id="tagSearchForm" action="{% url 'wtsimages' %}" method="post">{% csrf_token %}
@@ -138,3 +145,4 @@
 </form>
 
 <div id="searchResults"></div>
+</html>

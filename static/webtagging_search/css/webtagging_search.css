@@ -116,3 +116,7 @@ table.hideExtTokens .extTokens { display:none; }
     white-space:nowrap;
 }
 
+#id_selectedTags {
+  width:90%;
+}
+
