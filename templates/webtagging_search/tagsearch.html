@@ -40,9 +40,10 @@
         $("#searchResults").html(data.html);
         $submitButton.removeAttr('disabled');
 
-        // Hide any options that are no longer possible
-        $("#id_selectedTags option").each(function(){
-          if ($.inArray(parseInt(this.value), data.navdata) == -1) {
+        // Hide any options that are no longer possible and
+        // show any that have become possible
+        $("#id_selectedTags option").each(function() {
+          if (($.inArray(parseInt(this.value), data.navdata) == -1) && (data.navdata.length != 0)) {
             $(this).hide();
           } else {
             $(this).css('display', '');
@@ -69,71 +70,13 @@
 
       // Deselection made
       } else if (params.deselected) {
-
         $("#tagSearchForm").submit();
-
-      // If there are no remaining selected tags then nothing should be hidden
-      } else {
-        //Unhide all
-        $("#id_selectedTags option").each(function(){
-          if ($(this).css("display") == 'none') {
-            // $(this).show(); // This results in display:inline which breaks the formatting
-            $(this).css('display', '');
-          }
-
-        });
-        //TODO Remove preview
       }
 
-      // Update the chosen selector
-      // $("#id_selectedTags").trigger("chosen:updated");
+
     });
   });
 </script>
-<!--
-        AjaxQuery may be required (at least the first time) to get this information
-        In an AND only world, the first AjaxQuery can probably calculate the possible intersections so no more are required
-
-           Results
-           image1 - tag1, tag2, tag3
-           imaeg2 - tag1
-           image3 - tag2
-           image4 - tag2, tag3
-           image5 - tag3, tag4
-
-           Yields
-           tag1 - tag2, tag3
-           tag2 - tag1, tag3
-           tag3 - tag1, tag2, tag4
-           tag4 - tag3
-
-           Thus a query could be performed:
-           Assuming no selected tags
-           newlySelectedTag = tag1
-           availableTags = set([tag1, tag2, tag3, tag4]) # All tags are available
-           Lookup the newlySelectedTag in the yields. Union with available to reduce set
-           yield = yields[tag] # E.g. for tag1, this adds tag2 and tag3
-           availableTags = availableTags.union(yield) # Reduce set
-          
-           Second selection
-           newlySelectedTag = tag3
-           availableTags = set([tag2, tag3])
-           yield = yields[tag] # For tag3, this is tag1, tag2 and tag4
-           availableTags = availableTags.union(yield) # Reduce. set[tag2,tag3].union(set[tag1,tag2,tag4])
-
-           Actually that's not what would happen as the first query would not have returned image3,4,5 so the yield would actually have been:
-
-           tag1 - tag2, tag3
-           tag2 - tag1, tag3
-           tag3 - tag1, tag2
-
-       Submit - Actually return the results of the query. 
-       Options
-         Don't precalculate intersections at all, rely on doing more queries - Expensive, necessary if more than AND allowed (and all intersections are not precalculated).
-         Calculate Intersections button. Processes all intersections and caches it for performance - Will need to be manually updated by the user. Where to store it?
-         What details/previews to show at each new selection level. Nothing? Number of images matching? List of matching images? List of matching images below some threshold?
--->
-
 
 
 <p>Each item added to the search criteria further reduces the search space and will be therefore more responsive, so it is desirable to pick criteria that refine the search space more significantly towards the beginning.</p>

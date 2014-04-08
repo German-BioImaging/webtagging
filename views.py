@@ -96,6 +96,8 @@ def tag_image_search(request, conn=None, **kwargs):
             return [x[0].getValue() for x in qs.projection(hql,params)]
 
         context = {}
+        html_response = ''
+        remaining = []
         if selected_tags:
             image_ids = getObjectsWithAllAnnotations('Image', selected_tags)
             context['image_count'] = len(image_ids)
@@ -118,27 +120,26 @@ def tag_image_search(request, conn=None, **kwargs):
                     projects = conn.getObjects('Project', ids = project_ids)
                     context['projects'] = [{ 'id':x.getId(), 'name':x.getName() } for x in projects]
 
-        html_response = render_to_string("webtagging_search/image_results.html", context)
+            html_response = render_to_string("webtagging_search/image_results.html", context)
 
-        # Calculate remaining possible tag navigations
-        sub_hql = "select link.parent.id from ImageAnnotationLink link " \
-               "where link.child.id in (:oids) " \
-               "group by link.parent.id " \
-               "having count (link.parent) = %s" % len(selected_tags)
+            # Calculate remaining possible tag navigations
+            sub_hql = "select link.parent.id from ImageAnnotationLink link " \
+                   "where link.child.id in (:oids) " \
+                   "group by link.parent.id " \
+                   "having count (link.parent) = %s" % len(selected_tags)
 
-        hql = "select distinct link.child.id from ImageAnnotationLink link " \
-           "where link.parent.id in (%s)" % sub_hql
+            hql = "select distinct link.child.id from ImageAnnotationLink link " \
+               "where link.parent.id in (%s)" % sub_hql
 
-        params = Parameters()
-        params.map = {}
-        params.map["oids"] = rlist([rlong(o) for o in set(selected_tags)])
+            params = Parameters()
+            params.map = {}
+            params.map["oids"] = rlist([rlong(o) for o in set(selected_tags)])
 
-        qs = conn.getQueryService()
-        results = qs.projection(hql, params)
-        
-        remaining = []
-        for result in results:
-            remaining.append(result[0].val)
+            qs = conn.getQueryService()
+            results = qs.projection(hql, params)
+
+            for result in results:
+                remaining.append(result[0].val)
 
         # Return the navigation data and the html preview for display
         # return {"navdata": list(remaining), "html": html_response}
