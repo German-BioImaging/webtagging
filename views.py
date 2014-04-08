@@ -74,6 +74,8 @@ class TagSearchFormView(FormView):
 # production
 # @render_response()
 def tag_image_search(request, conn=None, **kwargs):
+    import time
+    start = time.time()
     if request.method == "POST":
 
         # TODO Special case where there are no selections just in case
@@ -143,6 +145,8 @@ def tag_image_search(request, conn=None, **kwargs):
 
         # Return the navigation data and the html preview for display
         # return {"navdata": list(remaining), "html": html_response}
+        end = time.time()
+        logger.info('Tag Query Time: %ss' % (end-start))
         return HttpResponse(json.dumps({"navdata": remaining,
                                         "html": html_response}),
                             content_type="application/json")
