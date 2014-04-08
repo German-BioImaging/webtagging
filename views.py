@@ -14,6 +14,9 @@ from utils import parse_path, createTagAnnotationsLinks, BlitzSet
 from urlparse import parse_qsl
 
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Token(object):
     """
@@ -433,7 +436,8 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
     suggestions for new tags.
     Indicate where these match existing tags etc.
     """
-
+    import time
+    start = time.time()
     # TODO: handle list of Image IDs. Currently we ONLY support Dataset
     if datasetId is not None:
         dataset = conn.getObject("Dataset", datasetId)
@@ -457,6 +461,9 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
     context['imageStates'] = json.dumps(table_data.generate_state())
     context['ignoreFirstFileToken'] = ignoreFirstFileToken
     context['ignoreLastFileToken'] = ignoreLastFileToken
+
+    end = time.time()
+    logger.info('AutoTag Assemble Data Time: %ss' % (end-start))
     return context
 
 
