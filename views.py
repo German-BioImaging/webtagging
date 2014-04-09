@@ -78,18 +78,15 @@ def tag_image_search(request, conn=None, **kwargs):
     start = time.time()
     if request.method == "POST":
 
-        # TODO Special case where there are no selections just in case
-        # TODO Also, don't call this if there are no selections, merely clear the form
         selected_tags = [long(x) for x in request.POST.getlist('selectedTags')]
         results_preview = bool(request.POST.get('results_preview'))
 
         def getObjectsWithAllAnnotations(obj_type, annids):
             # Get the images that match
             hql = "select link.parent.id from %sAnnotationLink link " \
-                  "inner join link.child as ann " \
-                  "where ann.id in (:oids) " \
+                  "where link.child.id in (:oids) " \
                   "group by link.parent.id " \
-                  "having count(link.child.id) = %s" %  (obj_type, len(annids))
+                  "having count (link.parent) = %s" % (obj_type, len(annids))
             params = Parameters()
             params.map = {}
             params.map["oids"] = rlist([rlong(o) for o in set(annids)])
@@ -99,7 +96,7 @@ def tag_image_search(request, conn=None, **kwargs):
 
         context = {}
         html_response = ''
-        remaining = []
+        remaining = set([])
         if selected_tags:
             image_ids = getObjectsWithAllAnnotations('Image', selected_tags)
             context['image_count'] = len(image_ids)
@@ -107,7 +104,6 @@ def tag_image_search(request, conn=None, **kwargs):
             context['dataset_count'] = len(dataset_ids)
             project_ids = getObjectsWithAllAnnotations('Project', selected_tags)
             context['project_count'] = len(project_ids)
-
 
             if results_preview:
                 if image_ids:
@@ -124,29 +120,42 @@ def tag_image_search(request, conn=None, **kwargs):
 
             html_response = render_to_string("webtagging_search/image_results.html", context)
 
+            middle = time.time()
+
+            def getAnnotationsForObjects(obj_type, oids):
+                # Get the images that match
+                hql = "select distinct link.child.id from %sAnnotationLink link " \
+                      "where link.parent.id in (:oids)" % obj_type
+
+                params = Parameters()
+                params.map = {}
+                params.map["oids"] = rlist([rlong(o) for o in oids])
+
+                qs = conn.getQueryService()
+                return [result[0].val for result in qs.projection(hql,params)]
+
             # Calculate remaining possible tag navigations
-            sub_hql = "select link.parent.id from ImageAnnotationLink link " \
-                   "where link.child.id in (:oids) " \
-                   "group by link.parent.id " \
-                   "having count (link.parent) = %s" % len(selected_tags)
+            # TODO Compare subquery to pass-in performance
+            # sub_hql = "select link.parent.id from ImageAnnotationLink link " \
+            #        "where link.child.id in (:oids) " \
+            #        "group by link.parent.id " \
+            #        "having count (link.parent) = %s" % len(selected_tags)
 
-            hql = "select distinct link.child.id from ImageAnnotationLink link " \
-               "where link.parent.id in (%s)" % sub_hql
+            # hql = "select distinct link.child.id from ImageAnnotationLink link " \
+            #    "where link.parent.id in (%s)" % sub_hql
 
-            params = Parameters()
-            params.map = {}
-            params.map["oids"] = rlist([rlong(o) for o in set(selected_tags)])
+            if image_ids:
+                remaining.update(getAnnotationsForObjects('Image', image_ids))
+            if dataset_ids:
+                remaining.update(getAnnotationsForObjects('Dataset', dataset_ids))
+            if project_ids:
+                remaining.update(getAnnotationsForObjects('Project', project_ids))
 
-            qs = conn.getQueryService()
-            results = qs.projection(hql, params)
-
-            for result in results:
-                remaining.append(result[0].val)
+            end = time.time()
+            logger.info('Tag Query Times. Preview: %ss, Remaining: %ss, Total:%ss' % ((middle-start),(end-middle),(end-start)))
 
         # Return the navigation data and the html preview for display
         # return {"navdata": list(remaining), "html": html_response}
-        end = time.time()
-        logger.info('Tag Query Time: %ss' % (end-start))
-        return HttpResponse(json.dumps({"navdata": remaining,
+        return HttpResponse(json.dumps({"navdata": list(remaining),
                                         "html": html_response}),
                             content_type="application/json")
