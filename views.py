@@ -213,9 +213,19 @@ class TableRow(object):
         self.image = image      # Details of the image
         self.tokens = set([])   # The tokens present in this image name
         self.tags = []          # The tags present on this image
+        self.client_path = None
 
     def get_name(self):
         return self.image.getName()
+
+    def get_client_path(self):
+        if self.client_path:
+            return self.client_path
+        else:
+            return self.get_name()
+
+    def set_client_path(self, client_path):
+        self.client_path = client_path
 
     def get_id(self):
         return self.image.getId()
@@ -497,13 +507,17 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
         row = table_data.add_image(image)
         # row = TableRow(table_data, image)
 
-        name = image.getName()
+        # Use the full client import path if possible
+        name = image.getClientPath()
+        # If not possible (OMERO 4.4.x), just use the name
+        if len(name) > 0:
+            # Set the client_path so this can be used in in the rendering
+            # If this isn't set, then the image name gets used instead
+            row.set_client_path(name)
+        else:
+            name = image.getName()
  
         pt, ft, et = parse_path(name)
-
-        if len(pt) == 0:
-            clientPath = image.getClientPath()
-            pt = clientPath.split(r'/')[0:-1]
         
         # Do discards
         #TODO Incredibly primitive, replace with much, much smarter discarding
