@@ -10,12 +10,20 @@ def parse_path(path):
     Hardcoded for now, one for the path, one for the name, one for the extension
     """
 
-    # Split by '/' to get the path
-    path_tokens = path.split(r'/')
-    file = path_tokens.pop()
+    # Split by '/' to get the path, then by '_'
+    path_tokens = []
+    temp_tokens = path.split(r'/')
+    file = temp_tokens.pop()
+    for token in temp_tokens:
+        path_tokens.extend(token.split(r'_'))
 
-    ext_tokens = file.rsplit(r'.')
-    file = ext_tokens.pop(0)
+    # Split by first '.' to get the extension (considered to be everything
+    # after the first '.'), then by '_'
+    ext_tokens = []
+    temp_tokens = file.rsplit(r'.')
+    file = temp_tokens.pop(0)
+    for token in temp_tokens:
+        ext_tokens.extend(token.split(r'_'))
 
     #TODO Cope with multiple separators
     file_tokens = file.split(r'_')
