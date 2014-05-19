@@ -97,6 +97,10 @@ def tag_image_search(request, conn=None, **kwargs):
         context = {}
         html_response = ''
         remaining = set([])
+
+        manager = {'containers': {}}
+
+        # self.containers={'projects': pr_list_with_counters, 'datasets': ds_list_with_counters, 'images': im_list_with_counters, 'screens': sc_list_with_counters, 'plates': pl_list_with_counters}
         if selected_tags:
             image_ids = getObjectsWithAllAnnotations('Image', selected_tags)
             context['image_count'] = len(image_ids)
@@ -108,17 +112,22 @@ def tag_image_search(request, conn=None, **kwargs):
             if results_preview:
                 if image_ids:
                     images = conn.getObjects('Image', ids = image_ids)
-                    context['images'] = [ { 'id':x.getId(), 'name':x.getName() } for x in images]
+                    manager['containers']['images'] = list(images)
 
                 if dataset_ids:
                     datasets = conn.getObjects('Dataset', ids = dataset_ids)
-                    context['datasets'] = [{ 'id':x.getId(), 'name':x.getName() } for x in datasets]
+                    manager['containers']['datasets'] = datasets
 
                 if project_ids:
                     projects = conn.getObjects('Project', ids = project_ids)
-                    context['projects'] = [{ 'id':x.getId(), 'name':x.getName() } for x in projects]
+                    manager['containers']['projects'] = projects
 
-            html_response = render_to_string("webtagging_search/image_results.html", context)
+                manager['c_size'] = len(image_ids) + len(dataset_ids) + len(project_ids)
+
+            context['manager'] = manager
+            print(context)
+            html_response = render_to_string("webclient/search/search_details.html", context)
+            # html_response = render_to_string("webtagging_search/image_results.html", context)
 
             middle = time.time()
 

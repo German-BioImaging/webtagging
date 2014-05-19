@@ -14,6 +14,8 @@
     <link rel="stylesheet" href="{% static "webgateway/css/ome.header.css" %}" type="text/css" />
     <link rel="stylesheet" href="{% static "webclient/css/layout.css" %}" type="text/css"/>
     <link rel="stylesheet" href="{% static "3rdparty/jquery-ui-1.8.19/themes/base/jquery.ui.base.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "webgateway/css/ome.table.css" %}" type="text/css" media="screen"/>
+    <link rel="stylesheet" href="{% static "3rdparty/jquery.tablesorter/jquery.tablesorter.css" %}" type="text/css" media="screen"/>
 </head>
 
 <link rel="stylesheet" href="{% static '3rdparty/jquery.chosen/chosen.css' %}" type="text/css" media="screen"/>
@@ -22,6 +24,11 @@
 {# <script src="//cdnjs.cloudflare.com/ajax/libs/chosen/1.0/chosen.jquery.js"></script> #}
 <script src="{% static 'webtagging_search/3rd-party/arrayUtilities/jquery.arrayUtilities.min.js' %}"></script>
 <script src="{% static 'webtagging_search/3rd-party/jquery.form.js' %}"></script> 
+
+<script type="text/javascript" src="{% static "3rdparty/jquery.tooltip/jquery.tooltip.pack.js" %}"></script>
+<script src="{% static 'webclient/javascript/jquery.infieldlabel.js' %}" type="text/javascript"></script>
+<script type="text/javascript" src="{% static "3rdparty/jquery.tablesorter/jquery.tablesorter.js" %}"></script>
+<script type="text/javascript" src="{% static "3rdparty/jquery.quicksearch.js" %}"></script>
 
 <script>
 
@@ -75,6 +82,16 @@
 
 
     });
+
+    // Preview change
+    $('#id_results_preview').change(function() {
+        if($(this).is(":checked")) {
+            $("#tagSearchForm").submit();
+        } else {
+            $("#searchResults").empty();
+        }   
+    });
+
   });
 </script>
 
@@ -84,7 +101,6 @@
 <!--TODO I should really use another view to process the data as there is no need to call the heavy operations invoked by get_form_kwargs in the TagSearchFormView. Also, it will be a bit awkward to return the data from there as that's not really the form views function. A standard TemplateView should be sufficient, returning html results to display -->
 <form id="tagSearchForm" action="{% url 'wtsimages' %}" method="post">{% csrf_token %}
 {{ form.as_p }}
-<input type="submit" value="Submit" />
 </form>
 
 <div id="searchResults"></div>

@@ -8,37 +8,37 @@ $(function() {
         empty_on_sel_change: false,                 // Do not completely erase content when changing selection
         load_plugin_content: function(selected, dtype, oid){
 
-        //     // this may have been called before datatree was initialised...
-        //     var datatree = $.jstree._focused();
-        //     if (!datatree) return;
+            // this may have been called before datatree was initialised...
+            // var datatree = $.jstree._focused();
+            // if (!datatree) return;
         
-        //     // we use the tree to access selected objects, since we can traverse to check parents etc...
-        //     var tree_selected = datatree.data.ui.selected;
+            // we use the tree to access selected objects, since we can traverse to check parents etc...
+            // var tree_selected = datatree.data.ui.selected;
 
-        //     //TODO if nothing selected, simply update selection
-        //     // var sel_objs = $("body").data("selected_objects.ome");
-        //     // if (sel_objs.length == 0) {
-        //     //     if (force_update === true) {
-        //     //         $("div#content_details").empty();
-        //     //         $("div#content_details").removeAttr('rel');
-        //     //     }
-        //     //     return;
-        //     // }
+            //TODO if nothing selected, simply update selection
+            // var sel_objs = $("body").data("selected_objects.ome");
+            // if (sel_objs.length == 0) {
+            //     if (force_update === true) {
+            //         $("div#content_details").empty();
+            //         $("div#content_details").removeAttr('rel');
+            //     }
+            //     return;
+            // }
 
-        //     // TODO Multiple selection
-        //     // if (selected.length > 1) {
-        //     //     //TODO if any non-images are selected, clear the centre panel
-        //     //     if (selected.filter('li:not([id|=image])').length > 0) {
-        //     //         $("div#content_details").empty();
-        //     //         $("div#content_details").removeAttr('rel');
-        //     //         return;
-        //     //     }
-        //     // }
+            // TODO Multiple selection
+            // if (selected.length > 1) {
+            //     //TODO if any non-images are selected, clear the centre panel
+            //     if (selected.filter('li:not([id|=image])').length > 0) {
+            //         $("div#content_details").empty();
+            //         $("div#content_details").removeAttr('rel');
+            //         return;
+            //     }
+            // }
 
-        //     // handle single object (or multi-image) selection...
-        //     // These are not used as the list of ids and the type are passed into this function
-        //     // var oid = selected.attr('id');                              // E.g. 'dataset-501'
-        //     // var orel = selected.attr('rel').replace("-locked", "");     // E.g. 'dataset'
+            // handle single object (or multi-image) selection...
+            // These are not used as the list of ids and the type are passed into this function
+            // var oid = selected.attr('id');                              // E.g. 'dataset-501'
+            // var orel = selected.attr('rel').replace("-locked", "");     // E.g. 'dataset'
 
             var standby_then_load = function() {
                 // Display waiting message
@@ -49,7 +49,11 @@ $(function() {
                 $("div#tagnav_panel").load(tagnav_url);
             };
 
-            standby_then_load();
+            // Check if the Tag Navigation Page is already loaded
+            if (!$('#tagSearchForm').length) {
+                standby_then_load();
+            }
+            
 
         //     var check_same_dataset = function(new_datasetId) {
         //         // Check if this dataset is already being displayed
