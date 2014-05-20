@@ -13,6 +13,15 @@ from omero.gateway import TagAnnotationWrapper
 from omero.sys import Parameters
 from omero.rtypes import rlong, rlist
 
+from omeroweb.webclient.forms import  GlobalSearchForm, ShareForm, BasketShareForm, \
+                    ContainerForm, ContainerNameForm, ContainerDescriptionForm, \
+                    CommentAnnotationForm, TagsAnnotationForm, \
+                    UsersForm, \
+                    MetadataFilterForm, MetadataDetectorForm, MetadataChannelForm, \
+                    MetadataEnvironmentForm, MetadataObjectiveForm, MetadataObjectiveSettingsForm, MetadataStageLabelForm, \
+                    MetadataLightSourceForm, MetadataDichroicForm, MetadataMicroscopeForm, \
+                    FilesAnnotationForm, WellIndexForm
+
 from .forms import TagSearchForm
 
 import logging
@@ -60,7 +69,6 @@ class TagSearchFormView(FormView):
 
     def form_valid(self, form):
         # Actually unlikely we'll ever submit this form
-        print('called form_valid')
         return super(TagSearchFormView, self).form_valid(form)
 
     @method_decorator(login_required(setGroupContext=True))
@@ -68,6 +76,166 @@ class TagSearchFormView(FormView):
         # Get OMERO connection
         self.conn = kwargs.get('conn', None)
         return super(TagSearchFormView, self).dispatch(*args, **kwargs)
+
+
+@login_required()
+@render_response()
+def index(request, conn=None, **kwargs):
+    request.session.modified = True
+
+    # TODO Hardcode menu as search until I figure out what to do with menu
+    menu = 'search'
+    template = "webtagging_search/tagnav.html"
+
+
+    #tree support
+    init = {'initially_open':None, 'initially_select': []}
+    first_sel = None
+    initially_open_owner = None
+    # E.g. backwards compatible support for path=project=51|dataset=502|image=607 (select the image)
+    path = request.REQUEST.get('path', '')
+    i = path.split("|")[-1]
+    if i.split("=")[0] in ('project', 'dataset', 'image', 'screen', 'plate', 'tag'):
+        init['initially_select'].append(str(i).replace("=",'-'))  # Backwards compatible with image=607 etc
+    # Now we support show=image-607|image-123  (multi-objects selected)
+    show = request.REQUEST.get('show', '')
+    for i in show.split("|"):
+        if i.split("-")[0] in ('project', 'dataset', 'image', 'screen', 'plate', 'tag', 'acquisition', 'run', 'well'):
+            i = i.replace('run', 'acquisition')   # alternatives for 'acquisition'
+            init['initially_select'].append(str(i))
+    if len(init['initially_select']) > 0:
+        # tree hierarchy open to first selected object
+        init['initially_open'] = [ init['initially_select'][0] ]
+        first_obj, first_id = init['initially_open'][0].split("-",1)
+        # if we're showing a tag, make sure we're on the tags page...
+        if first_obj == "tag" and menu != "usertags":
+            return HttpResponseRedirect(reverse(viewname="load_template", args=['usertags']) + "?show=" + init['initially_select'][0])
+        try:
+            conn.SERVICE_OPTS.setOmeroGroup('-1')   # set context to 'cross-group'
+            if first_obj == "tag":
+                first_sel = conn.getObject("TagAnnotation", long(first_id))
+            else:
+                first_sel = conn.getObject(first_obj, long(first_id))
+                initially_open_owner = first_sel.details.owner.id.val
+                # Wells aren't in the tree, so we need parent...
+                if first_obj == "well":
+                    parentNode = first_sel.getWellSample().getPlateAcquisition()
+                    ptype = "acquisition"
+                    if parentNode is None:      # No Acquisition for this well...
+                        parentNode = first_sel.getParent()  #...use Plate instead
+                        ptype = "plate"
+                    first_sel = parentNode
+                    init['initially_open'] = ["%s-%s" % (ptype, parentNode.getId())]
+                    init['initially_select'] = init['initially_open'][:]
+        except:
+            pass    # invalid id
+        if first_obj not in ("project", "screen"):
+            # need to see if first item has parents
+            if first_sel is not None:
+                for p in first_sel.getAncestry():
+                    if first_obj == "tag":  # parents of tags must be tags (no OMERO_CLASS)
+                        init['initially_open'].insert(0, "tag-%s" % p.getId())
+                    else:
+                        init['initially_open'].insert(0, "%s-%s" % (p.OMERO_CLASS.lower(), p.getId()))
+                        initially_open_owner = p.details.owner.id.val
+                if init['initially_open'][0].split("-")[0] == 'image':
+                    init['initially_open'].insert(0, "orphaned-0")
+    # need to be sure that tree will be correct omero.group
+    if first_sel is not None:
+        switch_active_group(request, first_sel.details.group.id.val)
+
+    # search support
+    global_search_form = GlobalSearchForm(data=request.REQUEST.copy())
+    if menu == "search":
+        if global_search_form.is_valid():
+            init['query'] = global_search_form.cleaned_data['search_query']
+
+    # get url without request string - used to refresh page after switch user/group etc
+    url = reverse(viewname="tagnav")
+
+    # validate experimenter is in the active group
+    active_group = request.session.get('active_group') or conn.getEventContext().groupId
+    # prepare members of group...
+    s = conn.groupSummary(active_group)
+    leaders = s["leaders"]
+    members = s["colleagues"]
+    userIds = [u.id for u in leaders]
+    userIds.extend( [u.id for u in members] )
+    users = []
+    if len(leaders) > 0:
+        users.append( ("Owners", leaders) )
+    if len(members) > 0:
+        users.append( ("Members", members) )
+    users = tuple(users)
+
+    # check any change in experimenter...
+    user_id = request.REQUEST.get('experimenter')
+    if initially_open_owner is not None:
+        if (request.session.get('user_id', None) != -1): # if we're not already showing 'All Members'...
+            user_id = initially_open_owner
+    try:
+        user_id = long(user_id)
+    except:
+        user_id = None
+    if user_id is not None:
+        print('form_users')
+        form_users = UsersForm(initial={'users': users, 'empty_label':None, 'menu':menu}, data=request.REQUEST.copy())
+        if not form_users.is_valid():
+            if user_id != -1:           # All users in group is allowed
+                user_id = None
+    if user_id is None:
+        # ... or check that current user is valid in active group
+        user_id = request.session.get('user_id', None)
+        if user_id is None or int(user_id) not in userIds:
+            if user_id != -1:           # All users in group is allowed
+                user_id = conn.getEventContext().userId
+
+    request.session['user_id'] = user_id
+
+    if conn.isAdmin():  # Admin can see all groups
+        myGroups = [g for g in conn.getObjects("ExperimenterGroup") if g.getName() not in ("user", "guest")]
+    else:
+        myGroups = list(conn.getGroupsMemberOf())
+    myGroups.sort(key=lambda x: x.getName().lower())
+    new_container_form = ContainerForm()
+
+    # Create and set the form
+    # List of tuples (id, value)
+    tags = []
+
+    # TODO Set the active group
+    params = Parameters()
+    qs = conn.getQueryService()
+    print('Active group: ', active_group)
+    # conn.SERVICE_OPTS.setOmeroGroup(active_group)
+    # Get tags
+    # It is not sufficient to simply get the objects as there may be tags
+    # which are not applied which don't really make sense to display
+    # tags = list(self.conn.getObjects("TagAnnotation"))
+    hql = "select distinct link.child.id, link.child.textValue " \
+          "from ImageAnnotationLink link " \
+          "where link.child.class is TagAnnotation " \
+          "order by link.child.textValue"
+    service_opts = conn.SERVICE_OPTS.copy()
+    service_opts.setOmeroGroup(active_group)
+    tags = [(result[0].val, result[1].val) for result in qs.projection(hql, params, service_opts)]
+    tags.sort(key=lambda x: x[1].lower())
+
+    form = TagSearchForm(tags, conn)
+
+    context = {'init':init, 'myGroups':myGroups, 'new_container_form':new_container_form, 'global_search_form':global_search_form}
+    context['groups'] = myGroups
+    context['active_group'] = conn.getObject("ExperimenterGroup", long(active_group))
+    for g in context['groups']:
+        g.groupSummary()    # load leaders / members
+    context['active_user'] = conn.getObject("Experimenter", long(user_id))
+
+    context['isLeader'] = conn.isLeader()
+    context['current_url'] = url
+    context['template'] = template
+    context['tagnav_form'] = form
+
+    return context
 
 @login_required(setGroupContext=True)
 # TODO Figure out what happened to render_response as it wasn't working on
@@ -81,6 +249,11 @@ def tag_image_search(request, conn=None, **kwargs):
         selected_tags = [long(x) for x in request.POST.getlist('selectedTags')]
         results_preview = bool(request.POST.get('results_preview'))
 
+        # validate experimenter is in the active group
+        active_group = request.session.get('active_group') or conn.getEventContext().groupId
+        service_opts = conn.SERVICE_OPTS.copy()
+        service_opts.setOmeroGroup(active_group)
+
         def getObjectsWithAllAnnotations(obj_type, annids):
             # Get the images that match
             hql = "select link.parent.id from %sAnnotationLink link " \
@@ -92,13 +265,14 @@ def tag_image_search(request, conn=None, **kwargs):
             params.map["oids"] = rlist([rlong(o) for o in set(annids)])
 
             qs = conn.getQueryService()
-            return [x[0].getValue() for x in qs.projection(hql,params)]
+            return [x[0].getValue() for x in qs.projection(hql,params,service_opts)]
 
         context = {}
         html_response = ''
         remaining = set([])
 
         manager = {'containers': {}}
+        preview = False
 
         # self.containers={'projects': pr_list_with_counters, 'datasets': ds_list_with_counters, 'images': im_list_with_counters, 'screens': sc_list_with_counters, 'plates': pl_list_with_counters}
         if selected_tags:
@@ -112,7 +286,7 @@ def tag_image_search(request, conn=None, **kwargs):
             if results_preview:
                 if image_ids:
                     images = conn.getObjects('Image', ids = image_ids)
-                    manager['containers']['images'] = list(images)
+                    manager['containers']['images'] = images
 
                 if dataset_ids:
                     datasets = conn.getObjects('Dataset', ids = dataset_ids)
@@ -123,10 +297,13 @@ def tag_image_search(request, conn=None, **kwargs):
                     manager['containers']['projects'] = projects
 
                 manager['c_size'] = len(image_ids) + len(dataset_ids) + len(project_ids)
+                if manager['c_size'] > 0:
+                    preview = True
 
             context['manager'] = manager
-            print(context)
-            html_response = render_to_string("webclient/search/search_details.html", context)
+
+            html_response = render_to_string("webtagging_search/search_details.html", context)
+            # html_response = render_to_string("webclient/search/search_details.html", context)
             # html_response = render_to_string("webtagging_search/image_results.html", context)
 
             middle = time.time()
@@ -141,7 +318,7 @@ def tag_image_search(request, conn=None, **kwargs):
                 params.map["oids"] = rlist([rlong(o) for o in oids])
 
                 qs = conn.getQueryService()
-                return [result[0].val for result in qs.projection(hql,params)]
+                return [result[0].val for result in qs.projection(hql,params, service_opts)]
 
             # Calculate remaining possible tag navigations
             # TODO Compare subquery to pass-in performance
@@ -166,5 +343,6 @@ def tag_image_search(request, conn=None, **kwargs):
         # Return the navigation data and the html preview for display
         # return {"navdata": list(remaining), "html": html_response}
         return HttpResponse(json.dumps({"navdata": list(remaining),
+                                        "preview": preview,
                                         "html": html_response}),
                             content_type="application/json")
