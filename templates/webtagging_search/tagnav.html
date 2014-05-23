@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="{% static "webgateway/css/ome.table.css" %}" type="text/css" media="screen"/>
     <link rel="stylesheet" href="{% static "3rdparty/jquery.tablesorter/jquery.tablesorter.css" %}" type="text/css" media="screen"/>
     <link rel="stylesheet" href="{% static '3rdparty/jquery.chosen/chosen.css' %}" type="text/css" media="screen"/>
+    <link rel="stylesheet" href="{% static "webtagging_search/css/webtagging_search.css" %}" type="text/css" media="screen"/>
   
   <!--[if lte IE 8]>
     <link rel="stylesheet" type="text/css" href="{% static "/webgateway/css/ome.table_ie.css" %}" />
@@ -56,10 +57,35 @@
                   },
                   success: function(data) {
                     $("div#content_details").html(data.html);
+
+                      if (data.project_count > 0) {
+                        $("#tagnav_projects span").html(data.project_count);
+                        $("#tagnav_projects").removeClass('hidden');
+                      } else {
+                        $("#tagnav_projects").addClass('hidden');
+                      }
+
+                      if (data.dataset_count > 0) {
+                        $("#tagnav_datasets span").html(data.dataset_count);
+                        $("#tagnav_datasets").removeClass('hidden');
+                      } else {
+                        $("#tagnav_datasets").addClass('hidden');
+                      }
+                      
+                      if (data.image_count > 0) {
+                        $("#tagnav_images span").html(data.image_count);
+                        $("#tagnav_images").removeClass('hidden');
+                      } else {
+                        $("#tagnav_images").addClass('hidden');
+                      }
+
+                    
+                      
                     if (data.preview) {
-                      $("#filtersearch").show();
+                      $("#filtersearch").removeClass('hidden');
+                      OME.table_selection_changed();
                     }
-                    OME.table_selection_changed();
+                    
 
                     // Hide any options that are no longer possible and
                     // show any that have become possible
@@ -108,6 +134,7 @@
                         
                     } else {
                         $("div#content_details").empty();
+                        $("#filtersearch").addClass('hidden');
                         // TODO Hide filter
                     }   
                 });
@@ -115,110 +142,6 @@
 
                 $("#filtersearch label").inFieldLabels();
 
-                $('#startdateinput, #enddateinput').datepicker({
-                    changeMonth: true, 
-                    changeYear: true,
-                    firstDay: 1, 
-                    dateFormat: 'yy-mm-dd', 
-                    beforeShow: function(input, inst) {
-                        // z-index is set to 1 on 'show' - need to reset if AFTER show
-                        setTimeout(function(){
-                            $("#ui-datepicker-div").css('z-index','50');
-                        }, 10);
-                    }
-                });
-                
-                $(".searching_info, #daterange").tooltip({ 
-                    track: true, 
-                    delay: 0, 
-                    showURL: false, 
-                    opacity: 1, 
-                    fixPNG: true, 
-                    showBody: " - ", 
-                    top: -15, 
-                    left: 5 
-                });
-                
-                $("#search_button").click(function() { 
-                    var url = null;
-                    var query = $("input[name='query']"); 
-                    if (query.val().length <= 0) {
-                        alert("Search must contains some text.");
-                        return false;
-                    } else if (query.val().length <= 1 && query.val().indexOf("*") < 1) {
-                        alert("Wildcard searches (*) must contain more than a single wildcard.");
-                        return false;
-                    } else {
-                        url = query.serialize();
-                    }
-                    
-                    var startdateinput = $("input[name='startdateinput']");
-                    if(startdateinput.val()!=null && startdateinput.val()!="") {
-                        url = url + "&startdateinput="+startdateinput.val();
-                    }
-                    var enddateinput = $("input[name='enddateinput']");
-                    if(enddateinput.val()!=null && enddateinput.val()!="") {
-                        // check if start date is before, otherwise we have problem
-                        var start = startdateinput.val();
-                        var end = enddateinput.val();
-                        if (start==null || start=="") {
-                            alert("Choose start date for range");
-                            return false;
-                        }
-                        if (start > end) {
-                            alert("Start date is after End date");
-                            return false;
-                        }
-                        url = url + "&enddateinput="+end;
-                    }
-                    $("input[name='datatype']:checked").each(function(){
-                        if(url != null ) {
-                            url = url+"&"+this.value+"=on";
-                        } else {
-                            url = this.value+"=on";
-                        }
-                    });
-                    $("div#content_details").html('<p>{% trans "Loading data... please wait" %} <img src ="{% static "webgateway/img/spinner.gif" %}"/></p>');
-                    $("div#content_details").load('{% url 'load_searching' "form" %}?'+url);
-                    $("#filtersearch").show();
-                    OME.table_selection_changed();
-                    return false;
-                });
-
-
-            {% if init.query %}
-                console.log('init.query')
-                $("div#content_details").load('{% url 'load_searching' "form" %}?query={{ init.query|iriencode }}');
-                $("#filtersearch").show();
-                OME.table_selection_changed();
-                var query_string = "{{ init.query }}";
-                query_string = query_string.replace("%20", " ");
-                $("input[name='query']").val(query_string);
-            {% endif %}
-
-
-                $("#batch_search_button").click(function() {
-                    var batch_query = $("textarea[name='batch_query']").val();
-                    if (batch_query == "") {
-                        alert("No query entered");
-                        return false;
-                    }
-                    var delimiter = $("input[name='delimiter']:checked").val();
-                    var lines = batch_query.split('\n');
-                    var regex = new RegExp("\\w+D\\d+D\\d+".replace(/D/g, delimiter));
-                    for (var i=0; i<lines.length; i++) {
-                        if (!regex.test(lines[i])) {
-                            alert("Format error at line " + i + ": \n\"" + lines[i] + "\"\n\nDid you select the correct delimiter?");
-                            return false;
-                        }
-                    }
-                    var data = $("#batch_searching_form").serialize();
-                    $("div#content_details").html('<p>{% trans "Loading data... please wait" %} <img src ="{% static "webgateway/img/spinner.gif" %}"/></p>');
-                    $("div#content_details").load('{% url 'load_searching' %}', data);
-                    $("#filtersearch").show();
-                    OME.table_selection_changed()
-                    return false;
-                });
                 OME.table_selection_changed();     // clear selection (hides acquisition & preview tabs)
         })
     </script>
@@ -236,20 +159,24 @@
 
 
 <div id="searching">
-  
-  
-  {% comment %}
-    <div>
-        <p>{% trans "Searching feature enables you to search within the images, datasets, projects, plates and screens stored on the server. It supports single and multiple character wildcard searches." %}</p>
-    </div>
-  {% endcomment %}
-  
   <div class="left_panel_inner">
-      <div>
+      <form id="tagSearchForm" action="{% url 'wtsimages' %}" method="post" class="standard_form">{% csrf_token %}
           <h2>{% trans "Tag Navigation" %}</h2>
-      </div>
-      <form id="tagSearchForm" action="{% url 'wtsimages' %}" method="post">{% csrf_token %}
-          {{ tagnav_form.as_p }}
+          {# {{ tagnav_form.as_p }} #}
+          {{ tagnav_form.non_field_errors }}
+          <div class="fieldWrapper">
+              {{ tagnav_form.selectedTags.errors }}
+              <label for="id_selectedTags">Selected Tags:</label>
+              {{ tagnav_form.selectedTags }}
+              <span class="searching_info">
+                <img src="/static/webgateway/img/help16.png">
+              </span>
+              <br>
+
+              {{ tagnav_form.results_preview.errors }}
+              <label for="id_results_preview">Preview:</label>
+              {{ tagnav_form.results_preview }}
+          </div>
       </form>
 
 
@@ -260,9 +187,9 @@
 
 {% block center %}
 
-  <div id="center_panel_header" >
+  <div id="center_panel_header">
     
-    <form class="search filtersearch" id="filtersearch" action="#" style="display:none">
+    <form class="search filtersearch hidden" id="filtersearch" action="#">
         <div>
             <label for="id_search">
                 Filter Results
@@ -274,6 +201,17 @@
         <img class="loader" alt="Loading" src="{% static "webgateway/img/spinner.gif" %}">
       </span>
     </form>
+
+    <div id="tagnav_projects" class="tagnav_counts hidden">
+      <input id="projectButton" class="button" type="image" src="/static/webclient/image/folder16.png" alt="Projects" title="Projects"><span></span>
+    </div>
+    <div id="tagnav_datasets" class="tagnav_counts hidden">
+      <input id="datasetButton" class="button" type="image" src="/static/webgateway/img/folder_image16.png" alt="Datasets" title="Datasets"><span></span>
+    </div>
+    <div id="tagnav_images" class="tagnav_counts hidden">
+      <input id="imageButton" class="button" type="image" src="http://localhost:8000/static/webclient/image/image16.png" alt="Images" title="Images"><span></span>
+    </div>
+    
     
   </div>
 

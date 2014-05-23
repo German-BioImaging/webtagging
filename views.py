@@ -206,7 +206,6 @@ def index(request, conn=None, **kwargs):
     # TODO Set the active group
     params = Parameters()
     qs = conn.getQueryService()
-    print('Active group: ', active_group)
     # conn.SERVICE_OPTS.setOmeroGroup(active_group)
     # Get tags
     # It is not sufficient to simply get the objects as there may be tags
@@ -273,15 +272,21 @@ def tag_image_search(request, conn=None, **kwargs):
 
         manager = {'containers': {}}
         preview = False
+        project_count = 0
+        dataset_count = 0
+        image_count = 0
 
         # self.containers={'projects': pr_list_with_counters, 'datasets': ds_list_with_counters, 'images': im_list_with_counters, 'screens': sc_list_with_counters, 'plates': pl_list_with_counters}
         if selected_tags:
             image_ids = getObjectsWithAllAnnotations('Image', selected_tags)
             context['image_count'] = len(image_ids)
+            image_count = len(image_ids)
             dataset_ids = getObjectsWithAllAnnotations('Dataset', selected_tags)
             context['dataset_count'] = len(dataset_ids)
+            dataset_count = len(dataset_ids)
             project_ids = getObjectsWithAllAnnotations('Project', selected_tags)
             context['project_count'] = len(project_ids)
+            project_count = len(project_ids)
 
             if results_preview:
                 if image_ids:
@@ -344,5 +349,8 @@ def tag_image_search(request, conn=None, **kwargs):
         # return {"navdata": list(remaining), "html": html_response}
         return HttpResponse(json.dumps({"navdata": list(remaining),
                                         "preview": preview,
+                                        "project_count": project_count,
+                                        "dataset_count": dataset_count,
+                                        "image_count": image_count,
                                         "html": html_response}),
                             content_type="application/json")
