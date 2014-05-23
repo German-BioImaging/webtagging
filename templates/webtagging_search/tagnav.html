@@ -59,32 +59,29 @@
                     $("div#content_details").html(data.html);
 
                       if (data.project_count > 0) {
-                        $("#tagnav_projects span").html(data.project_count);
-                        $("#tagnav_projects").removeClass('hidden');
+                        $(".tagnav-project span").html(data.project_count);
                       } else {
-                        $("#tagnav_projects").addClass('hidden');
+                          $(".tagnav-project span").html('0');
                       }
 
                       if (data.dataset_count > 0) {
-                        $("#tagnav_datasets span").html(data.dataset_count);
-                        $("#tagnav_datasets").removeClass('hidden');
+                        $(".tagnav-dataset span").html(data.dataset_count);
                       } else {
-                        $("#tagnav_datasets").addClass('hidden');
-                      }
-                      
-                      if (data.image_count > 0) {
-                        $("#tagnav_images span").html(data.image_count);
-                        $("#tagnav_images").removeClass('hidden');
-                      } else {
-                        $("#tagnav_images").addClass('hidden');
+                        $(".tagnav-dataset span").html('0');
                       }
 
-                    
-                      
-                    if (data.preview) {
-                      $("#filtersearch").removeClass('hidden');
-                      OME.table_selection_changed();
-                    }
+                      if (data.image_count > 0) {
+                        $(".tagnav-image span").html(data.image_count);
+                      } else {
+                        $(".tagnav-image span").html('0');
+                      }
+   
+                      if (data.preview) {
+                        $("#filtersearch").removeClass('hidden');
+                        OME.table_selection_changed();
+                      } else {
+                        $("#filtersearch").addClass('hidden');
+                      }
                     
 
                     // Hide any options that are no longer possible and
@@ -179,6 +176,13 @@
           </div>
       </form>
 
+      <h2>Results</h2>
+      <ul>
+          <li class="tagnav-project"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
+          <li class="tagnav-dataset"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
+          <li class="tagnav-image"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
+      </ul>
+
 
   </div>
 </div>
@@ -201,17 +205,6 @@
         <img class="loader" alt="Loading" src="{% static "webgateway/img/spinner.gif" %}">
       </span>
     </form>
-
-    <div id="tagnav_projects" class="tagnav_counts hidden">
-      <input id="projectButton" class="button" type="image" src="/static/webclient/image/folder16.png" alt="Projects" title="Projects"><span></span>
-    </div>
-    <div id="tagnav_datasets" class="tagnav_counts hidden">
-      <input id="datasetButton" class="button" type="image" src="/static/webgateway/img/folder_image16.png" alt="Datasets" title="Datasets"><span></span>
-    </div>
-    <div id="tagnav_images" class="tagnav_counts hidden">
-      <input id="imageButton" class="button" type="image" src="http://localhost:8000/static/webclient/image/image16.png" alt="Images" title="Images"><span></span>
-    </div>
-    
     
   </div>
 
