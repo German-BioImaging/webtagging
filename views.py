@@ -269,7 +269,7 @@ def tag_image_search(request, conn=None, **kwargs):
             hql = "select link.parent.id from %sAnnotationLink link " \
                   "where link.child.id in (:oids) " \
                   "group by link.parent.id " \
-                  "having count (link.parent) = %s" % (obj_type, len(annids))
+                  "having count (distinct link.child) = %s" % (obj_type, len(annids))
             params = Parameters()
             params.map = {}
             params.map["oids"] = rlist([rlong(o) for o in set(annids)])
