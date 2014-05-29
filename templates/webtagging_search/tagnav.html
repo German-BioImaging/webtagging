@@ -181,30 +181,32 @@
           {# {{ tagnav_form.as_p }} #}
           {{ tagnav_form.non_field_errors }}
           <div class="fieldWrapper">
-              {{ tagnav_form.selectedTags.errors }}
-              <label for="id_selectedTags">Selected Tags:</label>
-              {{ tagnav_form.selectedTags }}
-              <span class="searching_info"
-                title="Tag Search - <small>Perform a query for Projects, Datasets and Images based on the tag specified. The query gets all Projects, Datasets and Images which have <b>all</b> of the specified tags.
-                Each time a tag is added, the list of potential tags to add is reduced to those that overlap with the tags already specified.
-                A count of results is shown in the search panel and at any time it is possible to show the Projects, Datasets and Images that match by turning on the <b>Preview<b></small>">
-                <img src="/static/webgateway/img/help16.png" />
-              </span>
-              <br>
+              <div class="tagSearchDivider">
+                  {{ tagnav_form.selectedTags.errors }}
+                  <label for="id_selectedTags">Selected Tags:</label>
+                  {{ tagnav_form.selectedTags }}
+                  <span class="searching_info"
+                    title="Tag Search - <small>Perform a query for Projects, Datasets and Images based on the tag specified. The query gets all Projects, Datasets and Images which have <b>all</b> of the specified tags.
+                    Each time a tag is added, the list of potential tags to add is reduced to those that overlap with the tags already specified.
+                    A count of results is shown in the search panel and at any time it is possible to show the Projects, Datasets and Images that match by turning on the <b>Preview<b></small>">
+                    <img src="/static/webgateway/img/help16.png" />
+                  </span>
+              </div>
 
               {{ tagnav_form.results_preview.errors }}
               <label for="id_results_preview">Preview:</label>
               {{ tagnav_form.results_preview }}
+              <h2>Results</h2>
+              <ul>
+                  <li class="tagnav-project"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
+                  <li class="tagnav-dataset"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
+                  <li class="tagnav-image"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
+              </ul>
+
           </div>
+      
+
       </form>
-
-      <h2>Results</h2>
-      <ul>
-          <li class="tagnav-project"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
-          <li class="tagnav-dataset"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
-          <li class="tagnav-image"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
-      </ul>
-
 
   </div>
 </div>
