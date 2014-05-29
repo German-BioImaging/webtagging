@@ -26,7 +26,7 @@
     {{ block.super }}
     <link rel="stylesheet" href="{% static "webgateway/css/ome.table.css" %}" type="text/css" media="screen"/>
     <link rel="stylesheet" href="{% static "3rdparty/jquery.tablesorter/jquery.tablesorter.css" %}" type="text/css" media="screen"/>
-    <link rel="stylesheet" href="{% static '3rdparty/jquery.chosen/chosen.css' %}" type="text/css" media="screen"/>
+    <link rel="stylesheet" href="{% static "webtagging_search/3rd-party/chosen/chosen.css" %}" type="text/css" media="screen"/>
     <link rel="stylesheet" href="{% static "webtagging_search/css/webtagging_search.css" %}" type="text/css" media="screen"/>
   
   <!--[if lte IE 8]>
@@ -42,12 +42,26 @@
     <script src="{% static 'webclient/javascript/jquery.infieldlabel.js' %}" type="text/javascript"></script>
     <script type="text/javascript" src="{% static "3rdparty/jquery.tablesorter/jquery.tablesorter.js" %}"></script>
     <script type="text/javascript" src="{% static "3rdparty/jquery.quicksearch.js" %}"></script>
-    <script src="{% static '3rdparty/jquery.chosen/chosen.jquery.js' %}"></script>
-    
+
+    {# Different chosen than used elsewhere in OMERO because ordering needs a more recent version #}
+    <script src="{% static "webtagging_search/3rd-party/chosen/chosen.jquery.js" %}"></script>
+    <script src="{% static "webtagging_search/3rd-party/chosen.order.jquery.js" %}"></script>
+
     <script type="text/javascript">
         $(document).ready(function() 
             {
                 $("#id_selectedTags").chosen({placeholder_text:'Choose tags'});
+
+                $(".searching_info").tooltip({
+                    track: true,
+                    delay: 0,
+                    showURL: false,
+                    opacity: 1,
+                    fixPNG: true,
+                    showBody: " - ",
+                    top: -15,
+                    left: 5
+                });
 
                 // Form Submission
                 $("#tagSearchForm").ajaxForm({  
@@ -94,9 +108,17 @@
                       }
                     });
 
+                    // Preserve the order of the select because otherwise Chosen will show the same order as
+                    // the underlying select. i.e. the original option ordering
+                    var selection = $('#id_selectedTags').getSelectionOrder();
+
                     // Update the chosen selector
-                    // $("#id_selectedTags").trigger("chosen:updated");
-                    $("#id_selectedTags").trigger("liszt:updated");
+                    $("#id_selectedTags").trigger("chosen:updated");
+                    // Old style chosen update
+                    // $("#id_selectedTags").trigger("liszt:updated");
+
+                    // Restore the ordering
+                    $('#id_selectedTags').setSelectionOrder(selection);
                     
                   }
                 });
@@ -106,9 +128,6 @@
                   
                   // Selection made
                   if (params.selected) {
-
-                    // Hide any options which do not intersect with the resulting selectTags set
-
                     // Instead of submitting, serialize the input data and load the url
                     $("#tagSearchForm").submit();
 
@@ -165,8 +184,11 @@
               {{ tagnav_form.selectedTags.errors }}
               <label for="id_selectedTags">Selected Tags:</label>
               {{ tagnav_form.selectedTags }}
-              <span class="searching_info">
-                <img src="/static/webgateway/img/help16.png">
+              <span class="searching_info"
+                title="Tag Navigation - <small>Perform a query for Projects, Datasets and Images based on the tag specified. The query gets all Projects, Datasets and Images which have <b>all</b> of the specified tags.
+                Each time a tag is added, the list of potential tags to add is reduced to those that overlap with the tags already specified.
+                A count of results is shown in the search panel and at any time it is possible to show the Projects, Datasets and Images that match by turning on the <b>Preview<b></small>">
+                <img src="/static/webgateway/img/help16.png" />
               </span>
               <br>
 
