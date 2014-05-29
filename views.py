@@ -200,24 +200,35 @@ def index(request, conn=None, **kwargs):
     new_container_form = ContainerForm()
 
     # Create and set the form
-    # List of tuples (id, value)
-    tags = []
 
-    # TODO Set the active group
     params = Parameters()
     qs = conn.getQueryService()
-    # conn.SERVICE_OPTS.setOmeroGroup(active_group)
-    # Get tags
-    # It is not sufficient to simply get the objects as there may be tags
-    # which are not applied which don't really make sense to display
-    # tags = list(self.conn.getObjects("TagAnnotation"))
-    hql = "select distinct link.child.id, link.child.textValue " \
-          "from ImageAnnotationLink link " \
-          "where link.child.class is TagAnnotation " \
-          "order by link.child.textValue"
     service_opts = conn.SERVICE_OPTS.copy()
     service_opts.setOmeroGroup(active_group)
-    tags = [(result[0].val, result[1].val) for result in qs.projection(hql, params, service_opts)]
+
+    def get_tags(obj):
+
+        # Get tags
+        # It is not sufficient to simply get the objects as there may be tags
+        # which are not applied which don't really make sense to display
+        # tags = list(self.conn.getObjects("TagAnnotation"))
+        hql = "select distinct link.child.id, link.child.textValue " \
+              "from %sAnnotationLink link " \
+              "where link.child.class is TagAnnotation " \
+              "order by link.child.textValue" % obj
+
+        return [(result[0].val, result[1].val) for result in qs.projection(hql, params, service_opts)]
+
+    # List of tuples (id, value)
+    tags = set(get_tags('Image'))
+    print('images', tags)
+    tags.update(get_tags('Dataset'))
+    print('datasets', tags)
+    tags.update(get_tags('Project'))
+    print('projects', tags)
+
+    # Convert back to an ordered list and sort
+    tags = list(tags)
     tags.sort(key=lambda x: x[1].lower())
 
     form = TagSearchForm(tags, conn)
@@ -276,7 +287,6 @@ def tag_image_search(request, conn=None, **kwargs):
         dataset_count = 0
         image_count = 0
 
-        # self.containers={'projects': pr_list_with_counters, 'datasets': ds_list_with_counters, 'images': im_list_with_counters, 'screens': sc_list_with_counters, 'plates': pl_list_with_counters}
         if selected_tags:
             image_ids = getObjectsWithAllAnnotations('Image', selected_tags)
             context['image_count'] = len(image_ids)
