@@ -177,7 +177,7 @@
 <div id="searching">
   <div class="left_panel_inner">
       <form id="tagSearchForm" action="{% url 'wtsimages' %}" method="post" class="standard_form">{% csrf_token %}
-          <h2>{% trans "Tag Navigation" %}</h2>
+          <h2>{% trans "Tag Search" %}</h2>
           {# {{ tagnav_form.as_p }} #}
           {{ tagnav_form.non_field_errors }}
           <div class="fieldWrapper">
@@ -185,7 +185,7 @@
               <label for="id_selectedTags">Selected Tags:</label>
               {{ tagnav_form.selectedTags }}
               <span class="searching_info"
-                title="Tag Navigation - <small>Perform a query for Projects, Datasets and Images based on the tag specified. The query gets all Projects, Datasets and Images which have <b>all</b> of the specified tags.
+                title="Tag Search - <small>Perform a query for Projects, Datasets and Images based on the tag specified. The query gets all Projects, Datasets and Images which have <b>all</b> of the specified tags.
                 Each time a tag is added, the list of potential tags to add is reduced to those that overlap with the tags already specified.
                 A count of results is shown in the search panel and at any time it is possible to show the Projects, Datasets and Images that match by turning on the <b>Preview<b></small>">
                 <img src="/static/webgateway/img/help16.png" />
