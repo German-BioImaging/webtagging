@@ -151,7 +151,7 @@ def index(request, conn=None, **kwargs):
             init['query'] = global_search_form.cleaned_data['search_query']
 
     # get url without request string - used to refresh page after switch user/group etc
-    url = reverse(viewname="tagnav")
+    url = reverse(viewname="tagsearch")
 
     # validate experimenter is in the active group
     active_group = request.session.get('active_group') or conn.getEventContext().groupId
