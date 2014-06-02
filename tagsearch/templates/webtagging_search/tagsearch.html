@@ -1,0 +1,107 @@
+{% load url from future %}
+<html>
+
+{# <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/chosen/1.0/chosen.css" type="text/css" media="screen"/> #}
+<link rel="stylesheet" type="text/css" href="{% static 'webtagging_search/css/bootstrap.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'webtagging_search/css/webtagging_search.css' %}" />
+
+{# <script src="//code.jquery.com/jquery-1.10.1.min.js"></script> #}
+<script>window.jQuery || document.write('<script src="/static/3rdparty/jquery-1.7.2.js"><\/script><script src="{% static "webclient/javascript/jquery.form.js" %}"><\/script><script src="{% static "3rdparty/jquery-ui-1.8.19/jquery-ui-1.8.19.custom.min.js" %}"><\/script>')</script>
+<head>
+    <link rel="stylesheet" href="{% static "webgateway/css/reset.css" %}" type="text/css" />   
+    <link rel="stylesheet" href="{% static "webgateway/css/ome.body.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "webclient/css/dusty.css" %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static "webgateway/css/ome.header.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "webclient/css/layout.css" %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static "3rdparty/jquery-ui-1.8.19/themes/base/jquery.ui.base.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "webgateway/css/ome.table.css" %}" type="text/css" media="screen"/>
+    <link rel="stylesheet" href="{% static "3rdparty/jquery.tablesorter/jquery.tablesorter.css" %}" type="text/css" media="screen"/>
+</head>
+
+<link rel="stylesheet" href="{% static '3rdparty/jquery.chosen/chosen.css' %}" type="text/css" media="screen"/>
+
+<script src="{% static '3rdparty/jquery.chosen/chosen.jquery.js' %}"></script>
+{# <script src="//cdnjs.cloudflare.com/ajax/libs/chosen/1.0/chosen.jquery.js"></script> #}
+<script src="{% static 'webtagging_search/3rd-party/arrayUtilities/jquery.arrayUtilities.min.js' %}"></script>
+<script src="{% static 'webtagging_search/3rd-party/jquery.form.js' %}"></script> 
+
+<script type="text/javascript" src="{% static "3rdparty/jquery.tooltip/jquery.tooltip.pack.js" %}"></script>
+<script src="{% static 'webclient/javascript/jquery.infieldlabel.js' %}" type="text/javascript"></script>
+<script type="text/javascript" src="{% static "3rdparty/jquery.tablesorter/jquery.tablesorter.js" %}"></script>
+<script type="text/javascript" src="{% static "3rdparty/jquery.quicksearch.js" %}"></script>
+
+<script>
+
+  $(function(){
+  // $( document ).ready(function() {
+    $("#id_selectedTags").chosen({placeholder_text:'Choose tags'});
+
+    var $submitButton = $("#tagSearchForm input[type='submit']");
+    // Form Submission
+    $("#tagSearchForm").ajaxForm({  
+      beforeSubmit: function() {
+        // prevent submitting the form again while waiting
+        $submitButton.attr('disabled', true);
+      },
+      success: function(data) {
+        $("#searchResults").html(data.html);
+        $submitButton.removeAttr('disabled');
+
+        // Hide any options that are no longer possible and
+        // show any that have become possible
+        $("#id_selectedTags option").each(function() {
+          if (($.inArray(parseInt(this.value), data.navdata) == -1) && (data.navdata.length != 0)) {
+            $(this).hide();
+          } else {
+            $(this).css('display', '');
+          }
+        });
+
+        // Update the chosen selector
+        // $("#id_selectedTags").trigger("chosen:updated");
+        $("#id_selectedTags").trigger("liszt:updated");
+        
+      }
+    });
+
+
+    // Selection change
+    $( "#id_selectedTags" ).chosen().change(function(event, params) {
+      
+      // Selection made
+      if (params.selected) {
+
+        // Hide any options which do not intersect with the resulting selectTags set
+
+        $("#tagSearchForm").submit();
+
+      // Deselection made
+      } else if (params.deselected) {
+        $("#tagSearchForm").submit();
+      }
+
+
+    });
+
+    // Preview change
+    $('#id_results_preview').change(function() {
+        if($(this).is(":checked")) {
+            $("#tagSearchForm").submit();
+        } else {
+            $("#searchResults").empty();
+        }   
+    });
+
+  });
+</script>
+
+
+<p>Each item added to the search criteria further reduces the search space and will be therefore more responsive, so it is desirable to pick criteria that refine the search space more significantly towards the beginning.</p>
+
+<!--TODO I should really use another view to process the data as there is no need to call the heavy operations invoked by get_form_kwargs in the TagSearchFormView. Also, it will be a bit awkward to return the data from there as that's not really the form views function. A standard TemplateView should be sufficient, returning html results to display -->
+<form id="tagSearchForm" action="{% url 'wtsimages' %}" method="post">{% csrf_token %}
+{{ form.as_p }}
+</form>
+
+<div id="searchResults"></div>
+</html>

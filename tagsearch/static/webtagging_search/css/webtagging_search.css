@@ -1,0 +1,67 @@
+.tagSearchDivider {
+    border-bottom:solid 1px hsl(210,20%,90%);
+    -webkit-box-shadow:0 1px 0 rgba(255,255,255,.3);
+
+    -webkit-box-shadow: 0 1px 0 rgba(255,255,255,0.3); /* Saf3.0+, Chrome */
+    -moz-box-shadow: 0 1px 0 rgba(255,255,255,0.3); /* FF3.5+ */
+    box-shadow: 0 1px 0 rgba(255,255,255,0.3); /* Opera 10.5, IE 9.0 */
+
+    padding-bottom:25px;
+    margin-bottom:25px;
+    }
+
+#id_selectedTags {
+  width:150px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.tagnav_counts {
+  position: relative;
+  display: inline-block;
+  margin-left: 10px;
+  top: 8px;
+}
+
+.tagnav_counts span {
+  font-size:1.3em;
+  font-weight:lighter;
+  margin-left: 5px;
+}
+
+.tagnav-icon {
+  background-position: 0 0;
+  background-position: center top;
+  height: 16px;
+  width: 17px;
+  display: inline-block;
+  text-decoration: none;
+  margin: 0 0 3px 0;
+  padding: 0;
+}
+
+.tagnav-project .tagnav-icon {
+  background: url('/static/webclient/image/folder16.png') no-repeat;
+}
+
+.tagnav-dataset .tagnav-icon {
+  background: url('/static/webgateway/img/folder_image16.png') no-repeat;
+}
+
+.tagnav-image .tagnav-icon {
+  background: url('/static/webclient/image/image16.png') no-repeat;
+}
+
+.tagnav-project span, .tagnav-dataset span , .tagnav-image span {
+    width: 25%;
+    display: inline-block;
+    color: hsl(210,10%,50%);
+    font-size: 1.2em;
+    text-shadow: 0 1px 0 white;
+    vertical-align: top;
+    font-weight: bold;
+    margin-left: 5px;
+    margin-top: 2px;
+  }

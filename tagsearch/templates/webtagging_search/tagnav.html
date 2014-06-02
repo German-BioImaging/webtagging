@@ -1,0 +1,237 @@
+{% extends "webclient/base/base_container.html" %}
+{% load i18n %}
+
+
+{% comment %}
+<!--
+  Copyright (C) 2011 University of Dundee & Open Microscopy Environment.
+  All rights reserved.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as
+  published by the Free Software Foundation, either version 3 of the
+  License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+{% endcomment %}
+
+{% block link %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static "webgateway/css/ome.table.css" %}" type="text/css" media="screen"/>
+    <link rel="stylesheet" href="{% static "3rdparty/jquery.tablesorter/jquery.tablesorter.css" %}" type="text/css" media="screen"/>
+    <link rel="stylesheet" href="{% static "webtagging_search/3rd-party/chosen/chosen.css" %}" type="text/css" media="screen"/>
+    <link rel="stylesheet" href="{% static "webtagging_search/css/webtagging_search.css" %}" type="text/css" media="screen"/>
+  
+  <!--[if lte IE 8]>
+    <link rel="stylesheet" type="text/css" href="{% static "/webgateway/css/ome.table_ie.css" %}" />
+  <![endif]-->
+  
+    
+{% endblock %}
+
+{% block script %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static "3rdparty/jquery.tooltip/jquery.tooltip.pack.js" %}"></script>
+    <script src="{% static 'webclient/javascript/jquery.infieldlabel.js' %}" type="text/javascript"></script>
+    <script type="text/javascript" src="{% static "3rdparty/jquery.tablesorter/jquery.tablesorter.js" %}"></script>
+    <script type="text/javascript" src="{% static "3rdparty/jquery.quicksearch.js" %}"></script>
+
+    {# Different chosen than used elsewhere in OMERO because ordering needs a more recent version #}
+    <script src="{% static "webtagging_search/3rd-party/chosen/chosen.jquery.js" %}"></script>
+    <script src="{% static "webtagging_search/3rd-party/chosen.order.jquery.js" %}"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function() 
+            {
+                $("#id_selectedTags").chosen({placeholder_text:'Choose tags'});
+
+                $(".searching_info").tooltip({
+                    track: true,
+                    delay: 0,
+                    showURL: false,
+                    opacity: 1,
+                    fixPNG: true,
+                    showBody: " - ",
+                    top: -15,
+                    left: 5
+                });
+
+                // Form Submission
+                $("#tagSearchForm").ajaxForm({  
+                  beforeSubmit: function() {
+                    // prevent submitting the form again while waiting
+                    $("div#content_details").html('<p>{% trans "Loading data... please wait" %} <img src ="{% static "webgateway/img/spinner.gif" %}"/></p>');
+                  },
+                  success: function(data) {
+                    $("div#content_details").html(data.html);
+
+                      if (data.project_count > 0) {
+                        $(".tagnav-project span").html(data.project_count);
+                      } else {
+                          $(".tagnav-project span").html('0');
+                      }
+
+                      if (data.dataset_count > 0) {
+                        $(".tagnav-dataset span").html(data.dataset_count);
+                      } else {
+                        $(".tagnav-dataset span").html('0');
+                      }
+
+                      if (data.image_count > 0) {
+                        $(".tagnav-image span").html(data.image_count);
+                      } else {
+                        $(".tagnav-image span").html('0');
+                      }
+   
+                      if (data.preview) {
+                        $("#filtersearch").removeClass('hidden');
+                        OME.table_selection_changed();
+                      } else {
+                        $("#filtersearch").addClass('hidden');
+                      }
+                    
+
+                    // Hide any options that are no longer possible and
+                    // show any that have become possible
+                    $("#id_selectedTags option").each(function() {
+                      if (($.inArray(parseInt(this.value), data.navdata) == -1) && (data.navdata.length != 0)) {
+                        $(this).hide();
+                      } else {
+                        $(this).css('display', '');
+                      }
+                    });
+
+                    // Preserve the order of the select because otherwise Chosen will show the same order as
+                    // the underlying select. i.e. the original option ordering
+                    var selection = $('#id_selectedTags').getSelectionOrder();
+
+                    // Update the chosen selector
+                    $("#id_selectedTags").trigger("chosen:updated");
+                    // Old style chosen update
+                    // $("#id_selectedTags").trigger("liszt:updated");
+
+                    // Restore the ordering
+                    $('#id_selectedTags').setSelectionOrder(selection);
+                    
+                  }
+                });
+
+                // Selection change
+                $( "#id_selectedTags" ).chosen().change(function(event, params) {
+                  
+                  // Selection made
+                  if (params.selected) {
+                    // Instead of submitting, serialize the input data and load the url
+                    $("#tagSearchForm").submit();
+
+                  // Deselection made
+                  } else if (params.deselected) {
+                    $("#tagSearchForm").submit();
+                  }
+
+
+                });
+
+                // Preview change
+                $('#id_results_preview').change(function() {
+                    if($(this).is(":checked")) {
+                        // Check if there is anything to submit
+                        // Above Success should be able to handle no results though
+                        if ($("#id_selectedTags option:selected").length) {
+                          $("#tagSearchForm").submit();
+                        }
+                        
+                    } else {
+                        $("div#content_details").empty();
+                        $("#filtersearch").addClass('hidden');
+                        // TODO Hide filter
+                    }   
+                });
+
+
+                $("#filtersearch label").inFieldLabels();
+
+                OME.table_selection_changed();     // clear selection (hides acquisition & preview tabs)
+        })
+    </script>
+
+{% endblock %}
+
+{% block left %}
+
+
+<div id="user_selection">
+
+{% include "webclient/base/includes/group_user_dropdown.html" %}
+  
+</div>
+
+
+<div id="searching">
+  <div class="left_panel_inner">
+      <form id="tagSearchForm" action="{% url 'wtsimages' %}" method="post" class="standard_form">{% csrf_token %}
+          <h2>{% trans "Tag Search" %}</h2>
+          {# {{ tagnav_form.as_p }} #}
+          {{ tagnav_form.non_field_errors }}
+          <div class="fieldWrapper">
+              <div class="tagSearchDivider">
+                  {{ tagnav_form.selectedTags.errors }}
+                  <label for="id_selectedTags">Selected Tags:</label>
+                  {{ tagnav_form.selectedTags }}
+                  <span class="searching_info"
+                    title="Tag Search - <small>Perform a query for Projects, Datasets and Images based on the tag specified. The query gets all Projects, Datasets and Images which have <b>all</b> of the specified tags.
+                    Each time a tag is added, the list of potential tags to add is reduced to those that overlap with the tags already specified.
+                    A count of results is shown in the search panel and at any time it is possible to show the Projects, Datasets and Images that match by turning on the <b>Preview<b></small>">
+                    <img src="/static/webgateway/img/help16.png" />
+                  </span>
+              </div>
+
+              {{ tagnav_form.results_preview.errors }}
+              <label for="id_results_preview">Preview:</label>
+              {{ tagnav_form.results_preview }}
+              <h2>Results</h2>
+              <ul>
+                  <li class="tagnav-project"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
+                  <li class="tagnav-dataset"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
+                  <li class="tagnav-image"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
+              </ul>
+
+          </div>
+      
+
+      </form>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block center %}
+
+  <div id="center_panel_header">
+    
+    <form class="search filtersearch hidden" id="filtersearch" action="#">
+        <div>
+            <label for="id_search">
+                Filter Results
+            </label>
+          <input type="text" id="id_search" size="25" />
+      </div>
+      <input type="submit" value="Go" />
+      <span class="loading">
+        <img class="loader" alt="Loading" src="{% static "webgateway/img/spinner.gif" %}">
+      </span>
+    </form>
+    
+  </div>
+
+  <div id="content_details" class="center_panel_content"> </div>
+
+{% endblock %}
