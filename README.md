@@ -1,6 +1,8 @@
 OMERO.webtagging
 ================
 
+This now is composed of two tools: autotag and tagsearch.
+
 Requirements
 ============
 
@@ -10,20 +12,37 @@ Requirements
 Installation
 ============
 
-Clone the repository in to your OMERO.web installation.
+Documentation for using PYTHONPATH to allow omero to find webapps is [here](https://www.openmicroscopy.org/site/support/omero5/developers/Web/CreateApp.html#add-your-app-location-to-your-pythonpath).
 
-    cd <dist>/lib/python/omeroweb # for production, or for development: <openmicroscopy checkout>components/tools/OmeroWeb/omeroweb/
-    git clone git://github.com/dpwrussell/webtagging.git
-    path/to/bin/omero config set omero.web.apps '["webtagging"]'
-    # For OMERO 4.4.x:
-    path/to/bin/omero config set omero.web.apps '["webtagging"]' # OMERO 4.4.x ONLY - don't forget to add your existing web apps to the list.
+Clone the repository in to a location outsude of the Omero.Web installation, e.g. ```~/Checkout/webtagging```
+
+    cd Checkout
+    git clone git://github.com/dpwrussell/webtagging.git webtagging
+
+Add this location to the PYTHONPATH
+
+    export PYTHONPATH=~/Checkout/webtagging:$PYTHONPATH
+
+Add autotag to webclient
+
     # For OMERO 5 and above only:
-    path/to/bin/omero config append omero.web.apps '"webtagging"' # NB: double quotes, OMERO 5.x
-    path/to/bin/omero config set omero.web.ui.center_plugins '[["Auto Tag", "webtagging/auto_tag_init.js.html", "auto_tag_panel"]]'
+    omero config append omero.web.apps '"autotag"'
+    omero config append omero.web.ui.center_plugins '["Auto Tag", "autotag/auto_tag_init.js.html", "auto_tag_panel"]'
 
-Now start up OMERO.web as normal in your development environment.
+    # For OMERO 4.4.x:
+    omero config set omero.web.apps '["autotag"]' Don't forget to add your existing web apps to this list.
 
-Note: Instead of cloning directly into OMERO.web it's also possible to clone to any location and then add webtagging to the PYTHONPATH as documented [here](https://www.openmicroscopy.org/site/support/omero5/developers/Web/CreateApp.html#add-your-app-location-to-your-pythonpath).
+Add tagsearch to webclient
+
+    # For OMERO 5 and above only:
+    omero config append omero.web.apps '"tagsearch"'
+    omero config append omero.web.ui.top_links '["Tag Search", "tagsearch"]'
+
+    # For OMERO 4.4.x:
+    omero config set omero.web.apps '["tagsearch"]' # Don't forget to add your existing web apps to this list. e.g. '["autotag", "tagsearch"]'
+    omero config set omero.web.ui.top_links '[["Tag Search", "tagsearch"]]' # Don't forget to add any existing top links to the list, '[["Figure", "figure_index"], ["Tag Search", "tagsearch"]]''
+
+Now start up OMERO.web as normal
 
 Documentation
 =============
