@@ -466,7 +466,7 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
 
     # We only need to return a dict - the @render_response() decorator does
     # the rest...
-    context = {'template': 'webtagging/tags_from_names.html'}
+    context = {'template': 'autotag/tags_from_names.html'}
     context['table_data'] = table_data
     context['imageStates'] = json.dumps(table_data.generate_state())
     context['ignoreFirstFileToken'] = ignoreFirstFileToken
@@ -772,7 +772,7 @@ def list_tags(request, conn=None, **kwargs):
                 'owner':t.getOwnerFullName()
             })
 
-    return {'template': 'webtagging/tag_dialog_form.html', 'tags':tags}
+    return {'template': 'autotag/tag_dialog_form.html', 'tags':tags}
 
 
 @login_required(setGroupContext=True)

@@ -7,4 +7,4 @@ if django.VERSION < (1, 6):
 
     # We can directly manipulate the settings
     # E.g. add plugins to RIGHT_PLUGINS list
-    settings.CENTER_PLUGINS.append(["Auto Tag", "webtagging/auto_tag_init.js.html", "auto_tag_panel"])
+    settings.CENTER_PLUGINS.append(["Auto Tag", "autotag/auto_tag_init.js.html", "auto_tag_panel"])

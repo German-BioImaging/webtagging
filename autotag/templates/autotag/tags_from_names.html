@@ -1,8 +1,8 @@
 {% load url from future %}
 <html>
 
-<link rel="stylesheet" type="text/css" href="{% static 'webtagging/css/bootstrap.css' %}" />
-<link rel="stylesheet" type="text/css" href="{% static 'webtagging/css/webtagging.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'autotag/css/bootstrap.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'autotag/css/webtagging.css' %}" />
 
 <!--<script>window.jQuery || document.write('<script src="/static/3rdparty/jquery-1.7.2.js"><\/script><script src="{% static "webclient/javascript/jquery.form.js" %}"><\/script>')</script>-->
 <!-- Diagnostics -->
@@ -18,10 +18,10 @@
 <!-- End Diagnostics -->
 
 <link rel="stylesheet" href="{% static '3rdparty/jquery.chosen/chosen.css' %}" type="text/css" media="screen"/>
-<script src="{% static 'webtagging/3rd-party/bootstrap/bootstrap.js' %}"></script>
+<script src="{% static 'autotag/3rd-party/bootstrap/bootstrap.js' %}"></script>
 <script src="{% static '3rdparty/jquery.chosen/chosen.jquery.js' %}"></script>
-<script src="{% static 'webtagging/js/show_tags_dialog.js' %}"></script>
-<script src="{% static 'webtagging/js/table_operations.js' %}"></script>
+<script src="{% static 'autotag/js/show_tags_dialog.js' %}"></script>
+<script src="{% static 'autotag/js/table_operations.js' %}"></script>
 <!-- In various places I could rely only on an HTML5 data- field, but testing shows that jQuery selection based on data field is much slower than class based (especially on IE)-->
 
 <script>
@@ -555,7 +555,7 @@ $(function(){
 
             <table id="token-table" class="table table-bordered table-striped table-hover table-condensed hidePathTokens hideExtTokens">
 
-            {% include "webtagging/tag_table.html" %}
+            {% include "autotag/tag_table.html" %}
 
             </table>
     </div>

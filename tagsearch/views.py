@@ -28,56 +28,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class TagSearchFormView(FormView):
-    """
-    Form view to present form for tag--based navigation
-    """
-    template_name = 'webtagging_search/tagsearch.html'
-    form_class = TagSearchForm
-
-    def get_success_url(self):
-        return reverse('wtsindex')
-
-    def get_form_kwargs(self):
-        kwargs = super(TagSearchFormView, self).get_form_kwargs()
-
-        # List of tuples (id, value)
-        tags = []
-
-        params = Parameters()
-        qs = self.conn.getQueryService()
-
-        # Get tags
-        # It is not sufficient to simply get the objects as there may be tags
-        # which are not applied which don't really make sense to display
-        # tags = list(self.conn.getObjects("TagAnnotation"))
-        hql = "select distinct link.child.id, link.child.textValue " \
-              "from ImageAnnotationLink link " \
-              "where link.child.class is TagAnnotation " \
-              "order by link.child.textValue"
-        tags = [(result[0].val, result[1].val) for result in qs.projection(hql, params)]
-
-        # Sort tags
-        # TODO Should be able to do this in the database query but for some 
-        # reason using lower on the order by requires that the select also be
-        # lower.
-        tags.sort(key=lambda x: x[1].lower())
-
-        kwargs['tags'] = tags
-        kwargs['conn'] = self.conn
-        return kwargs
-
-    def form_valid(self, form):
-        # Actually unlikely we'll ever submit this form
-        return super(TagSearchFormView, self).form_valid(form)
-
-    @method_decorator(login_required(setGroupContext=True))
-    def dispatch(self, *args, **kwargs):
-        # Get OMERO connection
-        self.conn = kwargs.get('conn', None)
-        return super(TagSearchFormView, self).dispatch(*args, **kwargs)
-
-
 @login_required()
 @render_response()
 def index(request, conn=None, **kwargs):
@@ -85,7 +35,7 @@ def index(request, conn=None, **kwargs):
 
     # TODO Hardcode menu as search until I figure out what to do with menu
     menu = 'search'
-    template = "webtagging_search/tagnav.html"
+    template = "tagsearch/tagnav.html"
 
 
     #tree support
@@ -317,9 +267,7 @@ def tag_image_search(request, conn=None, **kwargs):
 
             context['manager'] = manager
 
-            html_response = render_to_string("webtagging_search/search_details.html", context)
-            # html_response = render_to_string("webclient/search/search_details.html", context)
-            # html_response = render_to_string("webtagging_search/image_results.html", context)
+            html_response = render_to_string("tagsearch/search_details.html", context)
 
             middle = time.time()
 
