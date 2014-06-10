@@ -65,3 +65,8 @@
     margin-left: 5px;
     margin-top: 2px;
   }
+
+  .jstree-checkbox {
+    background: url('/static/3rdparty/jquery.jstree/themes/default/d.png') no-repeat;
+    background-position: -38px -19px;
+  }

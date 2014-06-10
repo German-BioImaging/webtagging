@@ -1,0 +1,141 @@
+{% load i18n %}
+{% load common_filters %}
+{% load common_tags %}
+
+{% comment %}
+<!--
+  Copyright (C) 2011-2014 University of Dundee & Open Microscopy Environment.
+  All rights reserved.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as
+  published by the Free Software Foundation, either version 3 of the
+  License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+{% endcomment %}
+
+
+<ul>
+    <li id="experimenter-0" rel="experimenter{% ifnotequal manager.experimenter.id ome.eventContext.userId %}-locked{% endifnotequal %}">
+        <a href="#">{% if manager.experimenter %}{{ manager.experimenter.getFullName }}{% else %}{% setting UI_MENU_DROPDOWN.ALL %}{% endif %}</a>
+        <ul>
+            {% for c in manager.containers.projects %}
+            <li id='project-{{ c.id }}' rel="project{% if not c.isOwned %}-locked{% endif %}" class="{{ c.getPermsCss }}">
+        <a href="#">{{ c.name|default:"Project"|truncatebefor:"35" }} {% if c.countChildren %}
+          <span class="children_count" id="counter-project-{{ c.id }}">{{ c.countChildren}}</span>{% endif %}
+        </a>
+                {% if c.countChildren %}
+                <ul>    
+                    {% for d in c.listChildren %}
+                        <li id='dataset-{{ d.id }}' rel="dataset{% if not d.isOwned %}-locked{% endif %}" 
+                                class="{{ c.getPermsCss }}{% if d.countChildren %} jstree-closed{% endif %}">
+              <a href="#">{{ d.name|default:"Dataset"|truncatebefor:"35" }} {% if d.countChildren %}
+                <span class="children_count" id="counter-dataset-{{ d.id }}">{{ d.countChildren}}
+                  <span id="page-dataset-{{ d.id }}"></span></span>{% endif %}
+              </a>
+            </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </li> 
+            {% endfor %}
+        
+    
+    
+    
+    
+            {% for d in manager.containers.datasets %}
+                <li id='dataset-{{ d.id }}' rel="dataset{% if not d.isOwned %}-locked{% endif %}" 
+                        class="{{ d.getPermsCss }}{% if d.countChildren %} jstree-closed{% endif %}">
+          <a href="#">{{ d.name|default:"Dataset"|truncatebefor:"35" }} {% if d.countChildren %}
+            <span class="children_count" id="counter-dataset-{{ d.id }}">{{ d.countChildren}}
+              <span id="page-dataset-{{ d.id }}"></span></span>{% endif %}
+          </a>
+        </li>
+            {% endfor %}
+            
+      
+      
+      
+            {% for c in manager.containers.screens %}
+            <li id='screen-{{ c.id }}' rel="screen{% if not c.isOwned %}-locked{% endif %}" class="{{ c.getPermsCss }}">
+        <a href="#">{{ c.name|default:"Screen"|truncatebefor:"35" }} {% if c.countChildren %}
+          <span class="children_count" id="counter-screen-{{ c.id }}">{{ c.countChildren}}</span>{% endif %}</a>
+                {% if c.countChildren %}
+                <ul>
+                    {% for d in c.listChildren %}
+                        <li id='plate-{{ d.id }}' rel="plate{% if not d.isOwned %}-locked{% endif %}" class="{{ d.getPermsCss }}">
+                            <a href="#">{{ d.name|default:"Plate"|truncatebefor:"35" }}</a>
+                            {% if d.countPlateAcquisitions %}
+                            <ul>
+                                {% for e in d.listPlateAcquisitions %}
+                                    <li id='acquisition-{{ e.id }}' rel="acquisition{% if not e.isOwned %}-locked{% endif %}" class="{{ e.getPermsCss }}">
+                                        <a href="#">{{ e.name|default:"Run"|truncatebefor:"35" }}</a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </li>
+            {% endfor %}
+            
+      
+      
+      
+            {% for d in manager.containers.plates %}
+            <li id='plate-{{ d.id }}' rel="plate{% if not d.isOwned %}-locked{% endif %}" class="{{ d.getPermsCss }}">
+                <a href="#">{{ d.name|default:"Plate"|truncatebefor:"35" }}</a>
+                {% if d.countPlateAcquisitions %}
+                <ul>
+                    {% for e in d.listPlateAcquisitions %}
+                        <li id='acquisition-{{ e.id }}' rel="acquisition{% if not e.isOwned %}-locked{% endif %}" class="{{ e.getPermsCss }}">
+                            <a href="#">{{ e.name|default:"Run"|truncatebefor:"35" }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </li>
+            {% endfor %}
+
+            {% if manager.tags %}
+            <li rel='tag-section'>
+            <a href="#">Tags</a>
+            <ul>
+            {% for t in manager.tags %}
+            {% ifequal t.ns insight_ns %}
+            <li id='tagset-{{ t.id }}' rel="tagset{% if not t.isOwned %}-locked{% endif %}" {% if t.countTagsInTagset %}class="jstree-closed"{% endif %}><a href="#">{{ t.textValue|truncatebefor:"35" }}</a>
+                {% if t.countTagsInTagset %}
+                <ul>    
+                    {% for d in t.listTagsInTagset %}
+                        <li id='tag-{{ d.id }}' rel="tag{% if not d.isOwned %}-locked{% endif %}" class="jstree-closed"><a href="#">{{ d.textValue|truncatebefor:"35" }}</a></li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </li>
+            {% else %}
+            <li id='tag-{{ t.id }}' rel="tag{% if not t.isOwned %}-locked{% endif %}" class="jstree-closed"><a href="#">{{ t.textValue|truncatebefor:"35" }}</a></li>
+            {% endifequal %}
+            {% endfor %}  
+            </li></ul>
+            {% endif %}
+
+            <li id='orphaned-0' rel="orphaned" {% if manager.orphans %}class="jstree-closed"{% endif %}><a href="#">{% setting UI_TREE_ORPHANED.NAME %}</a></li>
+            
+        </ul>
+    </li>
+</ul>
+
+
+
+

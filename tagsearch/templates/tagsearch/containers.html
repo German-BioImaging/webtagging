@@ -1,0 +1,1461 @@
+{% extends "webclient/base/base_container.html" %}
+{% load i18n %}
+
+
+{% comment %}
+<!--
+  Copyright (C) 2011-2014 University of Dundee & Open Microscopy Environment.
+  All rights reserved.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as
+  published by the Free Software Foundation, either version 3 of the
+  License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+{% endcomment %}
+
+{% comment %}
+<!--
+  This page is the 'home page' of the 3-column data layout for webclient.
+  It loads the tree in the left panel. This is then used to load data into the middle and right panels (via AJAX)
+  Plugins for the centre or right panels add themselves as selection listeners to the tree.
+-->
+{% endcomment %}
+
+{% block link %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static "tagsearch/css/webtagging_search.css" %}" type="text/css" media="screen"/>
+{% endblock %}
+
+{% block script %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static "3rdparty/jquery-ui-1.8.19/external/jquery.cookie.js" %}"></script>
+    <script type="text/javascript" src="{% static "3rdparty/jquery.hotkeys.js" %}"></script>
+    <script type="text/javascript" src="{% static "3rdparty/jquery.jstree/jquery.jstree.js" %}"></script>   
+
+    <!-- set-up left panel tabs, jstree etc -->
+    <script type="text/javascript">
+
+        if (typeof OME === "undefined") { OME={}; }
+        OME.handleChgrp = function(gid, gname, oid) {
+            var $chgrpform = $("#chgrp-form");
+            $chgrpform.dialog( "option" , "title" ,"Move to Group: "+ gname);
+            $chgrpform.dialog('open');
+            // Add group & selected items to chgrp form
+            $('input.removeMe', $chgrpform).remove();   // cleanup (horrible!)
+            $("<input name='group_id' value='"+ gid +"'/>")
+                .appendTo($chgrpform).addClass('removeMe').hide();
+            var selobjs = OME.get_tree_selection().split("&");  // E.g. Image=1,2&Dataset=3
+            for (var i=0;i<selobjs.length;i++) {
+                var dtype = selobjs[i].split("=")[0],
+                    dids = selobjs[i].split("=")[1];
+                $("<input name='"+ dtype +"' value='"+ dids +"'/>")
+                    .appendTo($chgrpform).addClass('removeMe').hide();
+            }
+
+            var chgrp_target_url = "{% url 'webindex' %}load_chgrp_target/"+gid;
+            var chgrp_type = oid.split("-")[0];
+            var target_type;
+            if (chgrp_type == "dataset") target_type = "project";
+            else if (chgrp_type == "image") target_type = "dataset";
+            else if (chgrp_type == "plate") target_type = "screen";
+            chgrp_target_url += "/"+target_type+"/";
+            
+            if (chgrp_type == "project" || chgrp_type == "screen") {
+                $("#move_group_tree").html("<h1>"+ chgrp_type.capitalize() +" will be moved to group: " + gname +"</h1>");
+            } else {
+                // we load a tree - then give it basic selection / expansion behaviour. jsTree would have been overkill!?
+                $("#move_group_tree").load(chgrp_target_url, function(){
+                    var node_click = function(){
+                        $("#move_group_tree a").removeClass("jstree-clicked");
+                        // only allow selection of correct nodes
+                        if ($(this).parent().attr('rel') == target_type) {
+                            $("a" ,$(this).parent()).addClass("jstree-clicked");
+                        }
+                        // toggle any children
+                        $("ul" ,$(this).parent()).toggle();
+                    };
+                    $("#move_group_tree a").click(node_click);
+                    $("#move_group_tree ins").click(node_click);
+                });
+            }
+
+            // Check if chgrp will attempt to Split a Fileset. Hidden until user hits 'OK'
+            $("#move_group_tree").hide();               // hide tree while we wait...
+            $.jstree._focused().save_selected();        // 'Cancel' will roll back to this
+            $.get("{% url 'fileset_check' 'chgrp' %}?" + OME.get_tree_selection(), function(html){
+                if($('div.split_fileset', html).length > 0) {
+                    $(html).appendTo($chgrpform)
+                    $('.chgrp_confirm_dialog .ui-dialog-buttonset button:nth-child(1) span').text("Move All");
+                    var filesetId = $('input[name="fileset"]', html).val();     // TODO - handle > 1 filesetId
+                    if (chgrp_type == "image") {
+                        OME.select_fileset_images(filesetId);
+                    }
+                } else {
+                    $("#move_group_tree").show();
+                }
+            });
+        }
+
+        OME.handleNewContainer = function(container_type) {
+            
+            $("#new_container_type").text(container_type.capitalize());
+            var $f = $("#new-container-form");
+            var new_container_name = $("input[name='name']", $f).val("");     // clear fields
+            var new_container_desc = $("textarea[name='description']", $f).val("");
+            $("#new-container-form").dialog('open');
+        }
+
+        OME.handleDelete = function() {
+            var datatree = $.jstree._focused();
+            var selected = datatree.get_selected();
+
+            var del_form = $( "#delete-dialog-form" );
+            del_form.dialog( "open" )
+                .removeData("clicked_button");
+            // clear previous stuff from form
+            $.removeData(del_form, "clicked_button");
+            $("#delete_contents_form").show();
+            del_form.unbind("dialogclose");
+            del_form.find("input[type='checkbox']").attr('checked', false);
+
+            // set up form - process all the objects for data-types and children
+            var ajax_data = new Array();
+            var q = false;
+            var dtypes = {};
+            var first_parent;   // select this when we're done deleting
+            selected.each(function (i) {
+                if (!first_parent) first_parent = datatree._get_parent(this);
+                ajax_data[i] = $(this).attr('id').replace("-","=");
+                var dtype = $(this).attr('rel');
+                if (dtype in dtypes) dtypes[dtype] += 1;
+                else dtypes[dtype] = 1;
+                if (!q && $(this).attr('rel').indexOf('image')<0) q = true;
+            });
+            var type_strings = [];
+            for (var key in dtypes) {
+                type_strings.push(key.capitalize() + (dtypes[key]>1 && "s" || ""));
+            }
+            var type_str = type_strings.join(" & ");    // For delete dialog: E.g. 'Project & Datasets'
+            $("#delete_type").text(type_str);
+            if (!q) $("#delete_contents_form").hide();  // don't ask about deleting contents
+
+            // callback when delete dialog is closed
+            del_form.bind("dialogclose", function(event, ui) {
+                if (del_form.data("clicked_button") == "Yes") {
+                    var delete_anns = $("#delete_anns").attr('checked');
+                    var delete_content = true;      // $("#delete_content").attr('checked');
+                    if (delete_content) ajax_data[ajax_data.length] = 'child=on';
+                    if (delete_anns) ajax_data[ajax_data.length] = 'anns=on';
+                    var url = '{% url 'manage_action_containers' "deletemany" %}'
+                    datatree.deselect_all();
+                    $.ajax({
+                        async : false,
+                        url: url,
+                        data : ajax_data.join("&"),
+                        dataType: "json",
+                        type: "POST",
+                        success: function(r){
+                            if(eval(r.bad)) {
+                                  $.jstree.rollback(data.rlbk);
+                                  alert(r.errs);
+                              } else {
+                                  OME.tree_selection_changed();   // clear center and right panels etc
+                                  datatree.delete_node(selected);
+                                  first_parent.children("a").click();
+                                  OME.refreshActivities();
+                              }
+                        },
+                        error: function(response) {
+                            $.jstree.rollback(data.rlbk);
+                            alert("Internal server error. Cannot remove object.");
+                        }
+                    });
+                }
+            });
+
+            // Check if delete will attempt to partially delete a Fileset.
+            var $deleteYesBtn = $('.delete_confirm_dialog .ui-dialog-buttonset button:nth-child(1)'),
+                $deleteNoBtn = $('.delete_confirm_dialog .ui-dialog-buttonset button:nth-child(2) span');
+            $.get("{% url 'fileset_check' 'delete' %}?" + OME.get_tree_selection(), function(html){
+                if($('div.split_fileset', html).length > 0) {
+                    var $del_form_content = del_form.children().hide();
+                    del_form.append(html);
+                    $deleteYesBtn.hide();
+                    $deleteNoBtn.text("Cancel");
+                    // On dialog close, clean-up what we changed above
+                    del_form.bind("dialogclose", function(event, ui) {
+                        $deleteYesBtn.show();
+                        $deleteNoBtn.text("No");
+                        $("#chgrp_split_filesets", del_form).remove();
+                        $del_form_content.show();
+                    });
+                }
+            });
+        }
+
+        // Getting text from jsTree nodes shouldn't be this hard, but it is!
+        OME.jsTreeNodeText = function($node) {
+            console.log('WHAT?');
+            return $.trim($node.children("a:eq(0)").text().split("\n")[0]);
+        }
+
+        OME.remove_nodes = function(tree, selected) {
+            if (selected.length>0) {
+                var images = selected.filter('li[id*=image]');      // id='copy_image-123' if just pasted
+                var datasets = selected.filter('li[id*=dataset]');
+                var plates = selected.filter('li[id*=plate]');
+                if (images.length > 0) {
+                    tree.move_node(images,$("li#orphaned-0"), undefined, undefined, false, true);
+                }
+                if (datasets.length > 0) {
+                    var nodeText = OME.jsTreeNodeText($(datasets[0])),
+                        targetIndex = OME.findTreeIndexForNode(tree, 'dataset', nodeText);
+                    tree.move_node(datasets, $("li#experimenter-0"), targetIndex);
+                }
+                if (plates.length > 0) {
+                    var nodeText = OME.jsTreeNodeText($(plates[0])),
+                        targetIndex = OME.findTreeIndexForNode(tree, 'plate', nodeText);
+                    tree.move_node(plates, $("li#experimenter-0"), targetIndex);
+                }
+            }
+        }
+
+        // If we're going to insert a top-level node under Experimenter, what index should it be?
+        // Assumes everything is in order: Projects, Datasets, Screens, Plates.
+        OME.findTreeIndexForNode =  function(tree, dtype, name) {
+            var nodeTypes = ['project', 'dataset', 'screen', 'plate'],
+                topNodes = {'project':[], 'dataset':[], 'screen':[], 'plate':[]};
+            if (!topNodes.hasOwnProperty(dtype)) {
+                return 0;   // don't recognise the dtype
+            }
+
+            // Build our index of current tree nodes, grouped by node type
+            var c = tree._get_children('#experimenter-0');
+            c.each(function(){
+                var $node = $(this),
+                    rel = $node.attr('rel').replace("-locked",""),
+                    nodeTxt = OME.jsTreeNodeText($node);
+                if (topNodes.hasOwnProperty(rel)) {
+                    topNodes[rel].push(nodeTxt.toLowerCase());
+                }
+            });
+            name = $.trim(name).toLowerCase();
+
+            // look-up the name we're given, within siblings of the same node type:
+            var nodeIndex = 0;
+            for (var i=0; i<nodeTypes.length; i++) {
+                // E.g. If we're a 'dataset', check position amoung 'dataset's
+                if (dtype === nodeTypes[i]) {
+                    var siblings = topNodes[dtype];
+                    siblings.push(name);
+                    siblings.sort();
+                    return nodeIndex + $.inArray(name, siblings)
+                } else {
+                    // if NOT, increment nodeIndex and continue
+                    nodeIndex += topNodes[nodeTypes[i]].length;
+                }
+            }
+            return nodeIndex
+        };
+
+        // Update the view of an expanded dataset
+        OME.tagsearchTreeUpdate = function(data) {
+            // Get the dataset and tag ids
+            var dataset = data.inst._get_parent(data.rslt.obj);
+            if (dataset != -1) {
+                var dataset_id = dataset.attr('id').split("-")[1];
+                var tag_ids = [];
+                var children = dataset.find('li')
+                children.each(function(i){
+                    if ($(this).attr('rel') == 'tag') {
+                        if ($("#dataTree").jstree("is_checked", $(this))) {
+                            tag_ids.push($(this).attr('data-fileset'));
+                        }
+                    }
+                });
+            } // TODO Should probably surround below as well
+
+            // If there are no tags selected, simply unselect all
+            if (tag_ids.length == 0) {
+                console.log('Empty');
+                children.each(function(i){
+                    $(this).show();
+                });
+            } else {
+
+                // Perform the AJAX query
+                jQuery.post("{% url 'tagsearch_images' %}", JSON.stringify({dataset:dataset_id, tags:tag_ids}), function(data){
+                    children.each(function(i){
+                        if ($(this).attr('rel') == 'tag') {
+                            if ($.inArray(parseInt($(this).attr('data-fileset')), data.tags) != -1) {
+                                $(this).show();
+                            } else {
+                                $(this).hide();
+                            }
+
+                        } else if ($(this).attr('rel') == 'image') {
+                            if ($.inArray(parseInt($(this).attr('data-fileset')), data.images) != -1) {
+                                $(this).show();
+                            } else {
+                                $(this).hide();
+                            }
+                        }
+                    });
+                }, 'json');
+
+            }
+        }
+
+        // Stuff to do on load...
+        $(function() 
+            {
+                var copy_paste_rdef_url = "{% url 'webgateway.views.copy_image_rdef_json' %}",
+                    apply_owners_rdef_url = "{% url 'webgateway.views.apply_owners_rdef_json' %}";
+                // Copy the selected Image ID to the 'session' (right-click menu only allows this on 'image')
+                var copyRenderingSettings = function(selected) {
+                    if (selected.length == 1) {
+                        var imageId = selected[0].id.split('-')[1];
+                        $.getJSON(copy_paste_rdef_url + "?fromid=" + imageId);
+                    }
+                }
+                // Paste settings from 'session' to selected Images
+                var pasteRenderingSettings = function(selected, owner) {
+                    var ids = [],
+                        rdef_url = copy_paste_rdef_url,
+                        rel = selected.attr('rel').replace('-locked','');
+                    if (owner) {
+                        rdef_url = apply_owners_rdef_url;
+                    }
+                    selected.each(function(){
+                        ids.push(this.id.split('-')[1]);
+                    });
+                    rdef_url += "?toids=" + ids.join("&toids=");
+                    if (rel === 'dataset' || rel === 'plate' || rel === 'acquisition') {
+                        rdef_url += '&to_type='+ rel;
+                    }
+                    $.getJSON(rdef_url, function(data){
+                        // update thumbnails
+                        OME.refreshThumbnails();
+                    });
+                }
+
+                var applyOwnerRenderingSettings = function(selected) {
+                    pasteRenderingSettings(selected, true);
+                }
+
+                $("#left_panel_tabs").tabs({
+                    select: function(event, ui) {
+                        var url = $.data(ui.tab, 'load.tabs');
+                        if( url ) {
+                            location.href = url;
+                            return false;
+                        }
+                        return true;
+                    }
+                });
+
+                // Handle creation of new Project, Dataset or Screen...
+                $("#new-container-form").dialog({
+                    autoOpen: false,
+                    resizable: true,
+                    height: 280,
+                    width:420,
+                    modal: true,
+                    buttons: {
+                        "OK": function() {
+                             createNewContainer();
+                             $( this ).dialog( "close" );
+                        },
+                        "Cancel": function() {
+                            $( this ).dialog( "close" );
+                        }
+                    }
+                });
+                // same code is called from closing dialog or 'submit' of form
+                $("#new-container-form").submit(function() {
+                    $("#new-container-form").dialog( "close" );
+                    createNewContainer();
+                    return false;
+                });
+                var createNewContainer = function() {
+                    var cont_type = $("#new_container_type").text().toLowerCase();  // E.g. 'project'
+                    var $f = $("#new-container-form");
+                    var new_container_name = $("input[name='name']", $f).val();
+                    var new_container_desc = $("textarea[name='description']", $f).val();
+                    if ($.trim(new_container_name).length == 0) {
+                        alert("Please enter a Name");
+                        return;
+                    }
+                    // if images under orphaned are selected, note IDs (for adding to new Dataset)
+                    var selected = $.jstree._focused().get_selected();
+                    var img_ids = [];
+                    selected.each(function(){
+                        var $this = $(this);
+                        if (this.id.split("-")[0] == "image" && $this.parent().parent().attr('rel') == 'orphaned'){
+                            if ($this.hasClass("canLink")) {
+                                img_ids.push(this.id.split("-")[1]);
+                            }
+                        }
+                    });
+                    // if "project" is selected, createDataset under it
+                    var url, position = 0;
+                    if(selected.length==1 && selected.attr("rel") == "project" && cont_type == "dataset") {
+                        url = '{% url 'manage_action_containers' "addnewcontainer" %}project/'+selected.attr("id").split("-")[1]+'/';
+                    // otherwise create an orphan of "folder_type" ('project', 'dataset', 'screen' etc. )
+                    } else {
+                        url = '{% url 'manage_action_containers' "addnewcontainer" %}';
+                        // Make sure top level objects get added to jsTree root (current selected may be project, dataset, image or screen)
+                        position = OME.findTreeIndexForNode($.jstree._focused(), cont_type, new_container_name);
+                        selected = "#experimenter-0";   // Ensure we add node to root
+                    }
+                    var ajax_data = {
+                            "name" : new_container_name,
+                            "folder_type" : cont_type,
+                            "description" : new_container_desc
+                        }
+                    if (img_ids.length > 0){
+                        ajax_data['img_ids'] = img_ids.join(",");
+                    }
+                    $.ajax({
+                        url: url,
+                        //data: $new_cont_form.serialize();
+                        data: ajax_data,
+                        dataType: "json",
+                        type: "POST",
+                        success: function(r){
+                            var cont_id = cont_type + "-" + r['id'];
+                            var node_data = { "attr" : { "rel":cont_type, "id":cont_id, "class":"canLink canDelete"},
+                                            "data":new_container_name }
+                            // if orphaned imgs moved into new Dataset, remove them...
+                            if (cont_type == "dataset") {
+                                if (img_ids.length > 0) {node_data.state = "closed"};
+                                for (var o=0; o<img_ids.length; o++) {
+                                    $("#dataTree").jstree("delete_node", "#image-"+img_ids[o]);
+                                }
+                            }
+                            $("#dataTree").jstree("create", selected, position, node_data,
+                                false, true);
+                            $("#dataTree").jstree("deselect_all");
+                            $("#dataTree").jstree("select_node", "#"+cont_id);
+                        }
+                    });
+                }
+
+                // After we edit the chgrp dialog to handle Filesets, we need to clean-up
+                var resetChgrpForm = function() {
+                    $('.chgrp_confirm_dialog .ui-dialog-buttonset button:nth-child(1) span').text("OK");
+                    $("#move_group_tree").show();
+                    $("#chgrp_split_filesets").remove();
+                }
+
+                var $chgrpform = $("#chgrp-form");
+                $chgrpform.dialog({
+                    dialogClass: 'chgrp_confirm_dialog',
+                    autoOpen: false,
+                    resizable: true,
+                    height: 310,
+                    width:420,
+                    modal: true,
+                    buttons: {
+                        "OK": function() {
+                            var $thisBtn = $('.chgrp_confirm_dialog .ui-dialog-buttonset button:nth-child(1) span');
+                            // If we have split filesets, on the first click 'OK', we ask 'Move All'?
+                            if ($("#chgrp_split_filesets .split_fileset").length > 0) {
+                                if ($thisBtn.text() == 'Move All') {
+                                    $("#move_group_tree").show();
+                                    $("#chgrp_split_filesets").hide();
+                                    $thisBtn.text('OK');
+                                    return false;
+                                }
+                            }
+                            $("#chgrp-form").submit();
+                            resetChgrpForm();
+                        },
+                        "Cancel": function() {
+                            resetChgrpForm();
+                            var datatree = $.jstree._focused();
+                            datatree.deselect_all();
+                            datatree.reselect();        // revert to previous selection
+                            $( this ).dialog( "close" );
+                        }
+                    }
+                });
+                // handle chgrp 
+                $("#chgrp-form").ajaxForm({
+                    beforeSubmit: function(data){
+                        $("#chgrp-form").dialog("close");
+                        var chgrp_target = $("#move_group_tree a.jstree-clicked");
+                        if (chgrp_target.length == 1){
+                            data.push({'name':'target_id', 'value': chgrp_target.parent().attr('id')});
+                        }
+                    },
+                    success: function() {
+                        OME.showActivities();
+                        var selected = $.jstree._focused().get_selected();
+                        $("#dataTree").jstree('remove', selected);
+                    }
+                });
+                // chgrp form behavior
+                $("#chgrp-form .group_option").click(function(){
+                    $("#chgrp-form .group_option").removeClass('selected');
+                    $(this).addClass('selected');
+                    $("input[type='radio']", $(this)).attr('checked', true);
+                });
+                $("#chgrp-form .group_option :first").click();  // select first option
+
+
+                var enableToolbarButton = function(name, enabled) {
+                    if (enabled) {
+                        $('input#'+name+'Button').removeClass('button-disabled').removeAttr('disabled');
+                    } else {
+                        $('input#'+name+'Button').addClass('button-disabled').attr('disabled', true);
+                    }
+                };
+
+                var buttonsShowHide = function(selected, inst) {
+                    var toolbar_config = {"addproject":false, 'adddataset':false, 'addscreen':false, 'copy':false, 'cut':false, 
+                        'paste': false, 'delete':false, 'annotation':false, 'basket':false};
+                    // We 'canCreate' top level items, E.g. Project, Dataset, Screen, if the current userId is self or 'All Members'
+                    var userId = {{ ome.user_id }},
+                        canCreate = (userId === {{ ome.user.id }} || userId === -1);
+                    var to_paste = inst.data.crrm.cp_nodes || inst.data.crrm.ct_nodes || false;
+                    // These nodes can be Orphans, so creation is not selection-specific
+                    if (canCreate) {
+                        toolbar_config["addproject"] = true;
+                        toolbar_config["adddataset"] = true;
+                        toolbar_config['addscreen'] = true;
+                    }
+                    if(selected.length > 0) {
+                        if(selected.hasClass('canDelete')) {
+                            toolbar_config['delete'] = true;
+                        }
+                        if(selected.hasClass('canLink')) {
+                            if(selected.attr("id").indexOf("project")>=0) {
+                                toolbar_config['adddataset'] = true;
+                                if (to_paste && to_paste[0].id.indexOf("dataset")>=0) {  // if wehave a dataset
+                                    toolbar_config['paste'] = true;                // allow paste
+                                }
+                            } else if(selected.attr("id").indexOf("dataset")>=0) {
+                                toolbar_config['cut'] = true;
+                                if (to_paste && to_paste[0].id.indexOf("image")>=0) {
+                                    toolbar_config['paste'] = true;
+                                }
+                                if (selected.parent().parent().length > 0 && selected.parent().parent().attr('rel').replace("-locked", "").indexOf("experimenter") < 0) {
+                                    toolbar_config["copy"] = true;
+                                }
+                            } else if(selected.attr("id").indexOf("image")>=0) {
+                                toolbar_config['basket'] = true;
+                                toolbar_config['cut'] = true;
+                                if (selected.parent().parent().length > 0 && selected.parent().parent().attr('rel').replace("-locked", "").indexOf("orphaned") < 0) {
+                                    toolbar_config["copy"] = true;
+                                }
+                            } else if(selected.attr("id").indexOf("screen")>=0) {
+                                if (to_paste && to_paste[0].id.indexOf("plate")>=0) {
+                                    toolbar_config['paste'] = true;
+                                }
+                            } else if(selected.attr("id").indexOf("plate")>=0) {
+                                toolbar_config['copy'] = true;
+                                if (selected.parent().parent().length > 0 && selected.parent().parent().attr('rel').replace("-locked", "").indexOf("experimenter") < 0) {
+                                    toolbar_config["cut"] = true;
+                                }
+                            }
+                            if ((inst.data.crrm.cp_nodes || inst.data.crrm.ct_nodes) && ($.inArray(selected.attr('rel').replace("-locked", ""), ["project", "dataset", "screen"]) > -1)) {
+                                toolbar_config['paste'] = true;
+                            }
+                        }
+                    }
+                    
+                    for (var btnName in toolbar_config) { 
+                        enableToolbarButton(btnName, toolbar_config[btnName])
+                    }
+                }
+
+                // Selection handled here
+                $("body").bind('selection_change.ome', function(event) {
+                    console.log('Selection here');
+                    var selected = $(this).data("selected_objects.ome"),
+                        selId;
+                    console.log(selected);
+                    for (var i=0; i<selected.length; i++) {
+                        selId = selected[i].id;
+                        if (selId.split("-")[0] === 'well') {
+                            $("#dataTree").jstree("deselect_all");
+                            // That won't trigger selection event, so we manually disable buttons...
+                            enableToolbarButton('delete', false);
+                            enableToolbarButton('cut', false);
+                            enableToolbarButton('copy', false);
+                        }
+                    }
+                });
+                
+                $("#delete-dialog-form").dialog({
+                    dialogClass: 'delete_confirm_dialog',
+                    autoOpen: false,
+                    resizable: true,
+                    height: 210,
+                    width:420,
+                    modal: true,
+                    buttons: {
+                        "Yes": function() {
+                            $("#delete-dialog-form").data("clicked_button", "Yes");
+                            $( this ).dialog( "close" );
+                        },
+                        "No": function() {
+                            $("#delete-dialog-form").data("clicked_button", "No");
+                            $( this ).dialog( "close" );
+                        }
+                    }
+                });
+
+                var jstree = $("#dataTree").jstree({
+                    // the list of plugins to include
+                    "plugins" : [ "themes", "html_data", "ui", "crrm", "dnd", "types", "hotkeys", "contextmenu", "checkbox" ],
+                    // Plugin configuration
+
+                    // I usually configure the plugin that handles the data first - in this case JSON as it is most common
+                    "html_data" : { 
+                        // I chose an ajax enabled tree - again - as this is most common, and maybe a bit more complex
+                        // All the options are the same as jQuery's except for `data` which CAN (not should) be a function
+                        "ajax" : {
+                            // the URL to fetch the data
+                            "url" : function(n) {
+                                var url;
+                                if (n.attr) {
+                                    var parent = this._get_parent(n);
+                                    if ($.inArray($(parent).attr("rel").replace("-locked", ""), ["project", "screen"]) > -1) {
+                                        url = "{% url 'wtsload_data' %}"+$(parent).attr("rel").replace("-locked", "")+"/"+$(parent).attr("id").split("-")[1]+"/"+n.attr("rel").replace("-locked", "")+"/"+n.attr("id").split("-")[1]+"/";
+                                    } else {
+                                        url = "{% url 'wtsload_data' %}"+n.attr("rel").replace("-locked", "")+"/"+n.attr("id").split("-")[1]+"/";
+                                    }
+                                } else {
+                                    url = "{% url 'wtsload_data' %}";
+                                }
+                                return url;
+                            },
+                            // this function is executed in the instance's scope (this refers to the tree instance)
+                            // the parameter is the node being loaded (may be -1, 0, or undefined when loading the root nodes)
+                            "data" : function (n) {
+                                var r = { "view" : "tree" };
+                                if (n.attr && $.inArray(n.attr("rel").replace("-locked", ""), ["dataset", "orphaned"]) > -1) {
+                                    // pagination supported for 'dataset' and 'orphaned'...
+                                    var page = n.data("page") || null;      // this data is added by OME.doPagination()
+                                    if (page) r["page"] = page;
+                                } 
+                                return r;
+                            }
+                        }
+                    },
+                    // Using types - most of the time this is an overkill
+                    // Still meny people use them - here is how
+                    // TODO Tags need to be added to the permitted children for projects, datasets, etc
+                    // TODO Think about restricting children of the standalong tag tree Vs. the embedded tags
+                    "types" : {
+                        // I want only `drive` nodes to be root nodes 
+                        // This will prevent moving or creating any other type as a root node
+                        "max_depth" : -1,
+                        "max_children" : -1,
+                        "valid_children" : [ "experimenter", "experimenter-locked" ],
+                        "types" : {
+                            "experimenter" : {
+                                "valid_children" : [ "project", "project-locked", "dataset", "dataset-locked", "screen", "screen-locked", "plate", "plate-locked", "tagset", "tagset-locked", "tag", "tag-locked", "tag-section" ],
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/icon_user.png" %}'
+                                },
+                                "create_node" : true,
+                                "start_drag" : false,
+                                "move_node" : false,
+                                "delete_node" : false,
+                                "remove" : false,
+                                "checkbox": false
+                            },
+                            "experimenter-locked" : {
+                                "valid_children" : [ "project", "project-locked", "dataset", "dataset-locked", "screen", "screen-locked", "plate", "plate-locked", "tagset", "tagset-locked", "tag", "tag-locked" ],
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/icon_user.png" %}'
+                                },
+                                "start_drag" : false
+                            },
+                            "project" : {
+                                "valid_children" : [ "dataset", "dataset-locked" ],
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/folder16.png" %}'
+                                },
+                                "start_drag" : false
+                            },
+                            "project-locked" : {
+                                "valid_children" : [ "dataset", "dataset-locked" ],
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/folder16.png" %}'
+                                },
+                                "start_drag" : false
+                            },
+                            "dataset" : {
+                                "valid_children" : [ "image", "image-locked", "tagset", "tagset-locked", "tag", "tag-locked" ],
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/folder_image16.png" %}'
+                                },
+                                "start_drag" : function(obj){return obj.hasClass('canLink');}
+                            },
+                            "dataset-locked" : {
+                                "valid_children" : [ "image", "image-locked" ],
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/folder_image16.png" %}'
+                                },
+                                "start_drag" : function(obj){return obj.hasClass('canLink');}
+                            },
+                            "image" : {
+                                "valid_children" : "none",
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/image16.png" %}'
+                                },
+                                "start_drag" : function(obj){return obj.hasClass('canLink');}
+                            },
+                            "image-locked" : {
+                                "valid_children" : "none",
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/image16.png" %}'
+                                },
+                                "start_drag" : function(obj){return obj.hasClass('canLink');}
+                            },
+                            "screen" : {
+                                "valid_children" : [ "plate", "plate-locked" ],
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/folder_screen16.png" %}'
+                                },
+                                "start_drag" : false
+                            },
+                            "screen-locked" : {
+                                "valid_children" : [ "plate", "plate-locked" ],
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/folder_screen16.png" %}'
+                                },
+                                "start_drag" : false
+                            },
+                            "plate" : {
+                                "valid_children" : "acquisition",
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/folder_plate16.png" %}'
+                                },
+                                "start_drag" : function(obj){return obj.hasClass('canLink');}
+                            },
+                            "plate-locked" : {
+                                "valid_children" : "acquisition",
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/folder_plate16.png" %}'
+                                },
+                                "start_drag" : function(obj){return obj.hasClass('canLink');}
+                            },
+                            "acquisition" : {
+                                "valid_children" : "none",
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/image16.png" %}'
+                                },
+                                "create_node" : false
+                            },
+                            "acquisition-locked" : {
+                                "valid_children" : "none",
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/image16.png" %}'
+                                },
+                                "start_drag" : false
+                            },
+                            "tag-section" : {
+                                "valid_children" : [ "tagset", "tagset-locked", "tag", "tag-locked" ],
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/left_sidebar_icon_tags.png" %}'
+                                },
+                                "create_node" : false,
+                                "start_drag" : false,
+                                "move_node" : false,
+                                "delete_node" : false,
+                                "remove" : false,
+                                "select_node" : false
+                            },
+                            "tagset" : {
+                                "valid_children" : [ "tag", "tag-locked" ],
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/left_sidebar_icon_tags.png" %}'
+                                },
+                                "create_node" : true,
+                                "start_drag" : false,
+                                "move_node" : false,
+                                "remove" : true,
+                                "select_node" : false
+                            },
+                            "tagset-locked" : {
+                                "valid_children" : [ "tag", "tag-locked" ],
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/left_sidebar_icon_tags.png" %}'
+                                },
+                                "create_node" : false,
+                                "start_drag" : false,
+                                "move_node" : false,
+                                "remove" : false,
+                                "select_node" : false
+                            },                                
+                            "tag" : {
+                                "valid_children" : [ "project", "project-locked", "dataset", "dataset-locked", "image", "image-locked", "screen", "screen-locked", "plate", "plate-locked" ],
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/left_sidebar_icon_tag.png" %}'
+                                },
+                                "create_node" : true,
+                                "start_drag" : true,
+                                "move_node" : true,
+                                "delete_node" : true,
+                                "remove" : true,
+                                "select_node" : false
+                            },
+                            "tag-locked" : {
+                                "valid_children" : [ "project", "project-locked", "dataset", "dataset-locked", "image", "image-locked", "screen", "screen-locked", "plate", "plate-locked" ],
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/left_sidebar_icon_tag.png" %}'
+                                },
+                                "create_node" : false,
+                                "start_drag" : false,
+                                "move_node" : false,
+                                "remove" : false,
+                                "select_node" : false
+                            },
+                            "orphaned" : {
+                                "valid_children" : [ "image", "image_locked" ],
+                                "icon" : {
+                                    "image" : '{% static "webclient/image/folder_yellow16.png" %}'
+                                },
+                                "create_node" : false
+                            }
+                        }
+                    },
+                    "crrm" : {
+                        "move" : {
+                            "check_move" : function (m) {
+                                var p = this._get_parent(m.r);
+                                if(!p) return false;
+                                if (p == -1) return true;
+                                if ($.inArray(m.r.attr("rel").replace("-locked", ""), ["orphaned"]) > -1)
+                                    return false;
+                                if ($.inArray(p.attr("rel").replace("-locked", ""), ["orphaned"]) > -1)
+                                    return false;
+                                if (!m.cr.hasClass("canLink"))
+                                    return false;
+                                return true;
+                            }
+                        }
+                    },
+                    
+                    // For UI & core - the nodes to initially select and open will be overwritten by the cookie plugin
+                    // the UI plugin - it handles selecting/deselecting/hovering nodes
+                    "ui" : {
+                        "select_limit" : -1,
+                        "select_multiple_modifier": OME.multi_key(),
+                        "selected_parent_close": "select_parent",
+                        "disable_selecting_children": true,
+                        "select_prev_on_delete": false,
+                        "initially_select" : [ {% if init.initially_select %}{% for s in init.initially_select%}"{{s}}",{% endfor %}""{% else %}"experimenter-0"{% endif %}  ],
+                    },
+                    // the core plugin - not many options here
+                    "core" : { 
+                        // just open those two nodes up
+                        // as this is an AJAX enabled tree, both will be downloaded from the server
+                        "initially_open" : [ {% for p in init.initially_open %}"{{ p }}",{% endfor %} "experimenter-0" ]
+                    },
+                    "contextmenu" : {
+                        "select_node":true,
+                        "show_at_node":false,
+                        "items" : function(obj){
+                            var config = {};
+                                                            
+                            config["create"] = {
+                                "label" : "Create new",
+                                "submenu": {
+                                    "project": {
+                                        "label" : "Project",
+                                        "icon"  : '{% static "webclient/image/folder16.png" %}',
+                                        action: function (obj) {OME.handleNewContainer("project"); },
+                                    },
+                                    "dataset": {
+                                        "label" : "Dataset",
+                                        "icon"  : '{% static "webclient/image/folder_image16.png" %}',
+                                        action: function (obj) {OME.handleNewContainer("dataset"); },
+                                      },
+                                      "screen": {
+                                        "label" : "Screen",
+                                        "icon"  : '{% static "webclient/image/folder_screen16.png" %}',
+                                        action: function (obj) {OME.handleNewContainer("screen"); },
+                                      }
+                                }
+                            };
+                            
+                            config["ccp"] = {
+                                "label"     : "Edit",
+                                "action"    : false,
+                                "submenu"   : {
+                                    "cut"   :{
+                                        "label" : "Cut Link",
+                                        "icon"  : '{% static "webclient/image/icon_basic_cut_16.png" %}',
+                                        "action": function() {
+                                            var tree = this,
+                                                selected = this.get_selected();
+                                            tree.cut(selected);     // jsTree 'cut' doesn't remove...
+                                            OME.remove_nodes(this, selected);
+                                        }
+                                    },
+                                    "copy"  : {
+                                        "label" : "Copy Link",
+                                        "icon"  : '{% static "webclient/image/icon_basic_copy_16.png" %}',
+                                        "action": function() {
+                                            this.copy(this.get_selected());
+                                        }
+                                    },
+                                    "paste": {
+                                        "label" : "Paste Link",
+                                        "icon"  : '{% static "webclient/image/icon_basic_paste_16.png" %}',
+                                        "action": function() {
+                                            this.paste(this.get_selected());
+                                        }
+                                    },
+                                }
+                            };
+                            
+                            config["delete"] = {
+                                "label" : "Delete",
+                                "icon"  : '{% static "webclient/image/icon_basic_delete_16.png" %}',
+                                "action": OME.handleDelete
+                            };
+                            
+                            config["chgrp"] = {
+                                "label" : "Move to Group...",
+                                "icon"  : '{% static "webclient/image/icon_basic_user_16.png" %}',
+                                //"action": handleChgrp
+                                "submenu"   : {
+                                    {% for grp in myGroups %}
+                                        {% ifnotequal grp.id active_group.id %}
+                                            "menuitem{{ grp.id }}" : {
+                                                "label" : "{{ grp.name }}",
+                                                "icon"  : {% if grp.getDetails.getPermissions.isGroupWrite %} src="{% static 'webclient/image/group_green16.png' %}"
+                                                {% else %}
+                                                    {% if grp.getDetails.getPermissions.isGroupAnnotate %} src="{% static "webclient/image/group_orange16.png" %}"
+                                                    {% else %}
+                                                        {% if grp.details.permissions.isGroupRead %} src="{% static "webclient/image/group_red16.png" %}"
+                                                        {% else %}
+                                                            src="{% static "webclient/image/personal16.png" %}"
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% endif %},
+                                                "action": function(obj) {
+                                                    OME.handleChgrp({{ grp.id }}, "{{ grp.name }}", obj[0].id);
+                                                }
+                                            },
+                                        {% endifnotequal %}
+                                    {% endfor %}
+                                }
+                            };
+
+                            config["basket"] = {
+                                "label" : "Add to Basket",
+                                "icon"  : '{% static "webclient/image/icon_basic_basket_16.png" %}',                                    
+                                "action": function(){
+                                    OME.addToBasket(this.get_selected(), '{% url 'update_basket' %}');
+                                }
+                            };
+
+                            config["renderingsettings"] = {
+                                "label" : "Rendering Settings...",
+                                "action" : false,
+                                "submenu" : {
+                                    "copy_rdef"  : {
+                                        "label" : "Copy",
+                                        "icon"  : '{% static "webclient/image/icon_basic_copy_16.png" %}',
+                                        "action": copyRenderingSettings
+                                    },
+                                    "paste_rdef": {
+                                        "label" : "Paste",
+                                        "icon"  : '{% static "webclient/image/icon_basic_paste_16.png" %}',
+                                        "action": function() {
+                                            pasteRenderingSettings(this.get_selected());
+                                        }
+                                    },
+                                    "owner_rdef": {
+                                        "label" : "Set Owner's",
+                                        "icon"  : '{% static "webclient/image/icon_basic_paste_16.png" %}',
+                                        "action": function() {
+                                            applyOwnerRenderingSettings(this.get_selected());
+                                        }
+                                    }
+                                }
+                            };
+                            
+                            {% if myGroups|length < 2 %}
+                            config["chgrp"]["_disabled"] = true;
+                            {% endif %}
+                            
+                            // use canLink, canDelete etc classes on each node to enable/disable right-click menu
+                            if(!obj.hasClass('canDelete')) {
+                                config["delete"]["_disabled"] = true;
+                            }
+                            if(!obj.hasClass('canChgrp')) {
+                                config["chgrp"]["_disabled"] = true;
+                                // need to disable all the group submenu items we created above
+                                {% for grp in myGroups %}
+                                    {% ifnotequal grp.id active_group.id %}
+                                        config["chgrp"]["submenu"]["menuitem{{ grp.id }}"]["_disabled"] = true;
+                                    {% endifnotequal %}
+                                {% endfor %}
+                            }
+                            // if experimenter or orphaned is selected, use 'locked' flag to decide permissions
+                            if(obj.attr("id").indexOf("experimenter")>=0 || obj.attr("rel") == 'orphaned') {
+                                var canCreate = $("#experimenter-0").attr("rel").indexOf("locked")>=0;
+                                // see #8879 config["ccp"]["_disabled"] = true;
+                                config["ccp"]["submenu"]["copy"]["_disabled"] = true;
+                                config["ccp"]["submenu"]["paste"]["_disabled"] = true;
+                                config["ccp"]["submenu"]["cut"]["_disabled"] = true;
+                                config["basket"]["_disabled"] = true;
+                                if(canCreate) {
+                                    // see #8879 config["create"]["_disabled"] = true;
+                                    config["create"]["submenu"]["project"]["_disabled"] = true;
+                                    config["create"]["submenu"]["dataset"]["_disabled"] = true;
+                                    config["create"]["submenu"]["screen"]["_disabled"] = true;
+                                }
+                            // if we DON'T have canLink, everything else is disabled
+                            } else if(!obj.hasClass('canLink')) {
+                                // see #8879 config["ccp"]["_disabled"] = true;
+                                config["create"]["_disabled"] = true;
+                                config["basket"]["_disabled"] = true;
+                                config["create"]["submenu"]["project"]["_disabled"] = true;
+                                config["create"]["submenu"]["dataset"]["_disabled"] = true;
+                                config["create"]["submenu"]["screen"]["_disabled"] = true;
+                                config["ccp"]["submenu"]["copy"]["_disabled"] = true;
+                                config["ccp"]["submenu"]["paste"]["_disabled"] = true;
+                                config["ccp"]["submenu"]["cut"]["_disabled"] = true;
+                            } else {
+                                // see #8879 otherwise the options depend on type of node...
+                                var to_paste = this.data.crrm.cp_nodes || this.data.crrm.ct_nodes || false;
+                                if(obj.attr("id").indexOf("project")>=0) {
+                                    config["ccp"]["submenu"]["cut"]["_disabled"] = true;
+                                    config["ccp"]["submenu"]["copy"]["_disabled"] = true;
+                                    config["basket"]["_disabled"] = true;
+                                    if (!(to_paste && to_paste[0].id.indexOf("dataset")>=0)) {  // if we don't have a dataset
+                                        config["ccp"]["submenu"]["paste"]["_disabled"] = true;  // disable paste
+                                    }
+                                } else if(obj.attr("id").indexOf("dataset")>=0) {
+                                    if (obj.parent().parent().attr('rel').indexOf('experimenter')>=0) {
+                                        config["ccp"]["submenu"]["copy"]["_disabled"] = true;
+                                    }
+                                    if (!(to_paste && to_paste[0].id.indexOf("image")>=0)) {
+                                        config["ccp"]["submenu"]["paste"]["_disabled"] = true;
+                                    }
+                                    // see #8879 config["create"]["_disabled"] = true;
+                                    config["basket"]["_disabled"] = true;
+                                } else if(obj.attr("id").indexOf("image")>=0) {
+                                    if (obj.parent().parent().attr('rel').indexOf('orphaned')>=0) {
+                                        config["ccp"]["submenu"]["copy"]["_disabled"] = true;
+                                    }
+                                    config["ccp"]["submenu"]["paste"]["_disabled"] = true;
+                                } else if(obj.attr("id").indexOf("screen")>=0) {
+                                    config["ccp"]["submenu"]["cut"]["_disabled"] = true;
+                                    config["ccp"]["submenu"]["copy"]["_disabled"] = true;
+                                    // see #8879 config["create"]["_disabled"] = true;
+                                    config["create"]["submenu"]["project"]["_disabled"] = true;
+                                    config["create"]["submenu"]["dataset"]["_disabled"] = true;
+                                    config["create"]["submenu"]["screen"]["_disabled"] = true;
+                                    config["basket"]["_disabled"] = true;
+                                    if (!(to_paste && to_paste[0].id.indexOf("plate")>=0)) {
+                                        config["ccp"]["submenu"]["paste"]["_disabled"] = true;
+                                    }
+                                } else if(obj.attr("id").indexOf("plate")>=0) {
+                                    if (obj.parent().parent().attr('rel').indexOf('experimenter')>=0) {
+                                        config["ccp"]["submenu"]["cut"]["_disabled"] = true;
+                                    }
+                                    // see #8879 config["create"]["_disabled"] = true;
+                                    config["create"]["submenu"]["project"]["_disabled"] = true;
+                                    config["create"]["submenu"]["dataset"]["_disabled"] = true;
+                                    config["create"]["submenu"]["screen"]["_disabled"] = true;
+                                    config["ccp"]["submenu"]["paste"]["_disabled"] = true;
+                                    config["basket"]["_disabled"] = true;
+                                } else if(obj.attr("id").indexOf("acquisition")>=0) {
+                                    // see #8879 config["ccp"]["_disabled"] = true;
+                                    config["ccp"]["submenu"]["cut"]["_disabled"] = true;
+                                    config["ccp"]["submenu"]["copy"]["_disabled"] = true;
+                                    config["ccp"]["submenu"]["paste"]["_disabled"] = true;
+                                    config["basket"]["_disabled"] = true;
+                                    config["chgrp"]["_disabled"] = true;
+                                    // see #8879 config["create"]["_disabled"] = true;
+                                    config["create"]["submenu"]["project"]["_disabled"] = true;
+                                    config["create"]["submenu"]["dataset"]["_disabled"] = true;
+                                    config["create"]["submenu"]["screen"]["_disabled"] = true;
+                                } else {
+                                    // see #8879 config["ccp"]["_disabled"] = true;
+                                    config["ccp"]["submenu"]["cut"]["_disabled"] = true;
+                                    config["ccp"]["submenu"]["copy"]["_disabled"] = true;
+                                    config["ccp"]["submenu"]["paste"]["_disabled"] = true;
+                                    // see #8879 config["create"]["_disabled"] = true;
+                                    config["create"]["submenu"]["project"]["_disabled"] = true;
+                                    config["create"]["submenu"]["dataset"]["_disabled"] = true;
+                                    config["create"]["submenu"]["screen"]["_disabled"] = true;
+                                    config["basket"]["_disabled"] = true;
+                                    config["delete"]["_disabled"] = true;
+                                }
+                            }
+                            // Handle rendering settings options. Disabled by default...
+                            config["renderingsettings"]["_disabled"] = true;
+                            config["renderingsettings"]["submenu"]["copy_rdef"]["_disabled"] = true;
+                            config["renderingsettings"]["submenu"]["paste_rdef"]["_disabled"] = true;
+                            if(obj.attr("id").indexOf("image")>=0) {
+                                // ...if it's an image, we can copy settings
+                                config["renderingsettings"]["_disabled"] = false;
+                                config["renderingsettings"]["submenu"]["copy_rdef"]["_disabled"] = false;
+                            }
+                            if($.inArray(obj.attr("rel").replace('-locked',''), ["image", "dataset", "plate", "acquisition"])>=0) {
+                                // if 'canAnnotate' then we can paste settings to image/dataset/plate
+                                if(obj.hasClass('canAnnotate')) {
+                                    config["renderingsettings"]["_disabled"] = false;
+                                    config["renderingsettings"]["submenu"]["paste_rdef"]["_disabled"] = false;
+                                }
+                            }
+                            
+                            return config;
+                        }
+                    },"checkbox" : {
+                        two_state: true
+                    },
+
+                    // include hotkeys plugin code
+                    {% include 'webclient/data/includes/hotkeys.js' %}
+
+                })
+                .delegate("a", "click.jstree", function (e) {
+                    var data = $.jstree._focused();
+                    if(!data.is_open() && data.get_selected().length < 2) {
+                        data.open_node(data.get_selected());
+                    }
+                    
+                })
+                .delegate("a", "dblclick", function(e) {
+                    var obj_rel = $(this).parent().attr('rel');
+                    if ((obj_rel=='image') || (obj_rel=='image-locked')) {
+                        OME.openPopup("{% url 'web_image_viewer' 0 %}".replace('0', $(this).parent().attr('id').split("-")[1]));
+                    }
+                })
+                .bind("select_node.jstree deselect_node.jstree", function (e, data) {
+                    buttonsShowHide(data.inst.data.ui.last_selected, data.inst);
+                    OME.tree_selection_changed(data, e);
+                })
+                .bind("open_node.jstree", function (e, data) {
+
+                })
+                .bind("move_node.jstree", function (e, data) {
+                    // We don't do 'move' in the way that jsTree expects now.
+                    // We 'Cut', which copies and removes. Then 'Paste' to move to new destination.
+                    // So 'move' doesn't need to remove the old parent any more...
+                    var refresh = false;
+                    data.rslt.o.each(function (i) {
+                        var remove = false;
+                        var url;
+                        if (data.inst.data.crrm.cp_nodes) {
+                            url = '{% url 'manage_action_containers' "paste" %}'+$(this).attr("rel").replace("-locked","")+'/'+$(this).attr("id").split("-")[1]+'/'
+                            d = {
+                                "destination" : data.rslt.np.attr("rel").replace("-locked","") +'-'+data.rslt.np.attr("id").split("-")[1]
+                            }
+                        } else  {
+                            // 'cr' is destination, 'op' is current parent
+                            if (data.rslt.cr.attr('rel')!="orphaned") {
+                                url = '{% url 'manage_action_containers' "move" %}'+$(this).attr("rel").replace("-locked","")+'/'+$(this).attr("id").split("-")[1]+'/';
+                                var p = "orphaned-0";
+                                // ...but parent may be project if we are orphaning a dataset or drag'n'drop image
+                                if (data.rslt.op.attr("rel")) {
+                                    p = data.rslt.op.attr("rel").replace("-locked","")+'-'+data.rslt.op.attr("id").split("-")[1];
+                                }
+                                var d = {
+                                    "parent" : p,
+                                    "destination" : data.rslt.np.attr("rel").replace("-locked","") +'-'+data.rslt.np.attr("id").split("-")[1]
+                                };
+                                if (data.inst.get_container().find('#'+this.id).length > 1 ) data.inst.delete_node(this);
+                            } else {
+                                url = '{% url 'manage_action_containers' "remove" %}'+$(this).attr("rel").replace("-locked","")+'/'+$(this).attr("id").split("-")[1]+'/'
+                                d = {
+                                    "parent" : data.rslt.op.attr("rel").replace("-locked","")+'-'+data.rslt.op.attr("id").split("-")[1]
+                                };
+                            }
+                        }
+                        $.ajax({
+                            async : false,
+                            url: url,
+                            data : d,
+                            dataType: "json",
+                            type: "POST",
+                            success: function(r){
+                                if(eval(r.bad)) {
+                                      if (data.rslt.o.length === 1) {
+                                          // only safe to rollback for single objects
+                                          $.jstree.rollback(data.rlbk);
+                                      };
+                                      // alert(r.errs);  // We've already handled the error - don't need to notify user
+                                  }
+                                  else {
+                                      refresh = true;
+                                      if(data.rslt.cy && $(data.rslt.oc).children("UL").length) {
+                                          data.inst.refresh(data.inst._get_node(data.rslt.oc));
+                                      }
+                                  }
+                            },
+                            error: function(response) {
+                                $.jstree.rollback(data.rlbk);
+                            }
+                        });
+                    });
+                    OME.clear_selected(true);   // clear center and right panels etc
+                    if (refresh) {
+                        data.inst.deselect_all();
+                        // refresh source
+                        if (!data.inst.is_leaf(data.rslt.op)) {
+                            data.inst.refresh(data.inst._get_node('#orphaned-0'));
+                        }
+                        //refresh destination (will already be expanded, even if orphaned)
+                        if (!data.inst.is_leaf(data.rslt.cr) && $.inArray(data.rslt.cr.attr("rel").replace("-locked", ""), ["dataset", "orphaned"]) > -1) {
+                            data.inst.refresh(data.inst._get_node('#'+data.rslt.cr.attr('id')));
+                        }
+                        // select the destination (select source if destination is orphaned)
+                        if (data.rslt.cr.attr("rel").replace("-locked", "") === "orphaned") {
+                            data.inst.select_node(data.rslt.op);
+                        } else {
+                            data.inst.select_node(data.rslt.cr);
+                        }
+                    }
+                })
+                .bind("check_node.jstree", function (e, data) {
+                    // TODO Ensure that this is a tag leaf
+                    OME.tagsearchTreeUpdate(data);
+                })
+                .bind("uncheck_node.jstree", function (e, data) {
+                    // TODO Ensure that this is a tag leaf
+                    OME.tagsearchTreeUpdate(data);
+                })
+            });
+           
+
+
+    </script>
+
+    <!-- configure toolbar buttons -->
+    <script type="text/javascript">
+    
+    $(function () {
+        $(".toolbar input").click(function () {
+            switch(this.id) {
+                case "addprojectButton":
+                    OME.handleNewContainer("project");
+                    break;
+                case "adddatasetButton":
+                    OME.handleNewContainer("dataset");
+                    break;
+                case "addscreenButton":
+                    OME.handleNewContainer("screen");
+                    break;
+                case "copyButton":
+                    $("#dataTree").jstree('copy', $.jstree._focused().get_selected());
+                    break;
+                case "cutButton":
+                    $("#dataTree").jstree('cut', $.jstree._focused().get_selected());
+                    var tree = $.jstree._focused(),
+                        selected = tree.get_selected();
+                    tree.cut(selected);     // jsTree 'cut' doesn't remove...
+                    OME.remove_nodes(tree, selected);
+                    break;
+                case "pasteButton":
+                    $("#dataTree").jstree('paste', $.jstree._focused().get_selected());
+                    break;
+                case "deleteButton":
+                        OME.handleDelete();
+                    break;
+                case "basketButton":
+                    OME.addToBasket($.jstree._focused().get_selected(), '{% url 'update_basket' %}');
+                    break;
+                case "refreshButton":
+                    // clear selection of center/right panels, refresh and notify
+                    OME.clear_selected(true);   // force refresh: true
+                    $("#dataTree").jstree("refresh");
+                    data = $.jstree._focused().get_selected();
+                    OME.tree_selection_changed(data);
+                    break;
+                default:
+                    break;
+            }
+        });
+    });
+    </script>
+
+    <!-- set up the middle panel to only show the div chosen by <select> -->
+    {% include "webclient/data/includes/center_plugin_init.js.html" %}
+
+    <!-- include code to handle primary 'thumbs' middle plugin -->
+    {% include "webclient/data/includes/center_plugin.thumbs.js.html" %}
+
+    {% for cp in ome.center_plugins %}
+        {% include cp.include %}
+    {% endfor %}
+
+
+
+{% endblock %}
+
+
+{% block left %}
+
+  
+
+    <div id="user_selection">
+
+          
+    {% include "webclient/base/includes/group_user_dropdown.html" %}
+  
+  </div>
+
+
+    <div id="left_panel_tabs" class="absolute_fill">
+  
+    
+        <ul id="left_panel_tab_list">
+      
+      <!-- Remember to update this in public/public.html as well. We should change this, but for the meantime, you need to manually update the menu there too -->
+      
+          <li id="explore_tab"><a href="#Projects" title="Explore">{% trans "Explore" %}</a></li>
+          <li id="tags_tab"><a href="{% url 'load_template' 'usertags' %}">{% trans "Tags" %}</a></li>
+          <li id="public_tab"><a href="{% url 'load_template' 'public' %}">{% trans "Public" %}</a></li>
+       
+      </ul>
+    
+    
+    
+    <!--
+    <div id="navigator">
+      <a href="#" id="back">Back</a>
+      <a href="#" id="forward">Back</a>
+      <dl>
+        <dt>Groups</dt>
+      </dl>
+      <a href="#" id="settings">Settings</a>
+    </div>
+    -->
+    
+    
+    
+
+
+        <!-- toolbar above tree -->
+        <div id="Projects">
+            <ul class="toolbar">
+          
+      <li><input id="addprojectButton" class="button button-disabled" type="image" src="{% static "webclient/image/folder16.png" %}" alt="Create new project" title="Create new Project" /></li>
+      <li><input id="adddatasetButton" class="button button-disabled" type="image" src="{% static "webclient/image/folder_image16.png" %}" alt="Create new dataset" title="Create new Dataset" /></li>
+      <li><input id="addscreenButton" class="button button-disabled" type="image" src="{% static "webclient/image/folder_screen16.png" %}" alt="Create new screen" title="Create new Screen" /></li>
+      
+      <li class="seperator"></li>
+      
+      <li><input id="cutButton" class="button button-disabled" type="image" src="{% static "webclient/image/icon_toolbar_cut.png" %}" alt="Cut Link" title="Cut Link" /> </li>
+            <li><input id="copyButton" class="button button-disabled" type="image" src="{% static "webclient/image/icon_toolbar_copy.png" %}" alt="Copy Link" title="Copy a link to the selected object" /> </li>
+      <li><input id="pasteButton" class="button button-disabled" type="image" src="{% static "webclient/image/icon_toolbar_paste.png" %}" alt="Paste Link" title="Paste the copied link" /> </li>
+      
+      <li class="seperator">
+      
+      <li><input id="deleteButton" class="button button-disabled" type="image" src="{% static "webclient/image/icon_toolbar_delete.png" %}" alt="Delete" title="Delete" /> </li>
+      <li><input id="basketButton" class="button button-disabled" type="image" src="{% static "webclient/image/icon_toolbar_basket.png" %}" alt="Add to basket" title="Add to basket"></li>
+      
+      <li class="seperator"></li>
+      
+      <li><input id="refreshButton" class="button" type="image" src="{% static "webclient/image/icon_toolbar_refresh.png" %}" alt="Refresh" title="Refresh"> </li>
+          
+            </ul>
+            
+
+            <div class="clear"> </div>
+
+            <div id="tree_details" class="left_panel_inner">
+                <div class="dataTree" id="dataTree"></div>
+            </div>
+        </div>
+
+        <!-- hidden form for delete dialogs -->
+        <div id="delete-dialog-form" title="Delete" style="display:none">
+            <p>Are you sure you want to delete the selected <span id="delete_type">Images</span>?</p>
+            <p>If yes:</p>
+            <form>
+            <fieldset style="border: 0px solid white">
+                <input type="checkbox" name="delete_anns" id="delete_anns" />
+                Also delete any Annotations that become 'orphans'?<br/>
+            </fieldset>
+            </form>
+        </div>
+
+        <!-- hidden dialog for new Container -->
+        <form id="new-container-form" title="New..." style="display:none">
+            <p>Create a new <span id="new_container_type">Container</span>...</p>
+            <p>
+                <label for="id_name">Name:</label>
+                {{ new_container_form.name }}
+            </p>
+            <p style="margin-bottom: 5px">
+                <label for="id_description">Description:</label><br />
+                {{ new_container_form.description }}
+            </p>
+        </form>
+
+        <!-- hidden form for chgrp -->
+        <form id="chgrp-form" title="Move to Group" action="{% url 'chgrp' %}" style="display:none" method="POST">
+            <div id="move_group_tree" class="gray_border">
+            </div>
+        </form>
+
+    </div>
+{% endblock %}
+
+{% block center %}
+
+<div id="center_panel_header">
+    <div id="center_panel_chooser">
+        {% if ome.center_plugins|length > 0 %}
+            <select id="source">
+                <option value="#content_details">Thumbnails</option>
+                {% for cp in ome.center_plugins %}
+                    <option value="#{{ cp.plugin_id }}">{{ cp.label }}</option>
+                {% endfor %}
+            </select>
+        {% endif %}
+    </div>
+</div>
+
+<div id="content_details" class="center_panel_content"> </div>
+
+{% for cp in ome.center_plugins %}
+    <div id="{{ cp.plugin_id }}" class="center_panel_content"></div>
+{% endfor %}
+
+{% endblock %}
+
+
+
+{% block right %}
+<div>
+    <div id="annotation_tabs" class="absolute_fill">
+        <ul id="annotation_tabs_list">
+            <li><a href="#metadata_general">{% trans "General" %}</a></li>
+            <!-- include right tabs, as configured in settings.py under "omero.web.ui.right_tabs" -->
+            {% for rt in ome.right_plugins %}
+                <li><a href="#{{ rt.plugin_id }}">{{ rt.label }}</a></li>
+            {% endfor %}
+        </ul>
+        <div id="metadata_general" class="right_tab_content" ></div>
+        <!-- include right tab bodies, as configured in settings.py under "omero.web.ui.right_tabs" -->
+        {% for rt in ome.right_plugins %}
+        <div id="{{ rt.plugin_id }}" class="right_tab_content" ></div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

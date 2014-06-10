@@ -48,7 +48,7 @@
     <script src="{% static "tagsearch/3rd-party/chosen.order.jquery.js" %}"></script>
 
     <script type="text/javascript">
-        $(document).ready(function() 
+        $(document).ready(function()
             {
                 $("#id_selectedTags").chosen({placeholder_text:'Choose tags'});
 
@@ -64,7 +64,7 @@
                 });
 
                 // Form Submission
-                $("#tagSearchForm").ajaxForm({  
+                $("#tagSearchForm").ajaxForm({
                   beforeSubmit: function() {
                     // prevent submitting the form again while waiting
                     $("div#content_details").html('<p>{% trans "Loading data... please wait" %} <img src ="{% static "webgateway/img/spinner.gif" %}"/></p>');

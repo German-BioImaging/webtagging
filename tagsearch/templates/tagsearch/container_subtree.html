@@ -1,0 +1,61 @@
+{% load i18n %}
+{% load common_filters %}
+
+{% comment %}
+<!--
+  Copyright (C) 2011 University of Dundee & Open Microscopy Environment.
+  All rights reserved.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as
+  published by the Free Software Foundation, either version 3 of the
+  License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+{% endcomment %}
+
+{% if manager.containers.orphaned %}
+    {% if manager.containers.images %}
+    {% for d in manager.containers.images %}
+        <li id='image-{{ d.id }}' rel="image{% if not d.isOwned %}-locked{% endif %}" class="{{ d.getPermsCss }}" data-fileset="{{ d.fileset.id.val }}">
+          <a href="#">{{ d.name|default:"Image"|truncatebefor:"30" }}</a>
+        </li>
+    {% endfor %}
+    {% endif %}
+{% else %}
+    {% if manager.containers.images %}
+    {% for d in manager.containers.images %}
+        <li id='image-{{ d.id }}' rel="image{% if not d.isOwned %}-locked{% endif %}" class="{{ d.getPermsCss }}" data-fileset="{{ d.fileset.id.val }}">
+          <a href="#">{{ d.name|default:"Image"|truncatebefor:"30" }}</a>
+        </li>
+    {% endfor %}
+    {% endif %}
+
+    {# Display the tags that correspond to images in this dataset #}
+    {% if manager.tags %}
+    {% for d in manager.tags %}
+      <li id='tag-{{ d.id.val }}' rel="tag" class="jstree-leaf" data-fileset="{{ d.id.val }}"><a href="#">{{ d.textValue.val|truncatebefor:"35" }}</a></li>
+      {# <li id='tag-{{ d.id.val }}' rel="tag{% if not d.isOwned.val %}-locked{% endif %}" class="jstree-leaf" data-fileset="{{ d.id.val }}"><a href="#">{{ d.textValue.val|truncatebefor:"35" }}</a></li> #}
+{#           <a href="#">{{ d.name.val|default:"Tag"|truncatebefor:"30" }}</a> #}
+        </li>
+    {% endfor %}
+    {% endif %}
+
+{% endif %}
+
+{% if manager.plate %}
+    {% if manager.plate.countPlateAcquisitions %}
+        {% for e in manager.plate.listPlateAcquisitions %}
+            <li id='acquisition-{{ e.id }}' rel="acquisition{% if not e.isOwned %}-locked{% endif %}" class="{{ e.getPermsCss }}">
+                <a href="#">{{ e.name|default:"Run"|truncatebefor:"35" }}</a>
+            </li>
+        {% endfor %}
+    {% endif %}
+{% endif %}
