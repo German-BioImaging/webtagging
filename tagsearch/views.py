@@ -651,9 +651,8 @@ def tagsearch_images(request, conn=None, **kwargs):
         tags = [long(x) for x in json_data['tags']]
 
         # TODO Handle no tags?
-        # TODO Handle impossible tag combinations?
 
-        tags = set(tags)
+        tags = list(set(tags))
         # validate experimenter is in the active group
         active_group = request.session.get('active_group') or \
                        conn.getEventContext().groupId
@@ -694,14 +693,24 @@ def tagsearch_images(request, conn=None, **kwargs):
         print('project_ids', project_ids)
 
         # TODO Do this for Project/Dataset tags as well.
-        hql = "select distinct link.child.id from ImageAnnotationLink link " \
-              "where link.parent.id in (:oids)"
+        if image_ids:
+            hql = "select distinct link.child.id from ImageAnnotationLink link " \
+                  "where link.parent.id in (:oids)"
 
-        params = Parameters()
-        params.map = {}
-        params.map["oids"] = rlist([rlong(o) for o in image_ids])
+            params = Parameters()
+            params.map = {}
+            params.map["oids"] = rlist([rlong(o) for o in image_ids])
 
-        tag_ids = [x[0].getValue() for x in qs.projection(hql,params,service_opts)]
+            tag_query = qs.projection(hql,params,service_opts)
+            tag_ids = [x[0].getValue() for x in tag_query]
+        else:
+            # If there are no images then this means that the tags (likely just
+            # one as the interface will prevent futher selection) specified
+            # have no results. This means there can logically be no
+            # intersecting tags so simply return only the original tag list.
+            # I have made it possible to select tags with no results simply so
+            # that the user can verify for themselves that a tag has no results
+            tag_ids = tags
 
         return HttpResponse(json.dumps({"images": image_ids,
                                         "datasets": dataset_ids,
