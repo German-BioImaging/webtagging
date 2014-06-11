@@ -32,36 +32,36 @@ class BaseContainer(BC):
         super(BaseContainer, self).listContainerHierarchy(eid)
         super(BaseContainer, self).loadTags(eid)
 
-    def listDatasetContents(self, did, eid=None, page=None, load_pixels=False):
-        super(BaseContainer, self).listImagesInDataset(did, eid, page,
-                                                       load_pixels)
+    # def listDatasetContents(self, did, eid=None, page=None, load_pixels=False):
+    #     super(BaseContainer, self).listImagesInDataset(did, eid, page,
+    #                                                    load_pixels)
 
-        im_list = self.containers['images']
+    #     im_list = self.containers['images']
         
-        # Get any tags that could be applicable to these images
-        im_ids = [x.id for x in im_list]
-        qs = self.conn.getQueryService()
+    #     # Get any tags that could be applicable to these images
+    #     im_ids = [x.id for x in im_list]
+    #     qs = self.conn.getQueryService()
 
-        hql = "select distinct link.child from ImageAnnotationLink link " \
-              "where link.parent.id in (:oids)"
+    #     hql = "select distinct link.child from ImageAnnotationLink link " \
+    #           "where link.parent.id in (:oids)"
 
-        params = Parameters()
-        params.map = {}
+    #     params = Parameters()
+    #     params.map = {}
         
-        params.map["oids"] = rlist([rlong(o) for o in set(im_ids)])
+    #     params.map["oids"] = rlist([rlong(o) for o in set(im_ids)])
 
-        self.tags = list(qs.findAllByQuery(hql, params))
-        # TODO For now I have ignored tag ownership. Also needs to be added
-        # back in, in the container_subtree template
-        # for tag in self.tags:
-            # print('owner id:', tag.details.getOwner().id.val)
+    #     self.tags = list(qs.findAllByQuery(hql, params))
+    #     # TODO For now I have ignored tag ownership. Also needs to be added
+    #     # back in, in the container_subtree template
+    #     # for tag in self.tags:
+    #         # print('owner id:', tag.details.getOwner().id.val)
 
-        self.tags.sort(key=lambda x: x.textValue.val and x.textValue.val.lower())
-        self.t_size = len(self.tags)
+    #     self.tags.sort(key=lambda x: x.textValue.val and x.textValue.val.lower())
+    #     self.t_size = len(self.tags)
 
-        # TODO Handle paging with some combination of images and tags
-        # if page is not None:
-        #     self.paging = self.doPaging(page, len(im_list), self.c_size)
+    #     # TODO Handle paging with some combination of images and tags
+    #     # if page is not None:
+    #     #     self.paging = self.doPaging(page, len(im_list), self.c_size)
 
 
 import logging
@@ -601,12 +601,11 @@ def load_data(request, o1_type=None, o1_id=None, o2_type=None, o2_id=None, o3_ty
             load_pixels = (view == 'icon')  # we need the sizeX and sizeY for these
             filter_user_id = None           # Show images belonging to all users
             # List images and relevant tags in dataset
-            manager.listDatasetContents(kw.get('dataset'), filter_user_id, page, load_pixels=load_pixels)
-            # manager.listImagesInDataset(kw.get('dataset'), filter_user_id, page, load_pixels=load_pixels)
+            # manager.listDatasetContents(kw.get('dataset'), filter_user_id, page, load_pixels=load_pixels)
+            manager.listImagesInDataset(kw.get('dataset'), filter_user_id, page, load_pixels=load_pixels)
             if view =='icon':
                 template = "webclient/data/containers_icon.html"
             else:
-                print('container_subtree')
                 template = "tagsearch/container_subtree.html"
         elif kw.has_key('plate') or kw.has_key('acquisition'):
             if view == 'tree':  # Only used when pasting Plate into Screen - load Acquisition in tree
@@ -647,12 +646,10 @@ def tagsearch_images(request, conn=None, **kwargs):
     This updates the list of tags and images based on the navigation criteria
     """
     if request.method == "POST":
-
+        print('body', request.body)
         json_data = json.loads(request.body)
         tags = [long(x) for x in json_data['tags']]
-        dataset = long(json_data['dataset'])
 
-        # TODO Handle no dataset?
         # TODO Handle no tags?
         # TODO Handle impossible tag combinations?
 
@@ -664,20 +661,39 @@ def tagsearch_images(request, conn=None, **kwargs):
         qs = conn.getQueryService()
         service_opts = conn.SERVICE_OPTS.copy()
         service_opts.setOmeroGroup(active_group)
-        hql = "select link.parent.id " \
-              "from ImageAnnotationLink link, DatasetImageLink dlink " \
+
+        # Get the image ids that match these tags
+        # Also need all the datasets it is a member of and all the projects
+        # those datasets are a member of
+
+        # subquery gets a list of relevant images
+        # main query then gets the image id, its datasets and projects
+        hql = "select image.id, dlink.parent.id, plink.parent.id " \
+              "from Image image " \
+              "left outer join image.datasetLinks dlink " \
+              "left outer join dlink.parent.projectLinks plink " \
+              "where image.id in " \
+              "(select link.parent.id " \
+              "from ImageAnnotationLink link " \
               "where link.child.id in (:oids) " \
-              "and dlink.parent.id = (:did) " \
-              "and dlink.child.id = link.parent.id " \
               "group by link.parent.id " \
-              "having count (distinct link.child) = %s" % (len(tags))
+              "having count (distinct link.child) = %s)" % (len(tags))
 
         params = Parameters()
         params.map = {}
         params.map["oids"] = rlist([rlong(o) for o in tags])
-        params.map["did"] = rlong(dataset)
 
-        image_ids = [x[0].getValue() for x in qs.projection(hql,params,service_opts)]
+        # TODO optimize this if we don't need the
+        # [image_id, dataset_id, project_id] representation
+        ids = [(x[0].getValue(), x[1].getValue(), x[2].getValue()) for x in qs.projection(hql,params,service_opts)]
+        image_ids = list(set([ x[0] for x in ids ]))
+        dataset_ids = list(set([ x[1] for x in ids ]))
+        project_ids = list(set([ x[2] for x in ids ]))
+        print('image_ids', image_ids)
+        print('dataset_ids', dataset_ids)
+        print('project_ids', project_ids)
+
+        # TODO Do this for Project/Dataset tags as well.
         hql = "select distinct link.child.id from ImageAnnotationLink link " \
               "where link.parent.id in (:oids)"
 
@@ -687,7 +703,10 @@ def tagsearch_images(request, conn=None, **kwargs):
 
         tag_ids = [x[0].getValue() for x in qs.projection(hql,params,service_opts)]
 
-        return HttpResponse(json.dumps({"images": image_ids, "tags": tag_ids}),
+        return HttpResponse(json.dumps({"images": image_ids,
+                                        "datasets": dataset_ids,
+                                        "projects": project_ids,
+                                        "tags": tag_ids}),
                             content_type="application/json")
 
 

@@ -24,7 +24,7 @@
 {% if manager.containers.orphaned %}
     {% if manager.containers.images %}
     {% for d in manager.containers.images %}
-        <li id='image-{{ d.id }}' rel="image{% if not d.isOwned %}-locked{% endif %}" class="{{ d.getPermsCss }}" data-fileset="{{ d.fileset.id.val }}">
+        <li id='image-{{ d.id }}' rel="image{% if not d.isOwned %}-locked{% endif %}" class="{{ d.getPermsCss }} jstree-image" data-fileset="{{ d.fileset.id.val }}">
           <a href="#">{{ d.name|default:"Image"|truncatebefor:"30" }}</a>
         </li>
     {% endfor %}
@@ -32,28 +32,17 @@
 {% else %}
     {% if manager.containers.images %}
     {% for d in manager.containers.images %}
-        <li id='image-{{ d.id }}' rel="image{% if not d.isOwned %}-locked{% endif %}" class="{{ d.getPermsCss }}" data-fileset="{{ d.fileset.id.val }}">
+        <li id='image-{{ d.id }}' rel="image{% if not d.isOwned %}-locked{% endif %}" class="{{ d.getPermsCss }} jstree-image" data-fileset="{{ d.fileset.id.val }}">
           <a href="#">{{ d.name|default:"Image"|truncatebefor:"30" }}</a>
         </li>
     {% endfor %}
     {% endif %}
-
-    {# Display the tags that correspond to images in this dataset #}
-    {% if manager.tags %}
-    {% for d in manager.tags %}
-      <li id='tag-{{ d.id.val }}' rel="tag" class="jstree-leaf" data-fileset="{{ d.id.val }}"><a href="#">{{ d.textValue.val|truncatebefor:"35" }}</a></li>
-      {# <li id='tag-{{ d.id.val }}' rel="tag{% if not d.isOwned.val %}-locked{% endif %}" class="jstree-leaf" data-fileset="{{ d.id.val }}"><a href="#">{{ d.textValue.val|truncatebefor:"35" }}</a></li> #}
-{#           <a href="#">{{ d.name.val|default:"Tag"|truncatebefor:"30" }}</a> #}
-        </li>
-    {% endfor %}
-    {% endif %}
-
 {% endif %}
 
 {% if manager.plate %}
     {% if manager.plate.countPlateAcquisitions %}
         {% for e in manager.plate.listPlateAcquisitions %}
-            <li id='acquisition-{{ e.id }}' rel="acquisition{% if not e.isOwned %}-locked{% endif %}" class="{{ e.getPermsCss }}">
+            <li id='acquisition-{{ e.id }}' rel="acquisition{% if not e.isOwned %}-locked{% endif %}" class="{{ e.getPermsCss }} jstree-acquisition">
                 <a href="#">{{ e.name|default:"Run"|truncatebefor:"35" }}</a>
             </li>
         {% endfor %}

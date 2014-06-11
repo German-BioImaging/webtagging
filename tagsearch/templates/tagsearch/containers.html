@@ -267,49 +267,112 @@
             return nodeIndex
         };
 
-        // Update the view of an expanded dataset
+        // Update the view
         OME.tagsearchTreeUpdate = function(data) {
-            // Get the dataset and tag ids
-            var dataset = data.inst._get_parent(data.rslt.obj);
-            if (dataset != -1) {
-                var dataset_id = dataset.attr('id').split("-")[1];
-                var tag_ids = [];
-                var children = dataset.find('li')
-                children.each(function(i){
-                    if ($(this).attr('rel') == 'tag') {
-                        if ($("#dataTree").jstree("is_checked", $(this))) {
-                            tag_ids.push($(this).attr('data-fileset'));
-                        }
+            // Get the root tag node
+            var tag_node = data.inst._get_parent(data.rslt.obj);
+            var tag_ids = [];
+            if (tag_node != -1) {
+                // Get the list of checked tags
+                var tag_nodes = tag_node.find('li');
+                tag_nodes.each(function(i){
+                    if ($("#dataTree").jstree("is_checked", $(this))) {
+                        tag_ids.push($(this).attr('data-fileset'));
                     }
                 });
             } // TODO Should probably surround below as well
 
-            // If there are no tags selected, simply unselect all
+            // If there are no tags selected, simply unhide everything
+            // TODO
+            // Get top level
+            // Get all projects and unhide
+            // Get all datasets and unhide
+            // Get all images and unhide
             if (tag_ids.length == 0) {
                 console.log('Empty');
-                children.each(function(i){
+                $('.jstree-tag, .jstree-project, .jstree-dataset, .jstree-image').each(function(i){
                     $(this).show();
                 });
             } else {
 
                 // Perform the AJAX query
-                jQuery.post("{% url 'tagsearch_images' %}", JSON.stringify({dataset:dataset_id, tags:tag_ids}), function(data){
-                    children.each(function(i){
-                        if ($(this).attr('rel') == 'tag') {
-                            if ($.inArray(parseInt($(this).attr('data-fileset')), data.tags) != -1) {
-                                $(this).show();
-                            } else {
-                                $(this).hide();
-                            }
+                console.log('tag_ids');
+                console.log(tag_ids);
+                jQuery.post("{% url 'tagsearch_images' %}", JSON.stringify({tags:tag_ids}), function(data){
+                    // TODO
+                    // Get top level
+                    // Get projects and hide any that aren't in the list
+                    // Get datasets and hide any that aren't in the list
+                    // Get images and hide any that aren't in the list
 
-                        } else if ($(this).attr('rel') == 'image') {
-                            if ($.inArray(parseInt($(this).attr('data-fileset')), data.images) != -1) {
-                                $(this).show();
-                            } else {
-                                $(this).hide();
-                            }
+                    // for (var x in data.tags) {
+                    //     console.log('Finding tag-' + data.tags[x]);
+                    //     $('#tag-' + data.tags[x]).each(function (index, value) {
+                    //         // Found the node
+                    //         console.log($(this))
+                    //     });;
+                    // }
+
+
+                    // Because we have the list of tags not to be hidden, it is necessary to iterate over
+                    // the list of all tags in order to hide the other ones. Also, so that it is possible to
+                    // unhide any that have previously been hidden which should no longer be.
+                    tag_nodes.each(function(i){
+                        if ($.inArray(parseInt($(this).attr('data-fileset')), data.tags) != -1) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
                         }
                     });
+
+                    var project_nodes = $('.jstree-project');
+                    project_nodes.each(function(index, value){
+                        if ($.inArray(parseInt($(this).attr('data-fileset')), data.projects) != -1) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+
+                    var dataset_nodes = $('.jstree-dataset');
+                    dataset_nodes.each(function(index, value){
+                        if ($.inArray(parseInt($(this).attr('data-fileset')), data.datasets) != -1) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+
+                    var image_nodes = $('.jstree-image');
+                    image_nodes.each(function(index, value){
+                        if ($.inArray(parseInt($(this).attr('data-fileset')), data.images) != -1) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+
+
+                    // var experimenter_nodes = $(".jstree-experimenter");
+                    // experimenter_nodes.each(function(index, value){
+                    //     console.log('Experimenter ' + $(this).attr('id'));
+                    //     var project_nodes = $(this).find('.jstree-project');
+                    //     project_nodes.each(function(index, values) {
+                    //         console.log('Project ' + $(this).attr('id'));
+
+                    //     });
+                    // });
+                    
+
+
+                        //  else if ($(this).attr('rel') == 'image') {
+                        //     if ($.inArray(parseInt($(this).attr('data-fileset')), data.images) != -1) {
+                        //         $(this).show();
+                        //     } else {
+                        //         $(this).hide();
+                        //     }
+                        // }
+
                 }, 'json');
 
             }
