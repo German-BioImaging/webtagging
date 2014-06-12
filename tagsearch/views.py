@@ -25,6 +25,9 @@ from omeroweb.webclient.forms import  GlobalSearchForm, ShareForm, BasketShareFo
 from .forms import TagSearchForm
 
 from omeroweb.webclient.controller.container import BaseContainer as BC
+from django.conf import settings
+from omero.gateway import BlitzObjectWrapper
+from omeroweb.webclient.webclient_gateway import ImageWrapper
 
 class BaseContainer(BC):
     # Also set tags when setting container hierarchy
@@ -32,36 +35,68 @@ class BaseContainer(BC):
         super(BaseContainer, self).listContainerHierarchy(eid)
         super(BaseContainer, self).loadTags(eid)
 
-    # def listDatasetContents(self, did, eid=None, page=None, load_pixels=False):
-    #     super(BaseContainer, self).listImagesInDataset(did, eid, page,
-    #                                                    load_pixels)
+    # This restricts the query to getting only the images that also match the
+    # tags currently specified. This is no good as the nodes that are not
+    # matched still need to exist, they should just be hidden
+    def listImagesInDataset(self, did, eid=None, tags=None, page=None, load_pixels=False):
+        if eid is not None:
+            if eid == -1:       # Load data for all users
+                eid = None
+            else:
+                self.experimenter = self.conn.getObject("Experimenter", eid)
 
-    #     im_list = self.containers['images']
+        qs = self.conn.getQueryService()
+        params = Parameters()
+        params.map = {}
+        params.map["did"] = rlong(did)
+
+        params.map["oids"] = rlist([rlong(x) for x in tags])
+        # if page is not None:
+            # params.page(((int(page)-1)*settings.PAGE), settings.PAGE)
+        if load_pixels:
+            pixels = "join fetch im.pixels "
+        else:
+            pixels = ""
+
+
+        if eid is not None:
+            params.map["eid"] = rlong(eid)
+            exp = "and link.parent.details.owner.id=:eid "
+        else:
+            exp = ""
+
+        # TODO Paging disabled for now
+
+        hql = "select image from Image image " \
+              "join fetch image.details.creationEvent " \
+              "join fetch image.details.owner " \
+              "join fetch image.details.group " \
+              "left outer join fetch image.datasetLinks dil " \
+              "left outer join fetch dil.parent d " \
+              "%s" \
+              "where image.id in " \
+              "(select link.parent.id " \
+              "from ImageAnnotationLink link " \
+              "join link.parent.datasetLinks dlink " \
+              "where dlink.parent.id = :did " \
+              "and link.child.id in (:oids) " \
+              "%s" \
+              "group by link.parent.id " \
+              "having count (distinct link.child) = %s)" \
+              "order by image.name ASC" % (pixels, exp, len(tags))
         
-    #     # Get any tags that could be applicable to these images
-    #     im_ids = [x.id for x in im_list]
-    #     qs = self.conn.getQueryService()
+        im_list = []
+        for e in qs.findAllByQuery(hql, params, self.conn.SERVICE_OPTS):
 
-    #     hql = "select distinct link.child from ImageAnnotationLink link " \
-    #           "where link.parent.id in (:oids)"
+            kwargs = {'link': BlitzObjectWrapper(self.conn, e.copyDatasetLinks()[0])}
+            im_list.append(ImageWrapper(self.conn, e, None, **kwargs))
 
-    #     params = Parameters()
-    #     params.map = {}
+        im_list.sort(key=lambda x: x.getName().lower())
+        self.containers = {'images': im_list}
+        self.c_size = self.conn.getCollectionCount("Dataset", "imageLinks", [long(did)])[long(did)]
         
-    #     params.map["oids"] = rlist([rlong(o) for o in set(im_ids)])
-
-    #     self.tags = list(qs.findAllByQuery(hql, params))
-    #     # TODO For now I have ignored tag ownership. Also needs to be added
-    #     # back in, in the container_subtree template
-    #     # for tag in self.tags:
-    #         # print('owner id:', tag.details.getOwner().id.val)
-
-    #     self.tags.sort(key=lambda x: x.textValue.val and x.textValue.val.lower())
-    #     self.t_size = len(self.tags)
-
-    #     # TODO Handle paging with some combination of images and tags
-    #     # if page is not None:
-    #     #     self.paging = self.doPaging(page, len(im_list), self.c_size)
+        # if page is not None:
+        #     self.paging = self.doPaging(page, len(im_list), self.c_size)
 
 
 import logging
@@ -260,9 +295,6 @@ def index(request, conn=None, **kwargs):
         return pd
 
 
-
-
-    # print(get_projects_and_datasets())
 
     # Convert back to an ordered list and sort
     tags = list(tags)
@@ -553,16 +585,18 @@ def load_data(request, o1_type=None, o1_id=None, o2_type=None, o2_id=None, o3_ty
     By default this loads Projects and Datasets.
     E.g. /load_data?view=tree provides data for the tree as <li>.
     """
+
     # get page
     page = getIntOrDefault(request, 'page', 1)
-    print('page', page)
 
     # get view
     view = str(request.REQUEST.get('view', None))
-    print('view', view)
 
     # get index of the plate
     index = getIntOrDefault(request, 'index', 0)
+
+    tags = [long(x) for x in json.loads(request.REQUEST.get('tags'))]
+    # TODO Use this tags to hide (not remove) images in the template
 
     # prepare data. E.g. kw = {}  or  {'dataset': 301L}  or  {'project': 151L, 'dataset': 301L}
     kw = dict()
@@ -602,7 +636,8 @@ def load_data(request, o1_type=None, o1_id=None, o2_type=None, o2_id=None, o3_ty
             filter_user_id = None           # Show images belonging to all users
             # List images and relevant tags in dataset
             # manager.listDatasetContents(kw.get('dataset'), filter_user_id, page, load_pixels=load_pixels)
-            manager.listImagesInDataset(kw.get('dataset'), filter_user_id, page, load_pixels=load_pixels)
+            # manager.listImagesInDataset(kw.get('dataset'), filter_user_id, page, load_pixels=load_pixels)
+            manager.listImagesInDataset(kw.get('dataset'), filter_user_id, tags, page, load_pixels=load_pixels)
             if view =='icon':
                 template = "webclient/data/containers_icon.html"
             else:

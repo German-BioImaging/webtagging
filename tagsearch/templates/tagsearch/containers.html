@@ -690,6 +690,7 @@
                         // All the options are the same as jQuery's except for `data` which CAN (not should) be a function
                         "ajax" : {
                             // the URL to fetch the data
+                            // "type" : "POST",
                             "url" : function(n) {
                                 var url;
                                 if (n.attr) {
@@ -707,12 +708,24 @@
                             // this function is executed in the instance's scope (this refers to the tree instance)
                             // the parameter is the node being loaded (may be -1, 0, or undefined when loading the root nodes)
                             "data" : function (n) {
-                                var r = { "view" : "tree" };
+                                // Get the list of checked tags
+                                var tag_ids = [];
+                                $(".jstree-tag").each(function(index, value){
+                                    if ($("#dataTree").jstree("is_checked", $(this))) {
+                                        tag_ids.push($(this).attr('data-fileset'));
+                                    }
+                                });
+
+                                var r = { "view" : "tree", "tags": JSON.stringify(tag_ids) };
                                 if (n.attr && $.inArray(n.attr("rel").replace("-locked", ""), ["dataset", "orphaned"]) > -1) {
                                     // pagination supported for 'dataset' and 'orphaned'...
                                     var page = n.data("page") || null;      // this data is added by OME.doPagination()
                                     if (page) r["page"] = page;
-                                } 
+                                }
+
+
+                                // return {tags: JSON.stringify(tag_ids)};
+                                // Does not seem to do anything as request is GET!?!?!
                                 return r;
                             }
                         }
