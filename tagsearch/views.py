@@ -28,6 +28,7 @@ from omeroweb.webclient.controller.container import BaseContainer as BC
 from django.conf import settings
 from omero.gateway import BlitzObjectWrapper
 from omeroweb.webclient.webclient_gateway import ImageWrapper
+from . import tree
 
 class BaseContainer(BC):
     # Also set tags when setting container hierarchy
@@ -241,10 +242,6 @@ def index(request, conn=None, **kwargs):
 
     def get_tags(obj):
 
-        # Get tags
-        # It is not sufficient to simply get the objects as there may be tags
-        # which are not applied which don't really make sense to display
-        # tags = list(self.conn.getObjects("TagAnnotation"))
         hql = "select distinct link.child.id, link.child.textValue " \
               "from %sAnnotationLink link " \
               "where link.child.class is TagAnnotation " \
@@ -610,7 +607,6 @@ def load_data(request, o1_type=None, o1_id=None, o2_type=None, o2_id=None, o3_ty
     if o3_type is not None and o3_id > 0:
         kw[str(o3_type)] = long(o3_id)
 
-    print('kw', kw)
     try:
         manager= BaseContainer(conn, **kw)
     except AttributeError, x:
@@ -634,10 +630,12 @@ def load_data(request, o1_type=None, o1_id=None, o2_type=None, o2_id=None, o3_ty
         if kw.has_key('dataset'):
             load_pixels = (view == 'icon')  # we need the sizeX and sizeY for these
             filter_user_id = None           # Show images belonging to all users
-            # List images and relevant tags in dataset
-            # manager.listDatasetContents(kw.get('dataset'), filter_user_id, page, load_pixels=load_pixels)
+            # TODO change this to also load the tags that exist on these images
+            # they can then be hidden in the template if appropriate
             # manager.listImagesInDataset(kw.get('dataset'), filter_user_id, page, load_pixels=load_pixels)
-            manager.listImagesInDataset(kw.get('dataset'), filter_user_id, tags, page, load_pixels=load_pixels)
+            context['images'] = tree.marshal_images(conn, filter_user_id,
+                                                    kw.get('dataset'), tags)
+            # Now we 
             if view =='icon':
                 template = "webclient/data/containers_icon.html"
             else:
@@ -658,11 +656,33 @@ def load_data(request, o1_type=None, o1_id=None, o2_type=None, o2_id=None, o3_ty
                 context['baseurl'] = reverse('webgateway').rstrip('/')
                 context['form_well_index'] = form_well_index
                 template = "webclient/data/plate.html"
-
     # Initial view
     else:
-        manager.listContainerHierarchy(filter_user_id)
         if view =='tree':
+            # Replicate the semantics of listContainerHierarchy's filtering
+            # and experimenter population.
+            if filter_user_id is not None:
+                if filter_user_id == -1:
+                    filter_user_id = None
+                else:
+                    manager.experimenter = conn.getObject(
+                        "Experimenter", filter_user_id
+                    )
+            else:
+                filter_user_id = conn.getEventContext().userId
+            # Projects
+            context['projects'] = tree.marshal_projects(conn, filter_user_id)
+            # Datasets
+            context['datasets'] = tree.marshal_datasets(conn, filter_user_id)
+            # Screens
+            context['screens'] = tree.marshal_screens(conn, filter_user_id)
+            # Plates
+            context['plates'] = tree.marshal_plates(conn, filter_user_id)
+            # Images (orphaned)
+            context['orphans'] = conn.countOrphans("Image", filter_user_id)
+            # Tags
+            context['tags'] = tree.marshal_tags(conn, filter_user_id)
+
             template = "tagsearch/containers_tree.html"
         elif view =='icon':
             template = "webclient/data/containers_icon.html"
@@ -673,6 +693,7 @@ def load_data(request, o1_type=None, o1_id=None, o2_type=None, o2_id=None, o3_ty
     context['isLeader'] = conn.isLeader()
     context['template'] = template
     return context
+
 
 @login_required(setGroupContext=True)
 # @render_response()

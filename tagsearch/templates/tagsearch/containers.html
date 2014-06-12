@@ -324,9 +324,12 @@
                             $(this).hide();
                         }
                     });
-
+                    console.log('data.projects');
+                    console.log(data.projects);
                     var project_nodes = $('.jstree-project');
                     project_nodes.each(function(index, value){
+                        console.log('p');
+                        console.log($(this).attr('data-fileset'));
                         if ($.inArray(parseInt($(this).attr('data-fileset')), data.projects) != -1) {
                             $(this).show();
                         } else {
