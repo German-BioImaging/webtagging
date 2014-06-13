@@ -91,7 +91,8 @@ def marshal_image(conn, row, tag_filter_count):
         @param row The Image row to marshal
         @type row L{list}
     '''
-    image_id, name, owner_id, permissions, fileset_id, tag_count = row
+    image_id, name, owner_id, permissions, fileset_id, sizeX, sizeY, sizeZ, \
+        tag_count = row
     image = dict()
     image['id'] = image_id.val
     image['name'] = name.val
@@ -99,6 +100,10 @@ def marshal_image(conn, row, tag_filter_count):
     image['permsCss'] = parse_permissions_css(permissions, owner_id.val, conn)
     image['filesetId'] = fileset_id.val
     image['isFiltered'] = tag_count.val != tag_filter_count
+    image['sizeX'] = sizeX.val
+    image['sizeY'] = sizeY.val
+    image['sizeZ'] = sizeZ.val
+    print('image',image)
     return image
 
 def marshal_images(conn, experimenter_id=None, dataset_id=None,
@@ -110,12 +115,16 @@ def marshal_images(conn, experimenter_id=None, dataset_id=None,
 
     qs = conn.getQueryService()
 
+    # select image.name, pix.sizeX, pix.sizeY, pix.sizeZ from Image image join image.pixels pix
     q = """
         select image.id,
                image.name,
                image.details.owner.id,
                image.details.permissions,
                image.fileset.id,
+               pix.sizeX,
+               pix.sizeY,
+               pix.sizeZ,
         """
 
     if tag_filter:
@@ -128,9 +137,10 @@ def marshal_images(conn, experimenter_id=None, dataset_id=None,
              )
              """
     else:
-        q += " 0 "
+        q += "0 "
     
-    q += ' from Image image '
+    q += 'from Image image ' \
+         'join image.pixels pix'
 
     where_clause = ''
     if dataset_id:
@@ -154,7 +164,7 @@ def marshal_images(conn, experimenter_id=None, dataset_id=None,
         tag_filter_count = 0
 
     for e in qs.projection(q, params, conn.SERVICE_OPTS):
-        images.append(marshal_image(conn, e[0:6], tag_filter_count))
+        images.append(marshal_image(conn, e[0:9], tag_filter_count))
 
     return images
 
