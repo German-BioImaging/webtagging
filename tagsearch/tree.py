@@ -77,7 +77,8 @@ def marshal_tags(conn, experimenter_id):
         tags.append(marshal_tag(conn, e[0:4]))
     return tags
 
-def marshal_image(conn, row, tag_filter_count):
+def marshal_image(conn, row, row_pixels = None, filtered = False,
+                  tag_filter_count=0):
     ''' Given an Image row (list) marshals it into a dictionary.  Order
         and type of columns in row is:
           * id (rlong)
@@ -91,23 +92,25 @@ def marshal_image(conn, row, tag_filter_count):
         @param row The Image row to marshal
         @type row L{list}
     '''
-    image_id, name, owner_id, permissions, fileset_id, sizeX, sizeY, sizeZ, \
-        tag_count = row
+    image_id, name, owner_id, permissions, fileset_id = row
     image = dict()
     image['id'] = image_id.val
     image['name'] = name.val
     image['isOwned'] = owner_id.val == conn.getUserId()
     image['permsCss'] = parse_permissions_css(permissions, owner_id.val, conn)
     image['filesetId'] = fileset_id.val
-    image['isFiltered'] = tag_count.val != tag_filter_count
-    image['sizeX'] = sizeX.val
-    image['sizeY'] = sizeY.val
-    image['sizeZ'] = sizeZ.val
-    print('image',image)
+    if row_pixels:
+        sizeX, sizeY, sizeZ = row_pixels
+        image['sizeX'] = sizeX.val
+        image['sizeY'] = sizeY.val
+        image['sizeZ'] = sizeZ.val
+    if filtered:
+        image['isFiltered'] = filtered.val != tag_filter_count
+
     return image
 
 def marshal_images(conn, experimenter_id=None, dataset_id=None,
-                   tag_filter=None):
+                   tag_filter=None, load_pixels=False):
     ''' Marshal images for a given user, possibly filtered by dataset
     '''
     images = []
@@ -121,31 +124,35 @@ def marshal_images(conn, experimenter_id=None, dataset_id=None,
                image.name,
                image.details.owner.id,
                image.details.permissions,
-               image.fileset.id,
-               pix.sizeX,
-               pix.sizeY,
-               pix.sizeZ,
+               image.fileset.id
         """
+
+    if load_pixels:
+        q += """
+             , pix.sizeX,
+             pix.sizeY,
+             pix.sizeZ
+             """
 
     if tag_filter:
         params.add('tids', rlist([rlong(x) for x in tag_filter]))
         q += """
-             (select count(distinct link.child)
+             , (select count(distinct link.child)
               from ImageAnnotationLink link
               where link.parent.id = image.id
               and link.child.id in (:tids)
              )
              """
-    else:
-        q += "0 "
     
-    q += 'from Image image ' \
-         'join image.pixels pix'
+    q += 'from Image image '
+
+    if load_pixels:
+        q += 'join image.pixels pix '
 
     where_clause = ''
     if dataset_id:
         params.add('did', rlong(dataset_id))
-        where_clause = ' join image.datasetLinks dlink ' \
+        where_clause = 'join image.datasetLinks dlink ' \
                        'where dlink.parent.id = :did '
 
     if experimenter_id:
@@ -158,13 +165,19 @@ def marshal_images(conn, experimenter_id=None, dataset_id=None,
 
     q += where_clause
 
-    if tag_filter:
-        tag_filter_count = len(tag_filter)
-    else:
-        tag_filter_count = 0
-
     for e in qs.projection(q, params, conn.SERVICE_OPTS):
-        images.append(marshal_image(conn, e[0:9], tag_filter_count))
+        kwargs = {'conn':conn, 'row':e[0:5]}
+        if load_pixels:
+            kwargs['row_pixels'] = e[5:8]
+
+        if tag_filter:
+            if load_pixels:
+                kwargs['filtered'] = e[8]
+            else:
+                kwargs['filtered'] = e[5]
+            kwargs['tag_filter_count'] = len(tag_filter)
+
+        images.append(marshal_image(**kwargs))
 
     return images
 
