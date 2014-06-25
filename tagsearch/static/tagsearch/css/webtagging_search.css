@@ -43,15 +43,15 @@
 }
 
 .tagnav-project .tagnav-icon {
-  background: url('/static/webclient/image/folder16.png') no-repeat;
+  background: url('../image/folder16.png') no-repeat;
 }
 
 .tagnav-dataset .tagnav-icon {
-  background: url('/static/webgateway/img/folder_image16.png') no-repeat;
+  background: url('../image/folder_image16.png') no-repeat;
 }
 
 .tagnav-image .tagnav-icon {
-  background: url('/static/webclient/image/image16.png') no-repeat;
+  background: url('../image/image16.png') no-repeat;
 }
 
 .tagnav-project span, .tagnav-dataset span , .tagnav-image span {
