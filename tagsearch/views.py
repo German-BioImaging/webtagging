@@ -251,15 +251,15 @@ def tag_image_search(request, conn=None, **kwargs):
             if results_preview:
                 if image_ids:
                     images = conn.getObjects('Image', ids = image_ids)
-                    manager['containers']['images'] = images
+                    manager['containers']['images'] = list(images)
 
                 if dataset_ids:
                     datasets = conn.getObjects('Dataset', ids = dataset_ids)
-                    manager['containers']['datasets'] = datasets
+                    manager['containers']['datasets'] = list(datasets)
 
                 if project_ids:
                     projects = conn.getObjects('Project', ids = project_ids)
-                    manager['containers']['projects'] = projects
+                    manager['containers']['projects'] = list(projects)
 
                 manager['c_size'] = len(image_ids) + len(dataset_ids) + len(project_ids)
                 if manager['c_size'] > 0:
