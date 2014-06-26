@@ -248,27 +248,39 @@ def tag_image_search(request, conn=None, **kwargs):
             context['project_count'] = len(project_ids)
             project_count = len(project_ids)
 
+            logger.info('results_preview: %s' % results_preview)
             if results_preview:
                 if image_ids:
+                    logger.info('images')
                     images = conn.getObjects('Image', ids = image_ids)
-                    manager['containers']['images'] = images
+                    manager['containers']['images'] = list(images)
+                    for i in manager['containers']['images']:
+                        logger.info(i.id)
 
                 if dataset_ids:
+                    logger.info('datasets')
                     datasets = conn.getObjects('Dataset', ids = dataset_ids)
-                    manager['containers']['datasets'] = datasets
+                    manager['containers']['datasets'] = list(datasets)
+                    for i in manager['containers']['datasets']:
+                        logger.info(i.id)
 
                 if project_ids:
+                    logger.info('projects')
                     projects = conn.getObjects('Project', ids = project_ids)
-                    manager['containers']['projects'] = projects
+                    manager['containers']['projects'] = list(projects)
+                    for i in manager['containers']['projects']:
+                        logger.info(i.id)
 
                 manager['c_size'] = len(image_ids) + len(dataset_ids) + len(project_ids)
                 if manager['c_size'] > 0:
                     preview = True
+                logger.info('c_size: %s' % manager['c_size'])
 
             context['manager'] = manager
 
             html_response = render_to_string("tagsearch/search_details.html", context)
-
+            logger.info('HTML Response')
+            logger.info(html_response)
             middle = time.time()
 
             def getAnnotationsForObjects(obj_type, oids):
