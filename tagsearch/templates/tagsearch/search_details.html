@@ -1,3 +1,193 @@
+{# In webtagging version of search_details, do not display unless c_size is not zero.
+   This is because there may be results, but preview is not enabled #}
 {% if manager.c_size %}
-  {% include "webclient/search/search_details.html" %}
+
+    {% load i18n %}
+    {% load common_filters %}
+
+
+{% comment %}
+<!--
+  Copyright (C) 2011 University of Dundee & Open Microscopy Environment.
+  All rights reserved.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as
+  published by the Free Software Foundation, either version 3 of the
+  License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+{% endcomment %}
+
+    <script type="text/javascript">
+        $(document).ready(function(){
+            
+            // double-click handler on image - launches image viewer
+            //$("table#dataTable tbody tr").dblclick(function(event) {
+                // TODO: path to the object should be rendered on the server side
+            //});
+
+            // single click handler on image (container). Selection then update toolbar & metadata pane
+            $("table#dataTable tbody tr").click(function(event) {
+                OME.handleTableClickSelection(event);
+            });
+            
+            // plugin to handle drag-select of images
+            $("table#dataTable tbody").selectable({
+                filter: 'tr',
+                distance: 2,
+                stop: function(){  
+                    var selected = $('tr.ui-selected', this);
+                    OME.table_selection_changed(selected);
+                },
+                start: function(){
+                }
+            });
+            
+            // We init sorting (not cols 0 & 3) but don't sort by default
+            $("#dataTable").tablesorter({headers: { 0: { sorter: false}, 4: {sorter: false} } });
+
+            $('input#id_search').quicksearch('table#dataTable tbody tr', {
+                'delay': 300,
+                'loader': 'span.loading'
+            });
+        });    
+    </script>
+
+    <style type="text/css">
+        .search_thumb {
+            max-width: 32px;
+            max-height: 32px;
+        }
+    </style>
+
+  
+    
+
+    <div>
+    {% block search_results %}
+
+        {% if manager.searchError %}
+        <div class="error" style="font-size: 120%; margin-top: 50px; text-align: center">
+            {{ manager.searchError }}
+        </div>
+        {% endif %}
+
+        {% if manager.c_size or foundById %}
+        
+        <table id="dataTable" class="tablesorter">
+            <thead> 
+                <tr> 
+                    <th class="table_images">{% trans "Object" %}</th> 
+                    <th class="table_desc">{% trans "Name" %}</th> 
+                    <th class="table_date">{% trans "Import Date" %}</th>
+                    <th>{% trans "Group" %}</th>
+                    <th>{% trans "Link" %}</th>
+                </tr> 
+            </thead>
+            <tbody>
+            <!-- NB: E.g. "#project-123 td.desc a" etc is used to update names if edited in right-panel 'editinplace.js' -->
+            {% for byId in foundById %}
+                {% with c=byId.obj %}
+                <tr id="{{ byId.otype }}-{{ c.id }}" class="{{ c.getPermsCss }}">
+                    <td class="image">
+                        {% ifequal byId.otype 'image' %}
+                        <img class="search_thumb" id="{{ c.id }}" src="{% url 'render_thumbnail_resize' 96 c.id  %}" alt="image" title="{{ c.name }}"/>
+                        {% else %}
+                        <img src="{% static "webgateway/img/folder16.png" %}" alt="{{ byId.otype }}" title="{{ c.name }}"/>
+                        {% endifequal %}
+                    </td>
+                    <td class="desc">
+                        <span style="color:red">ID: {{ c.id }}</span>
+                        <a>{{ c.name|truncatebefor:"65" }}</a>
+                    </td>
+                    <td class="date">{{ c.creationEventDate }}</td>
+                    <td class="group">{{ c.getDetails.group.name.val }}</td>
+                    <td><a href="{% url 'webindex' %}?show={{ byId.otype }}-{{ c.id }}" title="{% trans 'Show in hierarchy view' %}">
+                        {% trans "Browse" %}
+                    </a></td>
+                </tr>
+                {% endwith %}
+            {% endfor %}
+            {% for c in manager.containers.project %}
+                <tr id="project-{{ c.id }}" class="{{ c.getPermsCss }}">
+                    <td class="image">
+                        <img id="{{ c.id }}" src="{% static "webgateway/img/folder16.png" %}" alt="project" title="{{ c.name }}"/>
+                    </td>
+                    <td class="desc"><a>{{ c.name|truncatebefor:"65" }}</a></td>
+                    <td class="date">{{ c.creationEventDate }}</td>
+                    <td class="group">{{ c.getDetails.group.name.val }}</td>
+                    <td><a href="{% url 'webindex' %}?show=project-{{ c.id }}" title="{% trans 'Show in hierarchy view' %}">
+                        {% trans "Browse" %}
+                    </a></td>
+                </tr>
+            {% endfor %}
+            {% for c in manager.containers.screen %}
+                <tr id="screen-{{ c.id }}" class="{{ c.getPermsCss }}">
+                    <td class="image">
+                        <img id="{{ c.id }}" src="{% static "webclient/image/folder_screen32.png" %}" alt="screen" title="{{ c.name }}"/>
+                    </td>
+                    <td class="desc"><a>{{ c.name|truncatebefor:"65" }}</a></td>
+                    <td class="date">{{ c.creationEventDate }}</td>
+                    <td class="group">{{ c.getDetails.group.name.val }}</td>
+                    <td><a href="{% url 'webindex' %}?show=screen-{{ c.id }}" title="{% trans 'Show in hierarchy view' %}">
+                        {% trans "Browse" %}
+                    </a></td>
+                </tr>
+            {% endfor %}
+            {% for c in manager.containers.dataset %}
+                <tr id="dataset-{{ c.id }}" class="{{ c.getPermsCss }}">
+                    <td class="image">
+                        <img id="{{ c.id }}" src="{% static "webgateway/img/folder_image16.png" %}" alt="dataset" title="{{ c.name }}"/>
+                    </td>
+                    <td class="desc"><a>{{ c.name|truncatebefor:"65" }}</a></td>
+                    <td class="date">{{ c.creationEventDate }}</td>
+                    <td class="group">{{ c.getDetails.group.name.val }}</td>
+                    <td><a href="{% url 'webindex' %}?show=dataset-{{ c.id }}" title="{% trans 'Show in hierarchy view' %}">
+                        {% trans "Browse" %}
+                    </a></td>
+                </tr>
+            {% endfor %}
+            {% for c in manager.containers.plate %}
+                <tr id="plate-{{ c.id }}" class="{{ c.getPermsCss }}">
+                    <td class="image">
+                        <img id="{{ c.id }}" src="{% static "webclient/image/folder_plate32.png" %}" alt="plate" title="{{ c.name }}"/>
+                    </td>
+                    <td class="desc"><a>{{ c.name|truncatebefor:"65" }}</a></td>
+                    <td class="date">{{ c.creationEventDate }}</td>
+                    <td class="group">{{ c.getDetails.group.name.val }}</td>
+                    <td><a href="{% url 'webindex' %}?show=plate-{{ c.id }}" title="{% trans 'Show in hierarchy view' %}">
+                        {% trans "Browse" %}
+                    </a></td>
+                </tr>
+            {% endfor %}
+            {% for c in manager.containers.image %}
+                <tr id="image-{{ c.id }}" class="{{ c.getPermsCss }}">
+                    <td class="image">
+                        <img class="search_thumb" id="{{ c.id }}" src="{% url 'render_thumbnail_resize' 96 c.id  %}" alt="image" title="{{ c.name }}"/>
+                    </td>
+                    <td class="desc"><a>{{ c.name|truncatebefor:"65" }}</a></td>
+                    <td class="date">{{ c.creationEventDate }}</td>
+                    <td class="group">{{ c.getDetails.group.name.val }}</td>
+                    <td><a href="{% url 'webindex' %}?show=image-{{ c.id }}" title="{% trans 'Show in hierarchy view' %}">
+                        {% trans "Browse" %}
+                    </a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        
+        {% else %}
+            <p class="center_message message_nodata">{% trans "No results found" %}</p>
+        {% endif %}
+
+    {% endblock %}
+    </div>
 {% endif %}
