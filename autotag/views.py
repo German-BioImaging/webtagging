@@ -671,7 +671,9 @@ def process_update(request, conn=None, **kwargs):
 
         # Get the list of images that may require operations as they have some
         # selections (could be being removed) or checks (could be being added)
-        imageIds = list(set(serverSelected.keys() + checked.keys()))
+        imageIds = list(set(serverSelected.keys() +
+                            server_selected_tag_ids.keys() +
+                            checked.keys()))
 
         # tokenName can be None in these to denote a unmatched tag
         additions = []      # [(imageID, tagId, tokenName)]
