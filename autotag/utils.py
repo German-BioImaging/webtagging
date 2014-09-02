@@ -38,7 +38,7 @@ def createTagAnnotationsLinks(conn, additions=[], removals=[]):
     @param additions:       List of tags to remove from images
     """
 
-    newLinks = []        
+    newLinks = []
     # Create a list of links to apply
     for addition in additions:
         link = omero.model.ImageAnnotationLinkI()

@@ -81,12 +81,15 @@
                     {# Display special case background color for server applied tokens #}
                     <td class="{{ cell.token.tokentype }}Tokens token_{{ cell.token.value }}{% if cell.is_tagged %} success{% endif %}">
 
-                        <input class="imagechecked" name="imagechecked" value="token_{{ row.get_id }}_{{ cell.token.value }}" type="checkbox"{% if cell.is_checked %} checked{% endif %}{% if not cell.is_enabled %} disabled{% endif %}/>
+                        {# Only if this row is annotateable are inputs added #}
+                        {% if row.can_annotate %}
+                            <input class="imagechecked" name="imagechecked" value="token_{{ row.get_id }}_{{ cell.token.value }}" type="checkbox"{% if cell.is_checked %} checked{% endif %}{% if not cell.is_enabled %} disabled{% endif %}/>
 
-                        {# Create a hidden field to indicate that for the current mapping, this image is tagged server side #}
-                        {% if cell.is_tagged %}
-                            <input class="serverselected" name="serverselected" type="hidden" value="token_{{ row.get_id }}_{{ cell.token.value }}"/>
+                            {# Create a hidden field to indicate that for the current mapping, this image is tagged server side#}
+                            {% if cell.is_tagged %}
+                                <input class="serverselected" name="serverselected" type="hidden" value="token_{{ row.get_id }}_{{ cell.token.value }}"/>
 
+                            {% endif %}
                         {% endif %}
 
                     </td>
@@ -97,11 +100,14 @@
                     {# Display special case background color for server applied tokens #}
                     <td class="unmatchedTag tag_{{ cell.tag.getId }}{% if cell.is_tagged %} success{% endif %}">
 
-                        <input class="imagechecked" name="imagechecked" value="tag_{{ row.get_id }}_{{ cell.tag.getId }}" type="checkbox"{% if cell.is_checked %} checked{% endif %}/>
+                        {# Only if this row is annotateable are inputs added #}
+                        {% if row.can_annotate %}
+                            <input class="imagechecked" name="imagechecked" value="tag_{{ row.get_id }}_{{ cell.tag.getId }}" type="checkbox"{% if cell.is_checked %} checked{% endif %}/>
 
-                        {# Create a hidden field to indicate that for the current mapping, this image is tagged server side #}
-                        {% if cell.is_tagged %}
-                            <input class="serverselected" name="serverselected" type="hidden" value="tag_{{ row.get_id }}_{{ cell.tag.getId }}"/>
+                            {# Create a hidden field to indicate that for the current mapping, this image is tagged server side #}
+                            {% if cell.is_tagged %}
+                                <input class="serverselected" name="serverselected" type="hidden" value="tag_{{ row.get_id }}_{{ cell.tag.getId }}"/>
+                            {% endif %}
                         {% endif %}
 
                     </td>

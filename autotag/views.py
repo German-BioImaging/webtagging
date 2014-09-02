@@ -214,6 +214,7 @@ class TableRow(object):
         self.tokens = set([])   # The tokens present in this image name
         self.tags = []          # The tags present on this image
         self.client_path = None
+        # self.perms = []         # Users permissions on this image
 
     def get_name(self):
         return self.image.getName()
@@ -240,6 +241,9 @@ class TableRow(object):
 
         for tag in self.parent.get_unmatched_tags():
             yield TableCellTag(self, tag)
+
+    def can_annotate(self):
+        return self.image.canAnnotate()
 
     def add_token(self, token):
         """
@@ -448,6 +452,7 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
     """
     import time
     start = time.time()
+
     # TODO: handle list of Image IDs. Currently we ONLY support Dataset
     if datasetId is not None:
         dataset = conn.getObject("Dataset", datasetId)
