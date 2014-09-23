@@ -13,6 +13,8 @@ urlpatterns = patterns('django.views.generic.simple',
 
     # name tokens to tags
     url( r'^auto_tag/dataset/(?P<datasetId>[0-9]+)/$', views.auto_tag, name="webtagging_auto_tag" ),
+    url( r'^auto_tag/orphaned/(?P<experimenterId>[0-9]+)/$', views.auto_tag,
+        name="webtagging_auto_tag_orphaned" ),
 
     # process main form submission
     url( r'^auto_tag/processUpdate/$', views.process_update, name="webtagging_process_update" ),
