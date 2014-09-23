@@ -52,7 +52,9 @@ $(function(){
         // Not blindly using the current tree selection which
         // could be an image or dataset
         var crel = $("div#auto_tag_panel").attr('rel');
-        var oid = crel.split("-")[1];
+        var crelSplit = crel.split("-");
+        var datatype = crelSplit[0];
+        var oid = crelSplit[1];
 
         var params = "";
         var first = true;
@@ -71,7 +73,7 @@ $(function(){
             }
         }
 
-        var auto_tag_url = "{% url 'webtagging_index' %}auto_tag/dataset/"+oid+'/' + params;
+        var auto_tag_url = "{% url 'webtagging_index' %}auto_tag/" + datatype + "/"+oid+'/' + params;
 
         $("#auto_tag_panel").load(auto_tag_url);
     });

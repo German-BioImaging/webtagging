@@ -116,6 +116,7 @@ class ImageWrapper (omero.gateway.ImageWrapper):
 
 # Update the ref to ImageWrapper in BlitzGateway
 omero.gateway.ImageWrapper = ImageWrapper
+omero.gateway.refreshWrappers()
 
 
 class BlitzSet(object):
