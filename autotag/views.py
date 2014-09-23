@@ -527,9 +527,9 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
         # Do discards
         #TODO Incredibly primitive, replace with much, much smarter discarding
         # system
-        if (ignoreFirstFileToken):
+        if (ignoreFirstFileToken) and len(ft) > 0:
             ft.pop(0)
-        if (ignoreLastFileToken):
+        if (ignoreLastFileToken) and len(ft) > 0:
             ft.pop()
 
 
