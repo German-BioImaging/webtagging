@@ -148,7 +148,6 @@ $(function(){
    
             }
 
-            $submitButton.removeAttr('disabled');
             // Determine if any of the currently selected images was modified
             // as this necessitates an update of the right-hand panel.
 
@@ -159,7 +158,7 @@ $(function(){
                 var selected = datatree.data.ui.selected;
 
                 // For each selection, ensure it is an image
-                selected.filter( "li:[id|=image]" ).each(function(k,v) {
+                selected.filter( "li[id|=image]" ).each(function(k,v) {
                     var s = $(v).attr('id').split("-")[1];
                     for (var i in data.additions) {
                         var imageId = data.additions[i][0];
@@ -180,6 +179,7 @@ $(function(){
                 });
             }
 
+            $submitButton.removeAttr('disabled');
         }
     });
 
