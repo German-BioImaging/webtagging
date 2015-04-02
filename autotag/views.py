@@ -600,12 +600,17 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
             # Then continue to the next token
             continue
 
-        # Add the matching tags to this token
-        token.add_tags(tags)
+        # Add the matching tags, discarding any that can not be linked
+        # This is when the group is read-only and the querying user is not
+        # the owner of the tag
+        for tag in tags:
+            if tag.canLink():
+                # Add the matching tags to this token
+                token.add_tags([tag])
 
-        # Update the matched_tags in table_data
-        table_data.matched_tags.update(tags)
-        # TODO Do I need to update the all_tags in table_data??
+                # Update the matched_tags in table_data
+                table_data.matched_tags.update([tag])
+                # TODO Do I need to update the all_tags in table_data??
 
     # Find the tags that are prexisting on these images
     for row in table_data.rows:
