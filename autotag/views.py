@@ -776,7 +776,10 @@ def list_tags(request, conn=None, **kwargs):
 
     tags = []
     for t in conn.getObjects("TagAnnotation"):
-        if t.id not in current_tags:
+        # Exclude tags already in use and tags that are not linkable
+        # because they are in a read-only group of which the current
+        # user is not the owner
+        if t.id not in current_tags and t.canLink():
             tags.append({
                 'id':t.id,
                 'name':t.getTextValue(),
