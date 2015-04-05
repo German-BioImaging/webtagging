@@ -91,6 +91,15 @@ $(function() {
 
                             standby_then_load('orphaned', experimenterId);
                         }
+                    } else if (datatree._get_type(pr) === 'tag') {
+                        var tagId = pr.attr('id').split("-")[1];
+                        if (check_same('tag', tagId)) {
+                            //TODO Change selection
+                            return;
+                        }
+
+                        standby_then_load('tag', tagId)
+
                     } else {
                         return;
                     }
@@ -122,13 +131,21 @@ $(function() {
 
                     standby_then_load('orphaned', experimenterId);
                 }
+            } else if (dtype=="tag") {
+                // Check if this tag is already being displayed
+                // If so, selecting tag itself equates to no images selected
+                if (check_same('tag', oid)) {
+                    //TODO Change selection to none
+                    return;
+                }
 
+                standby_then_load('tag', oid);
             } else {
                 return;
             }
 
         },
-        supported_obj_types: ['dataset', 'image', 'orphaned']
+        supported_obj_types: ['dataset', 'image', 'orphaned', 'tag']
     });
 });
 

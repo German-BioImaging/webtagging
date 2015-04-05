@@ -445,8 +445,8 @@ def index(request):
 
 @login_required(setGroupContext=True)
 @render_response()
-def auto_tag(request, datasetId=None, experimenterId=None, conn=None,
-             **kwargs):
+def auto_tag(request, datasetId=None, experimenterId=None, tagId=None,
+             conn=None, **kwargs):
     """
     List all the images in a table, with their names tokenised to create 
     suggestions for new tags.
@@ -455,8 +455,8 @@ def auto_tag(request, datasetId=None, experimenterId=None, conn=None,
     import time
     start = time.time()
 
-    # TODO: handle list of Image IDs. Currently we ONLY support Dataset
-    # and orphaned. List would be for search results etc.
+    # TODO: handle list of Image IDs. Currently we ONLY support Dataset,
+    # orphaned and Tag. List would be for search results etc.
     if datasetId is not None:
         dataset = conn.getObject("Dataset", datasetId)
         images = list( dataset.listChildren() )
@@ -471,6 +471,10 @@ def auto_tag(request, datasetId=None, experimenterId=None, conn=None,
         if experimenterId == 0:
             experimenterId = request.session.get('user_id')
         images = list(conn.listOrphans("Image", eid=experimenterId))
+
+    elif tagId is not None:
+        # Query the images that are valid for this tag
+        images = list(conn.getObjectsByAnnotations('Image', [tagId]))
 
     else:
         images = []
