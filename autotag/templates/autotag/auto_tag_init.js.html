@@ -47,7 +47,7 @@ $(function() {
 
             var standby_then_load = function(datatype, id) {
                 standby();
-                // Set dataset attribute
+                // Set datatype attribute
                 $("div#auto_tag_panel").attr('rel', datatype + '-' + id);
 
                 // Get and load actual contents
@@ -56,7 +56,7 @@ $(function() {
             };
 
             var check_same = function(datatype, id) {
-                // Check if this dataset is already being displayed
+                // Check if this data is already being displayed
                 var crel = $("div#auto_tag_panel").attr('rel');
                 if (crel !== undefined && crel.length > 0 ) {
                     if (crel === datatype + '-' + id) {
