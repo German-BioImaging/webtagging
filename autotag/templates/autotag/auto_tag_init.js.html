@@ -40,43 +40,69 @@ $(function() {
             // var oid = selected.attr('id');                              // E.g. 'dataset-501'
             // var orel = selected.attr('rel').replace("-locked", "");     // E.g. 'dataset'
 
-            var standby_then_load = function(datasetId) {
+            var standby = function() {
                 // Display waiting message
                 $("div#auto_tag_panel").html('<p class="loading_center">Loading... please wait. <img src ="{% static "webgateway/img/spinner_big.gif" %}"/></p>');
-                // Set dataset attribute
-                $("div#auto_tag_panel").attr('rel', 'dataset-' + datasetId);
+            };
+
+            var standby_then_load = function(datatype, id) {
+                standby();
+                // Set datatype attribute
+                $("div#auto_tag_panel").attr('rel', datatype + '-' + id);
 
                 // Get and load actual contents
-                auto_tag_url = '{% url 'webtagging_index' %}auto_tag/dataset/'+datasetId+'/';
+                auto_tag_url = '{% url 'webtagging_index' %}auto_tag/' + datatype + '/'+id+'/';
                 $("div#auto_tag_panel").load(auto_tag_url);
             };
 
-            var check_same_dataset = function(new_datasetId) {
-                // Check if this dataset is already being displayed
+            var check_same = function(datatype, id) {
+                // Check if this data is already being displayed
                 var crel = $("div#auto_tag_panel").attr('rel');
                 if (crel !== undefined && crel.length > 0 ) {
-                    var cdsId = crel.split("-")[1];
-                    if (cdsId === new_datasetId) {
+                    if (crel === datatype + '-' + id) {
                         return true;
                     }
                 }
                 return false;
             };
 
+            // TODO Make this whole section less clumsy and unreadable. Some refactoring
             var auto_tag_url;
             if (dtype=="image") {
                 var pr = tree_selected.parent().parent();
                 if (pr.length>0) {
-                    var dsId = pr.attr('id').split("-")[1];
+                    if (datatree._get_type(pr) === 'dataset') {
+                        var parentId = pr.attr('id').split("-")[1];
+                        if (check_same('dataset', parentId)) {
+                            //TODO Change selection
+                            return;
+                        }
 
-                    // Check if this dataset is already being displayed
-                    // If so, change selection instead of reloading
-                    if (check_same_dataset(dsId)) {
-                        //TODO Change selection
+                        standby_then_load('dataset', parentId);
+
+                    } else if (datatree._get_type(pr) === 'orphaned') {
+                        var exp = pr.parent().parent();
+                        if (exp.length>0) {
+                            var experimenterId = exp.attr('id').split("-")[1];
+                            if (check_same('orphaned', experimenterId)) {
+                                //TODO Change selection
+                                return;
+                            }
+
+                            standby_then_load('orphaned', experimenterId);
+                        }
+                    } else if (datatree._get_type(pr) === 'tag') {
+                        var tagId = pr.attr('id').split("-")[1];
+                        if (check_same('tag', tagId)) {
+                            //TODO Change selection
+                            return;
+                        }
+
+                        standby_then_load('tag', tagId)
+
+                    } else {
                         return;
                     }
-                    // Otherwise, load is require
-                    standby_then_load(dsId);
                 } else {
                     return;
                 }
@@ -84,17 +110,42 @@ $(function() {
             } else if (dtype=="dataset") {
                 // Check if this dataset is already being displayed
                 // If so, selecting dataset itself equates to no images selected
-                if (check_same_dataset(oid)) {
+                if (check_same('dataset', oid)) {
                     //TODO Change selection to none
                     return;
                 }
-                // Otherwise, load is required
-                standby_then_load(oid);
+
+                standby_then_load('dataset', oid);
+            } else if (dtype == "orphaned") {
+
+                // Get the experimenter that we want orphaned images for
+                var exp = tree_selected.parent().parent();
+                if (exp.length>0) {
+                    console.log(pr);
+                    var experimenterId = exp.attr('id').split("-")[1];
+
+                    if (check_same('orphaned', experimenterId)) {
+                        //TODO Change selection
+                        return;
+                    }
+
+                    standby_then_load('orphaned', experimenterId);
+                }
+            } else if (dtype=="tag") {
+                // Check if this tag is already being displayed
+                // If so, selecting tag itself equates to no images selected
+                if (check_same('tag', oid)) {
+                    //TODO Change selection to none
+                    return;
+                }
+
+                standby_then_load('tag', oid);
             } else {
                 return;
             }
+
         },
-        supported_obj_types: ['dataset', 'image']
+        supported_obj_types: ['dataset', 'image', 'orphaned', 'tag']
     });
 });
 

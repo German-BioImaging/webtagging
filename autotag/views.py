@@ -11,6 +11,7 @@ from omero.rtypes import rstring, rlong
 
 from utils import parse_path, createTagAnnotationsLinks, BlitzSet
 
+
 from urlparse import parse_qsl
 
 import json
@@ -444,7 +445,8 @@ def index(request):
 
 @login_required(setGroupContext=True)
 @render_response()
-def auto_tag(request, datasetId=None, conn=None, **kwargs):
+def auto_tag(request, datasetId=None, experimenterId=None, tagId=None,
+             conn=None, **kwargs):
     """
     List all the images in a table, with their names tokenised to create 
     suggestions for new tags.
@@ -453,11 +455,31 @@ def auto_tag(request, datasetId=None, conn=None, **kwargs):
     import time
     start = time.time()
 
-    # TODO: handle list of Image IDs. Currently we ONLY support Dataset
+    # TODO: handle list of Image IDs. Currently we ONLY support Dataset,
+    # orphaned and Tag. List would be for search results etc.
     if datasetId is not None:
         dataset = conn.getObject("Dataset", datasetId)
         images = list( dataset.listChildren() )
-        images.sort(key=lambda img: img.getName().lower())
+
+    elif experimenterId is not None:
+        experimenterId = long(experimenterId)
+        # TODO The experimenters in the jstree currently all have id=0. This
+        # makes it difficult to supply the experimenterId to this view. For now
+        # if it is an orphaned listing required, override the supplied
+        # experimenter id with the one from the session
+        # omeroweb.webclient.webclient_gateway.ImageWrapper
+        if experimenterId == 0:
+            experimenterId = request.session.get('user_id')
+        images = list(conn.listOrphans("Image", eid=experimenterId))
+
+    elif tagId is not None:
+        # Query the images that are valid for this tag
+        images = list(conn.getObjectsByAnnotations('Image', [tagId]))
+
+    else:
+        images = []
+
+    images.sort(key=lambda img: img.getName().lower())
 
     ignoreFirstFileToken = bool(request.GET.get('ignoreFirstFileToken', False))
     ignoreLastFileToken = bool(request.GET.get('ignoreLastFileToken', False))
