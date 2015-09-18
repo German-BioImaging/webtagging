@@ -100,7 +100,7 @@ $(function(){
                     $td.addClass('success');
                     $td.append('<input class="serverselected" name="serverselected" type="hidden" value="tag_' + imageId + '_' + tagId + '"/>');
                 } else {
-                    $td = $('tr#image_' + imageId + ' .token_' + tokenName);
+                    $td = $('tr#image_' + imageId + ' .token_' + tokenName.replace( /(:|\.|\[|\]|,|;)/g , "\\$1" ));
                     $td.addClass('success');
                     $td.append('<input class="serverselected" name="serverselected" type="hidden" value="token_' + imageId + '_' + tokenName + '"/>');
 
@@ -126,7 +126,7 @@ $(function(){
                     $td.removeClass('success');
                     $td.children('.serverselected').remove();
                 } else {
-                    $td = $('tr#image_' + imageId + ' .token_' + tokenName);
+                    $td = $('tr#image_' + imageId + ' .token_' + tokenName.replace(/(:|\.|\[|\]|,|;)/g, "\\$1" ));
                     $td.removeClass('success');
                     $td.children('.serverselected').remove();
 
