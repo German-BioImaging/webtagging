@@ -79,7 +79,7 @@
 
                 {% if cell.is_token_cell %}
                     {# Display special case background color for server applied tokens #}
-                    <td class="{{ cell.token.tokentype }}Tokens token_{{ cell.token.value }}{% if cell.is_tagged %} success{% endif %}">
+                    <td class="{{ cell.token.tokentype }}Tokens token_{{ cell.token.css_value }}{% if cell.is_tagged %} success{% endif %}">
 
                         {# Only if this row is annotateable are inputs added #}
                         {% if row.can_annotate %}

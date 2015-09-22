@@ -55,6 +55,13 @@ class Token(object):
         """
         self.tokentype = tokentype
 
+    def css_value(self):
+        """
+        Replace spaces with underscore as space is obviously not a valid
+        character for a CSS class
+        """
+        return self.value.replace(' ', '_')
+
 
 class TableHeader(object):
     def __init__(self, parent):
