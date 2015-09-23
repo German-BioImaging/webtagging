@@ -647,136 +647,138 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
 @login_required(setGroupContext=True)
 @render_response()
 def process_update(request, conn=None, **kwargs):
-    if request.method == "POST":
-        
-        tagSelector = request.POST.getlist('tag-selector')
-        serverSelectedPost = request.POST.getlist('serverselected')
-        checkedPost = request.POST.getlist('imagechecked')
 
-        # Convert the posted data into something more manageable:
+    if not request.POST:
+        return {"error": "need to POST"}
 
-        # Mappings between token and tags
-        # tokenTags = { tokenName: tagId }
-        tokenTags = {}
-        for tokenTag in tagSelector:
-            tokenName,tagId = tokenTag.rsplit(r'_', 1)
-            tokenTags[tokenName] = long(tagId)
+    tagSelector = request.POST.getlist('tag-selector')
+    serverSelectedPost = request.POST.getlist('serverselected')
+    checkedPost = request.POST.getlist('imagechecked')
 
-        # tokens (with current token->tag mappings) that are already applied
-        # serverSelected = { imageId: [tokenName]}
-        serverSelected = {}
-        server_selected_tag_ids = {}
-        for s in serverSelectedPost:
-            tag_or_token, imageId, token_name_or_tag_id = s.split(r'_',2)
-            if tag_or_token == 'token':
-                serverSelected.setdefault(long(imageId), []).append(
+    # Convert the posted data into something more manageable:
+
+    # Mappings between token and tags
+    # tokenTags = { tokenName: tagId }
+    tokenTags = {}
+    for tokenTag in tagSelector:
+        tokenName,tagId = tokenTag.rsplit(r'_', 1)
+        tokenTags[tokenName] = long(tagId)
+
+    # tokens (with current token->tag mappings) that are already applied
+    # serverSelected = { imageId: [tokenName]}
+    serverSelected = {}
+    server_selected_tag_ids = {}
+    for s in serverSelectedPost:
+        tag_or_token, imageId, token_name_or_tag_id = s.split(r'_',2)
+        if tag_or_token == 'token':
+            serverSelected.setdefault(long(imageId), []).append(
+                token_name_or_tag_id
+            )
+        elif tag_or_token == 'tag':
+            server_selected_tag_ids.setdefault(long(imageId), []).append(
+                long(token_name_or_tag_id)
+            )
+
+    # tokens that are checked
+    # checked = { imageId: [tokenName] }
+    checked = {}
+    # unmatched tags that are checked
+    # checked_tag_ids = { imageId: [tagId]}
+    checked_tag_ids = {}
+    for c in checkedPost:
+        tag_or_token, imageId, token_name_or_tag_id = c.split(r'_', 2)
+        if tag_or_token == 'token':
+            # Ignore submissions from unmapped tokens
+            if token_name_or_tag_id in tokenTags:
+                checked.setdefault(long(imageId), []).append(
                     token_name_or_tag_id
                 )
-            elif tag_or_token == 'tag':
-                server_selected_tag_ids.setdefault(long(imageId), []).append(
-                    long(token_name_or_tag_id)
-                )
+        elif tag_or_token == 'tag':
+            checked_tag_ids.setdefault(long(imageId), []).append(
+                long(token_name_or_tag_id)
+            )
 
-        # tokens that are checked
-        # checked = { imageId: [tokenName] }
-        checked = {}
-        # unmatched tags that are checked
-        # checked_tag_ids = { imageId: [tagId]}
-        checked_tag_ids = {}
-        for c in checkedPost:
-            tag_or_token, imageId, token_name_or_tag_id = c.split(r'_', 2)
-            if tag_or_token == 'token':
-                # Ignore submissions from unmapped tokens
-                if token_name_or_tag_id in tokenTags:
-                    checked.setdefault(long(imageId), []).append(
-                        token_name_or_tag_id
-                    )
-            elif tag_or_token == 'tag':
-                checked_tag_ids.setdefault(long(imageId), []).append(
-                    long(token_name_or_tag_id)
-                )
+    # Get the list of images that may require operations as they have some
+    # selections (could be being removed) or checks (could be being added)
+    imageIds = list(set(serverSelected.keys() +
+                        server_selected_tag_ids.keys() +
+                        checked.keys()))
 
-        # Get the list of images that may require operations as they have some
-        # selections (could be being removed) or checks (could be being added)
-        imageIds = list(set(serverSelected.keys() +
-                            server_selected_tag_ids.keys() +
-                            checked.keys()))
+    # tokenName can be None in these to denote a unmatched tag
+    additions = []      # [(imageID, tagId, tokenName)]
+    removals = []       # [(imageId, tagId, tokenName)]
 
-        # tokenName can be None in these to denote a unmatched tag
-        additions = []      # [(imageID, tagId, tokenName)]
-        removals = []       # [(imageId, tagId, tokenName)]
+    # Create a list of tags to add on images and one to remove tags from
+    # images
+    for imageId in imageIds:
 
-        # Create a list of tags to add on images and one to remove tags from
-        # images
-        for imageId in imageIds:
+        # Not every image will have both of these so have to default to
+        # empty list
+        checkedTokens = []
+        selectedTokens = []
 
-            # Not every image will have both of these so have to default to
-            # empty list
-            checkedTokens = []
-            selectedTokens = []
+        # If there are checked checkboxes for this image
+        if imageId in checked:
+            checkedTokens = checked[imageId]
 
-            # If there are checked checkboxes for this image
-            if imageId in checked:
-                checkedTokens = checked[imageId]
+        # If there are server selected tokens for this image
+        if imageId in serverSelected:
+            selectedTokens = serverSelected[imageId]
 
-            # If there are server selected tokens for this image
-            if imageId in serverSelected:
-                selectedTokens = serverSelected[imageId]
+        # Add any tokens (for addition) that are not preexisting
+        # (checked - serverSelected)
+        additionsTokens = list(set(checkedTokens) - set(selectedTokens))
+        # Add any tokens (for removal) that are prexisiting but not
+        # checked (serverSelected - checked)
+        removalsTokens = list(set(selectedTokens) - set(checkedTokens))
 
-            # Add any tokens (for addition) that are not preexisting
-            # (checked - serverSelected)
-            additionsTokens = list(set(checkedTokens) - set(selectedTokens))
-            # Add any tokens (for removal) that are prexisiting but not
-            # checked (serverSelected - checked)
-            removalsTokens = list(set(selectedTokens) - set(checkedTokens))
+        # Resolve tokenNames to tagIds, but keep tokenNames as the client
+        # needs these back to update the table
+        for tokenName in additionsTokens:
+            # Resolve tokenName to a tagId
+            tagId = tokenTags[tokenName]
+            additions.append((imageId, tagId, tokenName))
 
-            # Resolve tokenNames to tagIds, but keep tokenNames as the client
-            # needs these back to update the table
-            for tokenName in additionsTokens:
-                # Resolve tokenName to a tagId
-                tagId = tokenTags[tokenName]
-                additions.append((imageId, tagId, tokenName))
+        for tokenName in removalsTokens:
+            # Resolve tokenName to a tagId
+            tagId = tokenTags[tokenName]
+            removals.append((imageId, tagId, tokenName))
 
-            for tokenName in removalsTokens:
-                # Resolve tokenName to a tagId
-                tagId = tokenTags[tokenName]
-                removals.append((imageId, tagId, tokenName))
+        # Now do the same for the tag fields
 
-            # Now do the same for the tag fields
+        # Not every image will have both of these so have to default to
+        # empty list
+        checked_tags = []
+        selected_tags = []
 
-            # Not every image will have both of these so have to default to
-            # empty list
-            checked_tags = []
-            selected_tags = []
+        # if there are checked unmapped tag checkboxes for this image
+        if imageId in checked_tag_ids:
+            checked_tags = checked_tag_ids[imageId]
 
-            # if there are checked unmapped tag checkboxes for this image
-            if imageId in checked_tag_ids:
-                checked_tags = checked_tag_ids[imageId]
+        # If there are server selected unmapped tags for this image
+        if imageId in server_selected_tag_ids:
+            selected_tags = server_selected_tag_ids[imageId]
 
-            # If there are server selected unmapped tags for this image
-            if imageId in server_selected_tag_ids:
-                selected_tags = server_selected_tag_ids[imageId]
+        # Add any tags (for addition) that are not prexisting
+        additions_tags = list(set(checked_tags) - set(selected_tags))
+        # Add any tags (for removal) that are prexisting, but not checked
+        removals_tags = list(set(selected_tags) - set(checked_tags))
 
-            # Add any tags (for addition) that are not prexisting
-            additions_tags = list(set(checked_tags) - set(selected_tags))
-            # Add any tags (for removal) that are prexisting, but not checked
-            removals_tags = list(set(selected_tags) - set(checked_tags))
+        for tag_id in additions_tags:
+            additions.append((imageId, tag_id, None))
 
-            for tag_id in additions_tags:
-                additions.append((imageId, tag_id, None))
+        for tag_id in removals_tags:
+            removals.append((imageId, tag_id, None))
 
-            for tag_id in removals_tags:
-                removals.append((imageId, tag_id, None))
-                
-        # TODO Problem is that unmatched tags are being marked for addition
-        # even if they are already tagged
+    # TODO Problem is that unmatched tags are being marked for addition
+    # even if they are already tagged
 
-        #TODO Return success/failure of each addition/removal
-        #TODO The success/failure need not contain the tagId like these
-        # additions/removals do, html will be indexing so will need to change
-        # there also.
-        createTagAnnotationsLinks(conn, additions, removals)
-    
+    #TODO Return success/failure of each addition/removal
+    #TODO The success/failure need not contain the tagId like these
+    # additions/removals do, html will be indexing so will need to change
+    # there also.
+    createTagAnnotationsLinks(conn, additions, removals)
+
     successfulUpdates = {'additions': additions, 'removals': removals}
 
     # We only need to return a dict - the @render_response() decorator does
