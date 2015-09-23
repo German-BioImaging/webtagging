@@ -93,30 +93,21 @@ def createTagAnnotationsLinks(conn, additions=[], removals=[]):
                 conn.deleteObjectDirect(link._obj)
 
 
-class ImageWrapper (omero.gateway.ImageWrapper):
-    """
-    omero_model_ImageI class wrapper overwrite omero.gateway.ImageWrapper
-    """
+def getImageClientPath(imageWrapper):
+    qs = imageWrapper._conn.getQueryService()
+    params = omero.sys.ParametersI()
+    params.addLong("iid", imageWrapper.getId())
+    query = "select fse from FilesetEntry fse join fse.fileset as fs "\
+            "left outer join fs.images as image where image.id=:iid"
 
-    def getClientPath(self):
-        qs = self._conn.getQueryService()
-        params = omero.sys.ParametersI()
-        params.addLong("iid", self.getId())
-        query = "select fse from FilesetEntry fse join fse.fileset as fs "\
-                "left outer join fs.images as image where image.id=:iid"
-
-        # this could be OMERO 4, so handle that
-        try:
-            r = qs.findAllByQuery(query, params, self._conn.SERVICE_OPTS)
-            paths = [fs.clientPath.val for fs in r]
-            path = os.path.commonprefix(paths)
-        except:
-            path = ""
-        return path
-
-# Update the ref to ImageWrapper in BlitzGateway
-omero.gateway.ImageWrapper = ImageWrapper
-omero.gateway.refreshWrappers()
+    # this could be OMERO 4, so handle that
+    try:
+        r = qs.findAllByQuery(query, params, imageWrapper._conn.SERVICE_OPTS)
+        paths = [fs.clientPath.val for fs in r]
+        path = os.path.commonprefix(paths)
+    except:
+        path = ""
+    return path
 
 
 class BlitzSet(object):

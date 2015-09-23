@@ -9,7 +9,8 @@ import omero
 from omero.model import TagAnnotationI
 from omero.rtypes import rstring, rlong
 
-from utils import parse_path, createTagAnnotationsLinks, BlitzSet
+from utils import (parse_path, createTagAnnotationsLinks, BlitzSet,
+                   getImageClientPath)
 
 
 from urlparse import parse_qsl
@@ -535,7 +536,7 @@ def build_table_data(conn, images, ignoreFirstFileToken=False,
         # row = TableRow(table_data, image)
 
         # Use the full client import path if possible
-        name = image.getClientPath().strip()
+        name = getImageClientPath(image).strip()
         # If not possible (OMERO 4.4.x), just use the name
         if len(name) > 0:
             # Set the client_path so this can be used in in the rendering
