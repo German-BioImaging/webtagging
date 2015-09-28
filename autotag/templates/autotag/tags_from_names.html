@@ -147,35 +147,67 @@ $(function(){
                     }
 
                 }
-   
             }
 
             // Determine if any of the currently selected images was modified
             // as this necessitates an update of the right-hand panel.
 
-            // this may have been called before datatree was initialised...
-            var datatree = $.jstree._focused();
-            if (datatree) {
-                // we use the tree to access selected objects, since we can traverse to check parents etc...
-                var selected = datatree.data.ui.selected;
+            // If this is the old jstree, add some methods to the tree object to make it behave like the new jstree
+            // Also, define get_obj_id function different in each case
+            if ($.jstree.hasOwnProperty('version') && parseInt($.jstree.version.split('.')[0]) >= 3) {
+                var datatree = $.jstree.reference('#dataTree');
+            } else {
+                var datatree = $.jstree._focused();
+            }
 
-                // For each selection, ensure it is an image
-                selected.filter( "li[id|=image]" ).each(function(k,v) {
-                    var s = $(v).attr('id').split("-")[1];
-                    for (var i in data.additions) {
-                        var imageId = data.additions[i][0];
-                        if (imageId == s) {
-                            // Trigger the right-panel update
-                            $("body").trigger("selection_change.ome");
-                            return;
+            // this may have been called before datatree was initialised...
+            if (datatree) {
+
+                if ($.jstree.hasOwnProperty('version') && parseInt($.jstree.version.split('.')[0]) >= 3) {
+
+                    var get_obj_id = function(obj) {
+                        var node = datatree.get_node(obj);
+                        return node.data.obj.id;
+                    };
+
+                } else {
+
+                    datatree.get_selected = function() {
+                        return datatree.data.ui.selected;
+                    };
+
+                    datatree.get_type = function(node) {
+                        return datatree._get_type(node);
+                    };
+
+                    var get_obj_id = function(node) {
+                        return $(node).attr('id').split("-")[1];
+                    };
+
+                }
+
+                // we use the tree to access selected objects, since we can traverse to check parents etc...
+                var selected = datatree.get_selected();
+
+                $.each(selected, function(k, v) {
+                    if (datatree.get_type(v)) {
+
+                        var s = get_obj_id(v);
+                        for (var i in data.additions) {
+                            var imageId = data.additions[i][0];
+                            if (imageId == s) {
+                                // Trigger the right-panel update
+                                $("body").trigger("selection_change.ome");
+                                return;
+                            }
                         }
-                    }
-                    for (var i in data.removals) {
-                        var imageId = data.removals[i][0];
-                        if (imageId == s) {
-                            // Trigger the right-panel update
-                            $("body").trigger("selection_change.ome");
-                            return;
+                        for (var i in data.removals) {
+                            var imageId = data.removals[i][0];
+                            if (imageId == s) {
+                                // Trigger the right-panel update
+                                $("body").trigger("selection_change.ome");
+                                return;
+                            }
                         }
                     }
                 });

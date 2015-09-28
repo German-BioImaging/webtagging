@@ -2,18 +2,52 @@
 <script>
 
 $(function() {
-    
+
     $("#auto_tag_panel").omeroweb_center_plugin({
         plugin_index: {{ forloop.counter }},        // since we're in a Django template loop
         empty_on_sel_change: false,                 // Do not completely erase content when changing selection
         load_plugin_content: function(selected, dtype, oid){
 
-            // this may have been called before datatree was initialised...
-            var datatree = $.jstree._focused();
-            if (!datatree) return;
-        
+
+            // If this is the old jstree, add some methods to the tree object to make it behave like the new jstree
+            // Also, define get_obj_id function different in each case
+            if ($.jstree.hasOwnProperty('version') && parseInt($.jstree.version.split('.')[0]) >= 3) {
+
+                // this may have been called before datatree was initialised...
+                var datatree = $.jstree.reference('#dataTree');
+                if (!datatree) return;
+
+                var get_obj_id = function(obj) {
+                    var node = datatree.get_node(obj);
+                    return node.data.obj.id;
+                };
+            } else {
+
+                // this may have been called before datatree was initialised...
+                var datatree = $.jstree._focused();
+                if (!datatree) return;
+
+                datatree.get_selected = function() {
+                    return datatree.data.ui.selected;
+                };
+
+                datatree.get_parent = function(node) {
+                    return node.parent().parent();
+                };
+
+                datatree.get_type = function(node) {
+                    return datatree._get_type(node);
+                };
+
+                var get_obj_id = function(node) {
+                    return $(node).attr('id').split("-")[1];
+                };
+            }
+
+
+
             // we use the tree to access selected objects, since we can traverse to check parents etc...
-            var tree_selected = datatree.data.ui.selected;
+            var tree_selected = datatree.get_selected();
 
             //TODO if nothing selected, simply update selection
             // var sel_objs = $("body").data("selected_objects.ome");
@@ -69,10 +103,11 @@ $(function() {
             // TODO Make this whole section less clumsy and unreadable. Some refactoring
             var auto_tag_url;
             if (dtype=="image") {
-                var pr = tree_selected.parent().parent();
+                var pr = datatree.get_parent(tree_selected);
+                var prType = datatree.get_type(pr);
                 if (pr.length>0) {
-                    if (datatree._get_type(pr) === 'dataset') {
-                        var parentId = pr.attr('id').split("-")[1];
+                    if (prType === 'dataset') {
+                        var parentId = get_obj_id(pr);
                         if (check_same('dataset', parentId)) {
                             //TODO Change selection
                             return;
@@ -80,10 +115,13 @@ $(function() {
 
                         standby_then_load('dataset', parentId);
 
-                    } else if (datatree._get_type(pr) === 'orphaned') {
-                        var exp = pr.parent().parent();
+                    } else if (prType === 'orphaned') {
+
+                        var exp = datatree.get_parent(tree_selected);
+
                         if (exp.length>0) {
-                            var experimenterId = exp.attr('id').split("-")[1];
+                            var experimenterId = get_obj_id(exp);
+
                             if (check_same('orphaned', experimenterId)) {
                                 //TODO Change selection
                                 return;
@@ -91,8 +129,8 @@ $(function() {
 
                             standby_then_load('orphaned', experimenterId);
                         }
-                    } else if (datatree._get_type(pr) === 'tag') {
-                        var tagId = pr.attr('id').split("-")[1];
+                    } else if (prType === 'tag') {
+                        var tagId = get_obj_id(pr);
                         if (check_same('tag', tagId)) {
                             //TODO Change selection
                             return;
@@ -119,10 +157,10 @@ $(function() {
             } else if (dtype == "orphaned") {
 
                 // Get the experimenter that we want orphaned images for
-                var exp = tree_selected.parent().parent();
+                var exp = datatree.get_parent(tree_selected);
+
                 if (exp.length>0) {
-                    console.log(pr);
-                    var experimenterId = exp.attr('id').split("-")[1];
+                    var experimenterId = get_obj_id(exp);
 
                     if (check_same('orphaned', experimenterId)) {
                         //TODO Change selection
