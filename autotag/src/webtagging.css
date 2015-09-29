@@ -7,15 +7,9 @@ th.pathTokens {
     background-color:#FFFFCC;
 }
 
-th.extTokens {
+th.extensionTokens {
     background-color:#FFFFCC;
 }
-
-
-table.pathTokens { display:table-cell; }
-table.hidePathTokens .pathTokens { display:none; }
-table.extTokens { display:table-cell; }
-table.hideExtTokens .extTokens { display:none; }
 
 .table td {
     text-align:center;
@@ -60,11 +54,15 @@ table.hideExtTokens .extTokens { display:none; }
   background-color:transparent;
 }
 
+.btn-default:focus {
+  outline: none;
+}
+
 /* Adapted from dusty .removeTag and .removeTag:hover */
 .showTag {
     color: #000;
     cursor:pointer;
-    font-weight:bold; 
+    font-weight:bold;
     text-shadow: 0 1px 0 rgba(255,255,255,.7);
     display:inline-block;
     width:12px;
@@ -80,7 +78,7 @@ table.hideExtTokens .extTokens { display:none; }
     margin-left:5px;
     overflow:hidden;
     display:block !important;
-    background:url(../images/tag_arrow_down.png) center center no-repeat;
+    background:url(tag_arrow_down.png) center center no-repeat;
     text-indent:-99px;
 }
 
@@ -101,8 +99,8 @@ table.hideExtTokens .extTokens { display:none; }
     background-image:-o-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* Opera11.10+ */
     background-image:-ms-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* IE10+ */
     filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#4795CC', endColorstr='#3987BF',GradientType=0 ) !important; /* IE6-9 */
-    background:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* W3C */ 
-    
+    background:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* W3C */
+
     text-decoration:none !important;
     text-shadow: 0 1px 0 rgba(255,255,255,.4) !important;
     color:hsl(350,30%,30%) !important;
@@ -116,3 +114,15 @@ table.hideExtTokens .extTokens { display:none; }
     white-space:nowrap;
 }
 
+/* Correct some aggressive CSS rules from dusty.css */
+.Select-arrow-zone {
+    display:table-cell !important;
+}
+
+.Select-clear-zone {
+    display:table-cell !important;
+}
+
+.Select-placeholder, .Select-option {
+    font-size:14px;
+}
