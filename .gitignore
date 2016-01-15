@@ -8,4 +8,3 @@ local_settings.py
 *.sublime-project
 *.sublime-workspace
 node_modules
-bundle.js
