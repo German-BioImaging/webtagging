@@ -24,10 +24,13 @@ export default class AutoTagForm extends React.Component {
 
     // Sort the rows by name, then ID
     let rowNodes = [...this.props.images].sort((a, b) => {
-      if (a.name < b.name) {
+      let caselessA = a.name.toLowerCase();
+      let caselessB = b.name.toLowerCase();
+
+      if (caselessA < caselessB) {
         return -1;
       }
-      if (a.name > b.name) {
+      if (caselessA > caselessB) {
         return 1;
       }
       if (a.id < b.id) {
