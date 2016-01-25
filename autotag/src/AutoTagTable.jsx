@@ -10,7 +10,8 @@ export default class AutoTagForm extends React.Component {
     // If it is a change in the required token cardinality (and unmapped tags are displayed)
     if (
         this.props.showUnmapped &&
-        nextProps.requiredTokenCardinality != this.props.requiredTokenCardinality
+        nextProps.requiredTokenCardinality != this.props.requiredTokenCardinality &&
+        this.props.images === nextProps.images
     ) {
       // Ensure it would actually result in a change of number of tags displayed
       return nextProps.tokenMap.size !== this.props.tokenMap.size;
