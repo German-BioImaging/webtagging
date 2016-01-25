@@ -93,12 +93,6 @@ export default class AutoTagForm extends React.Component {
       token = tokenMap.get(value);
       token.increment(tokenType);
 
-      // Also, update the maxTokenCardinality if this is higher than the current
-      // maximum recorded value
-      if (token.count > this.state.maxTokenCardinality) {
-        this.state.maxTokenCardinality = token.count;
-      }
-
     // Otherwise, create the entry and do any token -> tag matching
     } else {
       token = new Token(value, tokenType);
@@ -341,7 +335,7 @@ export default class AutoTagForm extends React.Component {
           tokenMap: tokenMap,
           unmappedTags: unmappedTags,
           requiredTokenCardinality: images.size === 1 ? 1 : 2,
-          maxTokenCardinality: this.state.maxTokenCardinality
+          maxTokenCardinality: images.size
         });
 
       }
