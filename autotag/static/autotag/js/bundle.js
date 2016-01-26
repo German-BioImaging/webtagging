@@ -23613,6 +23613,10 @@ var autotagform =
 
 	var _reactRange2 = _interopRequireDefault(_reactRange);
 
+	var _reactTooltip = __webpack_require__(192);
+
+	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -23659,31 +23663,67 @@ var autotagform =
 	    value: function render() {
 	      return _react2.default.createElement(
 	        'div',
-	        { style: { position: 'absolute',
-	            top: '0px',
+	        {
+	          style: {
+	            position: 'absolute',
+	            top: '5px',
 	            left: '0px',
 	            right: '0px',
 	            height: '29px',
-	            borderRight: '0px' }, className: 'toolbar' },
-	        'Show unmapped: ',
+	            marginRight: '10px'
+	          },
+	          className: 'toolbar'
+	        },
+	        _react2.default.createElement(
+	          'span',
+	          {
+	            style: {
+	              float: 'left',
+	              marginLeft: '20px',
+	              fontSize: '12px',
+	              fontWeight: 'bold'
+	            }
+	          },
+	          this.props.showUnmapped && _react2.default.createElement(
+	            'span',
+	            null,
+	            _react2.default.createElement(
+	              'span',
+	              { 'data-tip': true, 'data-for': 'tooltip-toolbar-slider' },
+	              'Rarity Threshold'
+	            ),
+	            _react2.default.createElement(_reactRange2.default, { className: 'slider',
+	              onChange: this.handleChangeRequiredTokenCardinality,
+	              type: 'range',
+	              value: this.props.requiredTokenCardinality,
+	              min: 1,
+	              max: this.props.maxTokenCardinality,
+	              style: { marginLeft: '10px', marginRight: '5px' } }),
+	            this.props.requiredTokenCardinality
+	          )
+	        ),
+	        _react2.default.createElement(
+	          _reactTooltip2.default,
+	          { id: 'tooltip-toolbar-slider', place: 'bottom', type: 'dark', effect: 'float' },
+	          'The number of files that tokens must be present on to be shown in the table.'
+	        ),
+	        _react2.default.createElement(
+	          'span',
+	          {
+	            'data-tip': true,
+	            'data-for': 'tooltip-toolbar-show-all',
+	            style: { fontSize: '12px', fontWeight: 'bold' }
+	          },
+	          'Show All Potential Tags'
+	        ),
+	        _react2.default.createElement(
+	          _reactTooltip2.default,
+	          { id: 'tooltip-toolbar-show-all', place: 'bottom', type: 'dark', effect: 'float' },
+	          'Show all the tokens found in the filenames that do not match an existing tag.'
+	        ),
 	        _react2.default.createElement('input', { type: 'checkbox',
 	          checked: this.props.showUnmapped,
 	          onChange: this.toggleUnmapped }),
-	        this.props.showUnmapped && _react2.default.createElement(
-	          'span',
-	          null,
-	          _react2.default.createElement(
-	            'strong',
-	            null,
-	            this.props.requiredTokenCardinality
-	          ),
-	          _react2.default.createElement(_reactRange2.default, { className: 'slider',
-	            onChange: this.handleChangeRequiredTokenCardinality,
-	            type: 'range',
-	            value: this.props.requiredTokenCardinality,
-	            min: 1,
-	            max: this.props.maxTokenCardinality })
-	        ),
 	        _react2.default.createElement('input', { type: 'submit',
 	          id: 'applyButton',
 	          value: 'Apply' }),
