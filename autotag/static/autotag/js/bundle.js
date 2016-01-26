@@ -19788,7 +19788,7 @@ var autotagform =
 	      }
 
 	      // Accept any combination of letters, numbers and symbols
-	      if (/^([A-Za-z0-9-\;\.\(\)]+)$/.test(tokenValue)) {
+	      if (/^([\s\-_A-Za-z0-9-\;\.\(\)]+)$/.test(tokenValue)) {
 	        return true;
 	      }
 
