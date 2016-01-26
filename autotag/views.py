@@ -122,11 +122,12 @@ def _marshal_image(conn, row, tags_on_images):
 
 @login_required(setGroupContext=True)
 def get_image_detail_and_tags(request, conn=None, **kwargs):
+    # According to REST, this should be a GET, but because of the amount of
+    # data being submitted, this is problematic
+    if not request.POST:
+        return HttpResponseNotAllowed('Methods allowed: POST')
 
-    if not request.GET:
-        return HttpResponseNotAllowed('Methods allowed: GET')
-
-    image_ids = request.GET.getlist("imageIds[]")
+    image_ids = request.POST.getlist("imageIds[]")
 
     if not image_ids:
         return HttpResponseBadRequest('Image IDs required')

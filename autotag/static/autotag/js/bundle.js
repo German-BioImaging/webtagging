@@ -19893,7 +19893,7 @@ var autotagform =
 
 	      this.loadRequest = $.ajax({
 	        url: this.props.url,
-	        type: "GET",
+	        type: "POST",
 	        data: { imageIds: imageIds },
 	        dataType: 'json',
 	        cache: false

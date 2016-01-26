@@ -176,7 +176,7 @@ export default class AutoTagForm extends React.Component {
 
     this.loadRequest = $.ajax({
       url: this.props.url,
-      type: "GET",
+      type: "POST",
       data: { imageIds: imageIds },
       dataType: 'json',
       cache: false
