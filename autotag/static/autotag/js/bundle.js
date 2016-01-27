@@ -24513,6 +24513,10 @@ var autotagform =
 	        dropDownClassname += " tagInactive";
 	      }
 
+	      if (token.possible.size > 0) {
+	        tagValue += ' (' + token.possible.size + ')';
+	      }
+
 	      var className = '' + token.type + 'Tokens';
 	      var tooltipID = 'tooltip-token-' + token.value;
 
@@ -24567,7 +24571,7 @@ var autotagform =
 	                    'Value:'
 	                  ),
 	                  ' ',
-	                  tagValue
+	                  tag.value
 	                ),
 	                tag.description && _react2.default.createElement(
 	                  'li',

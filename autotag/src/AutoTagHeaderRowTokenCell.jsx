@@ -55,6 +55,10 @@ export default class AutoTagHeaderRowTokenCell extends React.Component {
       dropDownClassname += " tagInactive";
     }
 
+    if (token.possible.size > 0) {
+      tagValue += '\u00a0(' + token.possible.size + ')';
+    }
+
     let className = '' + token.type + 'Tokens';
     let tooltipID = 'tooltip-token-' + token.value;
 
@@ -78,7 +82,7 @@ export default class AutoTagHeaderRowTokenCell extends React.Component {
               <ReactTooltip id={tooltipID} place="bottom" type="dark" effect="solid">
                 <ul>
                   <li><strong>ID:</strong> {tag.id}</li>
-                  <li><strong>Value:</strong> {tagValue}</li>
+                  <li><strong>Value:</strong> {tag.value}</li>
                   {
                     tag.description &&
                     <li><strong>Description:</strong> {tag.description}</li>
