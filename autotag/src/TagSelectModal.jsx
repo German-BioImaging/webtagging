@@ -143,7 +143,7 @@ export default class TagSelectModal extends React.Component {
         </div>
 
         <input type="button"
-               value="Map"
+               value="OK"
                onClick={this.onSubmit} />
 
         <input type="button"

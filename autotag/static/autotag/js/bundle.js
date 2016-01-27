@@ -19682,33 +19682,33 @@ var autotagform =
 
 	__webpack_require__(181);
 
-	var _Token = __webpack_require__(183);
+	var _Token = __webpack_require__(184);
 
 	var _Token2 = _interopRequireDefault(_Token);
 
-	var _Image = __webpack_require__(184);
+	var _Image = __webpack_require__(185);
 
 	var _Image2 = _interopRequireDefault(_Image);
 
-	var _Tag = __webpack_require__(185);
+	var _Tag = __webpack_require__(186);
 
 	var _Tag2 = _interopRequireDefault(_Tag);
 
-	var _User = __webpack_require__(186);
+	var _User = __webpack_require__(187);
 
 	var _User2 = _interopRequireDefault(_User);
 
-	var _SetUtils = __webpack_require__(187);
+	var _SetUtils = __webpack_require__(188);
 
-	var _AutoTagToolbar = __webpack_require__(188);
+	var _AutoTagToolbar = __webpack_require__(189);
 
 	var _AutoTagToolbar2 = _interopRequireDefault(_AutoTagToolbar);
 
-	var _AutoTagTable = __webpack_require__(192);
+	var _AutoTagTable = __webpack_require__(193);
 
 	var _AutoTagTable2 = _interopRequireDefault(_AutoTagTable);
 
-	var _TagSelectModal = __webpack_require__(200);
+	var _TagSelectModal = __webpack_require__(201);
 
 	var _TagSelectModal2 = _interopRequireDefault(_TagSelectModal);
 
@@ -23344,7 +23344,8 @@ var autotagform =
 
 
 /***/ },
-/* 183 */
+/* 183 */,
+/* 184 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -23392,7 +23393,7 @@ var autotagform =
 	exports.default = Token;
 
 /***/ },
-/* 184 */
+/* 185 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -23455,7 +23456,7 @@ var autotagform =
 	exports.default = Image;
 
 /***/ },
-/* 185 */
+/* 186 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -23496,7 +23497,7 @@ var autotagform =
 	exports.default = Tag;
 
 /***/ },
-/* 186 */
+/* 187 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -23520,7 +23521,7 @@ var autotagform =
 	exports.default = User;
 
 /***/ },
-/* 187 */
+/* 188 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -23551,7 +23552,7 @@ var autotagform =
 	}
 
 /***/ },
-/* 188 */
+/* 189 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -23570,7 +23571,7 @@ var autotagform =
 
 	var _reactRange2 = _interopRequireDefault(_reactRange);
 
-	var _reactTooltip = __webpack_require__(189);
+	var _reactTooltip = __webpack_require__(190);
 
 	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
 
@@ -23698,7 +23699,7 @@ var autotagform =
 	exports.default = AutoTagToolbar;
 
 /***/ },
-/* 189 */
+/* 190 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -23719,11 +23720,11 @@ var autotagform =
 
 	var _reactDom = __webpack_require__(158);
 
-	var _classnames = __webpack_require__(190);
+	var _classnames = __webpack_require__(191);
 
 	var _classnames2 = _interopRequireDefault(_classnames);
 
-	var _style = __webpack_require__(191);
+	var _style = __webpack_require__(192);
 
 	var _style2 = _interopRequireDefault(_style);
 
@@ -24113,7 +24114,7 @@ var autotagform =
 
 
 /***/ },
-/* 190 */
+/* 191 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -24162,7 +24163,7 @@ var autotagform =
 
 
 /***/ },
-/* 191 */
+/* 192 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -24173,7 +24174,7 @@ var autotagform =
 
 
 /***/ },
-/* 192 */
+/* 193 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -24192,11 +24193,11 @@ var autotagform =
 
 	var _reactDom2 = _interopRequireDefault(_reactDom);
 
-	var _AutoTagHeaderRow = __webpack_require__(193);
+	var _AutoTagHeaderRow = __webpack_require__(194);
 
 	var _AutoTagHeaderRow2 = _interopRequireDefault(_AutoTagHeaderRow);
 
-	var _AutoTagImageRow = __webpack_require__(197);
+	var _AutoTagImageRow = __webpack_require__(198);
 
 	var _AutoTagImageRow2 = _interopRequireDefault(_AutoTagImageRow);
 
@@ -24299,7 +24300,7 @@ var autotagform =
 	exports.default = AutoTagForm;
 
 /***/ },
-/* 193 */
+/* 194 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -24314,11 +24315,11 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _AutoTagHeaderRowTokenCell = __webpack_require__(194);
+	var _AutoTagHeaderRowTokenCell = __webpack_require__(195);
 
 	var _AutoTagHeaderRowTokenCell2 = _interopRequireDefault(_AutoTagHeaderRowTokenCell);
 
-	var _AutoTagHeaderRowTagCell = __webpack_require__(196);
+	var _AutoTagHeaderRowTagCell = __webpack_require__(197);
 
 	var _AutoTagHeaderRowTagCell2 = _interopRequireDefault(_AutoTagHeaderRowTagCell);
 
@@ -24394,7 +24395,7 @@ var autotagform =
 	exports.default = AutoTagHeadRow;
 
 /***/ },
-/* 194 */
+/* 195 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -24409,11 +24410,11 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactTooltip = __webpack_require__(189);
+	var _reactTooltip = __webpack_require__(190);
 
 	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
 
-	var _AutoTagHeaderRowMapMenuItem = __webpack_require__(195);
+	var _AutoTagHeaderRowMapMenuItem = __webpack_require__(196);
 
 	var _AutoTagHeaderRowMapMenuItem2 = _interopRequireDefault(_AutoTagHeaderRowMapMenuItem);
 
@@ -24630,7 +24631,7 @@ var autotagform =
 	exports.default = AutoTagHeaderRowTokenCell;
 
 /***/ },
-/* 195 */
+/* 196 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -24698,7 +24699,7 @@ var autotagform =
 	exports.default = AutoTagHeaderRowMapMenuItem;
 
 /***/ },
-/* 196 */
+/* 197 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -24713,7 +24714,7 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactTooltip = __webpack_require__(189);
+	var _reactTooltip = __webpack_require__(190);
 
 	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
 
@@ -24872,7 +24873,7 @@ var autotagform =
 	exports.default = AutoTagHeaderRowTagCell;
 
 /***/ },
-/* 197 */
+/* 198 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -24887,11 +24888,11 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _AutoTagImageRowTokenCell = __webpack_require__(198);
+	var _AutoTagImageRowTokenCell = __webpack_require__(199);
 
 	var _AutoTagImageRowTokenCell2 = _interopRequireDefault(_AutoTagImageRowTokenCell);
 
-	var _AutoTagImageRowTagCell = __webpack_require__(199);
+	var _AutoTagImageRowTagCell = __webpack_require__(200);
 
 	var _AutoTagImageRowTagCell2 = _interopRequireDefault(_AutoTagImageRowTagCell);
 
@@ -24974,7 +24975,7 @@ var autotagform =
 	exports.default = AutoTagImageRow;
 
 /***/ },
-/* 198 */
+/* 199 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25082,7 +25083,7 @@ var autotagform =
 	exports.default = AutoTagImageRowTokenCell;
 
 /***/ },
-/* 199 */
+/* 200 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25176,7 +25177,7 @@ var autotagform =
 	exports.default = AutoTagImageRowTagCell;
 
 /***/ },
-/* 200 */
+/* 201 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -25191,11 +25192,11 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactSelect = __webpack_require__(201);
+	var _reactSelect = __webpack_require__(202);
 
 	var _reactSelect2 = _interopRequireDefault(_reactSelect);
 
-	var _SetUtils = __webpack_require__(187);
+	var _SetUtils = __webpack_require__(188);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -25383,7 +25384,7 @@ var autotagform =
 	          _react2.default.createElement('textarea', { rows: '3', cols: '31', ref: 'tagDescription' })
 	        ),
 	        _react2.default.createElement('input', { type: 'button',
-	          value: 'Map',
+	          value: 'OK',
 	          onClick: this.onSubmit }),
 	        _react2.default.createElement('input', { type: 'button',
 	          value: 'Cancel',
@@ -25403,7 +25404,7 @@ var autotagform =
 	exports.default = TagSelectModal;
 
 /***/ },
-/* 201 */
+/* 202 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* disable some rules until we refactor more completely; fixing them now would
@@ -25418,11 +25419,11 @@ var autotagform =
 
 	var React = __webpack_require__(1);
 	var ReactDOM = __webpack_require__(158);
-	var Input = __webpack_require__(202);
-	var classes = __webpack_require__(203);
-	var Value = __webpack_require__(204);
-	var SingleValue = __webpack_require__(205);
-	var Option = __webpack_require__(206);
+	var Input = __webpack_require__(203);
+	var classes = __webpack_require__(204);
+	var Value = __webpack_require__(205);
+	var SingleValue = __webpack_require__(206);
+	var Option = __webpack_require__(207);
 
 	var requestId = 0;
 
@@ -26355,7 +26356,7 @@ var autotagform =
 	module.exports = Select;
 
 /***/ },
-/* 202 */
+/* 203 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -26482,7 +26483,7 @@ var autotagform =
 	module.exports = AutosizeInput;
 
 /***/ },
-/* 203 */
+/* 204 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -26536,13 +26537,13 @@ var autotagform =
 
 
 /***/ },
-/* 204 */
+/* 205 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var React = __webpack_require__(1);
-	var classes = __webpack_require__(203);
+	var classes = __webpack_require__(204);
 
 	var Value = React.createClass({
 
@@ -26624,13 +26625,13 @@ var autotagform =
 	module.exports = Value;
 
 /***/ },
-/* 205 */
+/* 206 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var React = __webpack_require__(1);
-	var classes = __webpack_require__(203);
+	var classes = __webpack_require__(204);
 
 	var SingleValue = React.createClass({
 		displayName: 'SingleValue',
@@ -26656,13 +26657,13 @@ var autotagform =
 	module.exports = SingleValue;
 
 /***/ },
-/* 206 */
+/* 207 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var React = __webpack_require__(1);
-	var classes = __webpack_require__(203);
+	var classes = __webpack_require__(204);
 
 	var Option = React.createClass({
 		displayName: 'Option',
