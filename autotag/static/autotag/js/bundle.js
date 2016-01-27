@@ -19704,7 +19704,7 @@ var autotagform =
 
 	var _AutoTagToolbar2 = _interopRequireDefault(_AutoTagToolbar);
 
-	var _AutoTagTable = __webpack_require__(189);
+	var _AutoTagTable = __webpack_require__(192);
 
 	var _AutoTagTable2 = _interopRequireDefault(_AutoTagTable);
 
@@ -19797,7 +19797,7 @@ var autotagform =
 	    }
 	  }, {
 	    key: 'addOrUpdateToken',
-	    value: function addOrUpdateToken(image, tagValuesMap, tokenMap, value, tokenType) {
+	    value: function addOrUpdateToken(image, tagValuesMap, tokenMap, value) {
 
 	      var token = undefined;
 
@@ -19806,11 +19806,11 @@ var autotagform =
 	      // If the token is already in the map, just update that entry
 	      if (tokenMap.has(value)) {
 	        token = tokenMap.get(value);
-	        token.increment(tokenType);
+	        token.increment();
 
 	        // Otherwise, create the entry and do any token -> tag matching
 	      } else {
-	          token = new _Token2.default(value, tokenType);
+	          token = new _Token2.default(value);
 	          tokenMap.set(value, token);
 
 	          // When a token is first added, attempt to match it to tags
@@ -19834,41 +19834,11 @@ var autotagform =
 	    value: function tokensInName(image, tagValuesMap, tokenMap) {
 	      var _this = this;
 
-	      var pathNames = image.clientPath.split('/');
-	      var fileName = pathNames.pop();
-	      var extNames = fileName.split('.');
-	      fileName = extNames.shift();
-
-	      var pathTokens = pathNames.reduce(function (a, b) {
-	        return (0, _SetUtils.union)(a, b.split('_'));
-	      }, new Set());
-
-	      var fileTokens = new Set(fileName.split('_'));
-
-	      var extTokens = extNames.reduce(function (a, b) {
-	        return (0, _SetUtils.union)(a, b.split('_'));
-	      }, new Set());
-
-	      // Based on precedence, drop repeated tokens. This is done here and then
-	      // again when building the master token map because here it is being done
-	      // to avoid boosting token counts when an image contains the same token more
-	      // than once.
-	      // Precedence: File > Extension > Path
-	      extTokens = (0, _SetUtils.difference)(extTokens, fileTokens);
-	      pathTokens = (0, _SetUtils.difference)(pathTokens, (0, _SetUtils.union)(fileTokens, extTokens));
-
 	      var imageTokens = new Set();
 
-	      pathTokens.forEach(function (value) {
-	        return imageTokens.add(_this.addOrUpdateToken(image, tagValuesMap, tokenMap, value, _Token2.default.TYPEPATH));
-	      });
-
-	      fileTokens.forEach(function (value) {
-	        return imageTokens.add(_this.addOrUpdateToken(image, tagValuesMap, tokenMap, value, _Token2.default.TYPEFILE));
-	      });
-
-	      extTokens.forEach(function (value) {
-	        return imageTokens.add(_this.addOrUpdateToken(image, tagValuesMap, tokenMap, value, _Token2.default.TYPEEXT));
+	      var tokens = image.clientPath.split(/[\/\\_\.\s]+/);
+	      tokens.forEach(function (value) {
+	        return imageTokens.add(_this.addOrUpdateToken(image, tagValuesMap, tokenMap, value));
 	      });
 
 	      // Return the set of tokens that are present on this image
@@ -23388,28 +23358,21 @@ var autotagform =
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	var Token = (function () {
-	  function Token(value, type) {
+	  function Token(value) {
 	    _classCallCheck(this, Token);
 
 	    this.value = value;
 	    this.count = 1;
-	    this.type = type;
 	    this.possible = new Set();
 	    this.activeTag = null;
 	  }
 
 	  // Increase the count of this token
-	  // Also changes the type based on precedence file > extension > path
 
 	  _createClass(Token, [{
 	    key: "increment",
-	    value: function increment(type) {
+	    value: function increment() {
 	      this.count += 1;
-
-	      // If this type is of higher precedence
-	      if (type > this.type) {
-	        this.type = type;
-	      }
 	    }
 	  }, {
 	    key: "isActive",
@@ -23425,12 +23388,6 @@ var autotagform =
 
 	  return Token;
 	})();
-
-	// Static properties for enum like behaviour
-
-	Token.TYPEFILE = 2;
-	Token.TYPEEXT = 1;
-	Token.TYPEPATH = 0;
 
 	exports.default = Token;
 
@@ -23613,7 +23570,7 @@ var autotagform =
 
 	var _reactRange2 = _interopRequireDefault(_reactRange);
 
-	var _reactTooltip = __webpack_require__(192);
+	var _reactTooltip = __webpack_require__(189);
 
 	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
 
@@ -23746,463 +23703,6 @@ var autotagform =
 
 	'use strict';
 
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _reactDom = __webpack_require__(158);
-
-	var _reactDom2 = _interopRequireDefault(_reactDom);
-
-	var _AutoTagHeaderRow = __webpack_require__(190);
-
-	var _AutoTagHeaderRow2 = _interopRequireDefault(_AutoTagHeaderRow);
-
-	var _AutoTagImageRow = __webpack_require__(197);
-
-	var _AutoTagImageRow2 = _interopRequireDefault(_AutoTagImageRow);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
-
-	var AutoTagForm = (function (_React$Component) {
-	  _inherits(AutoTagForm, _React$Component);
-
-	  function AutoTagForm() {
-	    _classCallCheck(this, AutoTagForm);
-
-	    return _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagForm).apply(this, arguments));
-	  }
-
-	  _createClass(AutoTagForm, [{
-	    key: 'shouldComponentUpdate',
-	    value: function shouldComponentUpdate(nextProps, nextState) {
-	      // If it is a change in the required token cardinality (and unmapped tags are displayed)
-	      if (this.props.showUnmapped && nextProps.requiredTokenCardinality != this.props.requiredTokenCardinality && this.props.images === nextProps.images) {
-	        // Ensure it would actually result in a change of number of tags displayed
-	        return nextProps.tokenMap.size !== this.props.tokenMap.size;
-	      }
-
-	      // Always update for anything else
-	      return true;
-	    }
-	  }, {
-	    key: 'render',
-	    value: function render() {
-	      var _this = this;
-
-	      // Sort the rows by name, then ID
-	      var rowNodes = [].concat(_toConsumableArray(this.props.images)).sort(function (a, b) {
-	        var caselessA = a.name.toLowerCase();
-	        var caselessB = b.name.toLowerCase();
-
-	        if (caselessA < caselessB) {
-	          return -1;
-	        }
-	        if (caselessA > caselessB) {
-	          return 1;
-	        }
-	        if (a.id < b.id) {
-	          return -1;
-	        }
-	        if (a.id > b.id) {
-	          return 1;
-	        }
-	        return 0;
-	      }).map(function (image) {
-	        return _react2.default.createElement(_AutoTagImageRow2.default, { key: image.id,
-	          image: image,
-	          tokenMap: _this.props.tokenMap,
-	          unmappedTags: _this.props.unmappedTags,
-	          cellCheckedChange: _this.props.cellCheckedChange,
-	          showUnmapped: _this.props.showUnmapped });
-	      });
-
-	      return _react2.default.createElement(
-	        'div',
-	        { style: { position: 'absolute',
-	            bottom: '25px',
-	            left: '0px',
-	            top: '29px',
-	            overflow: 'auto',
-	            marginTop: '0px',
-	            right: '0px' } },
-	        _react2.default.createElement(
-	          'table',
-	          { id: 'token-table',
-	            className: 'table table-bordered table-striped table-hover table-condensed hidePathTokens hideExtTokens' },
-	          _react2.default.createElement(_AutoTagHeaderRow2.default, { tokenMap: this.props.tokenMap,
-	            unmappedTags: this.props.unmappedTags,
-	            selectMapping: this.props.selectMapping,
-	            newMapping: this.props.newMapping,
-	            images: this.props.images,
-	            handleCheckedChangeAll: this.props.handleCheckedChangeAll,
-	            showUnmapped: this.props.showUnmapped }),
-	          _react2.default.createElement(
-	            'tbody',
-	            null,
-	            rowNodes
-	          )
-	        )
-	      );
-	    }
-	  }]);
-
-	  return AutoTagForm;
-	})(_react2.default.Component);
-
-	exports.default = AutoTagForm;
-
-/***/ },
-/* 190 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _AutoTagHeaderRowTokenCell = __webpack_require__(191);
-
-	var _AutoTagHeaderRowTokenCell2 = _interopRequireDefault(_AutoTagHeaderRowTokenCell);
-
-	var _AutoTagHeaderRowTagCell = __webpack_require__(196);
-
-	var _AutoTagHeaderRowTagCell2 = _interopRequireDefault(_AutoTagHeaderRowTagCell);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
-
-	var AutoTagHeadRow = (function (_React$Component) {
-	  _inherits(AutoTagHeadRow, _React$Component);
-
-	  function AutoTagHeadRow() {
-	    _classCallCheck(this, AutoTagHeadRow);
-
-	    return _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagHeadRow).apply(this, arguments));
-	  }
-
-	  _createClass(AutoTagHeadRow, [{
-	    key: 'render',
-	    value: function render() {
-	      var _this = this;
-
-	      var cellNodesToken = [].concat(_toConsumableArray(this.props.tokenMap)).map(function (kv) {
-	        var token = kv[1];
-	        var tag = token.activeTag;
-
-	        // Hide the unmapped columns if set
-	        if (_this.props.showUnmapped || token.possible.size > 0) {
-	          return _react2.default.createElement(_AutoTagHeaderRowTokenCell2.default, { token: token,
-	            tag: tag,
-	            tokenMap: _this.props.tokenMap,
-	            selectMapping: _this.props.selectMapping,
-	            newMapping: _this.props.newMapping,
-	            images: _this.props.images,
-	            handleCheckedChangeAll: _this.props.handleCheckedChangeAll,
-	            key: token.value });
-	        }
-	      });
-
-	      var cellNodesTag = [].concat(_toConsumableArray(this.props.unmappedTags)).map(function (tag) {
-	        return _react2.default.createElement(_AutoTagHeaderRowTagCell2.default, { tag: tag,
-	          images: _this.props.images,
-	          handleCheckedChangeAll: _this.props.handleCheckedChangeAll,
-	          key: tag.id });
-	      });
-
-	      return _react2.default.createElement(
-	        'thead',
-	        null,
-	        _react2.default.createElement(
-	          'tr',
-	          null,
-	          cellNodesToken,
-	          cellNodesTag,
-	          _react2.default.createElement(
-	            'th',
-	            null,
-	            'Original Import Path'
-	          )
-	        )
-	      );
-	    }
-	  }]);
-
-	  return AutoTagHeadRow;
-	})(_react2.default.Component);
-
-	exports.default = AutoTagHeadRow;
-
-/***/ },
-/* 191 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _reactTooltip = __webpack_require__(192);
-
-	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
-
-	var _AutoTagHeaderRowMapMenuItem = __webpack_require__(195);
-
-	var _AutoTagHeaderRowMapMenuItem2 = _interopRequireDefault(_AutoTagHeaderRowMapMenuItem);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
-
-	var AutoTagHeaderRowTokenCell = (function (_React$Component) {
-	  _inherits(AutoTagHeaderRowTokenCell, _React$Component);
-
-	  function AutoTagHeaderRowTokenCell() {
-	    _classCallCheck(this, AutoTagHeaderRowTokenCell);
-
-	    // Prebind this to callback methods
-
-	    var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagHeaderRowTokenCell).call(this));
-
-	    _this2.handleCheckedChangeAll = _this2.handleCheckedChangeAll.bind(_this2);
-	    return _this2;
-	  }
-
-	  _createClass(AutoTagHeaderRowTokenCell, [{
-	    key: 'isChecked',
-	    value: function isChecked() {
-	      var _iteratorNormalCompletion = true;
-	      var _didIteratorError = false;
-	      var _iteratorError = undefined;
-
-	      try {
-
-	        for (var _iterator = this.props.images[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-	          var image = _step.value;
-
-	          if (!image.checkedTokens.has(this.props.token)) {
-	            return false;
-	          }
-	        }
-	      } catch (err) {
-	        _didIteratorError = true;
-	        _iteratorError = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion && _iterator.return) {
-	            _iterator.return();
-	          }
-	        } finally {
-	          if (_didIteratorError) {
-	            throw _iteratorError;
-	          }
-	        }
-	      }
-
-	      return true;
-	    }
-	  }, {
-	    key: 'isDisabled',
-	    value: function isDisabled() {
-	      return this.props.tag === null;
-	    }
-	  }, {
-	    key: 'handleCheckedChangeAll',
-	    value: function handleCheckedChangeAll() {
-	      this.props.handleCheckedChangeAll(this.props.token, !this.isChecked());
-	    }
-	  }, {
-	    key: 'render',
-	    value: function render() {
-	      var _this = this;
-
-	      var token = this.props.token;
-	      var tag = this.props.tag;
-
-	      // If there are options for mapping this tag, create menu items for them
-	      var menuNodes = [];
-
-	      menuNodes = [].concat(_toConsumableArray(token.possible)).map(function (tag) {
-	        return _react2.default.createElement(_AutoTagHeaderRowMapMenuItem2.default, { key: tag.id,
-	          token: token,
-	          tag: tag,
-	          textValue: tag.value,
-	          selectMapping: _this.props.selectMapping });
-	      });
-
-	      // Set default (i.e. unmatched) tagValue to non-breaking space
-	      var tagValue = ' ';
-	      var dropDownClassname = "tag_inner";
-	      if (tag !== null) {
-	        tagValue = tag.value;
-	      } else {
-	        dropDownClassname += " tagInactive";
-	      }
-
-	      var className = '' + token.type + 'Tokens';
-	      var tooltipID = 'tooltip-token-' + token.value;
-
-	      return _react2.default.createElement(
-	        'th',
-	        { className: className },
-	        _react2.default.createElement(
-	          'div',
-	          { className: 'token' },
-	          token.value,
-	          _react2.default.createElement('input', { type: 'checkbox',
-	            checked: this.isChecked(),
-	            disabled: this.isDisabled(),
-	            onChange: this.handleCheckedChangeAll })
-	        ),
-	        _react2.default.createElement(
-	          'div',
-	          { className: 'tag' },
-	          _react2.default.createElement(
-	            'span',
-	            { style: { position: 'relative' } },
-	            _react2.default.createElement(
-	              'a',
-	              { className: dropDownClassname,
-	                'data-tip': true,
-	                'data-for': tooltipID },
-	              tagValue
-	            ),
-	            tag && _react2.default.createElement(
-	              _reactTooltip2.default,
-	              { id: tooltipID, place: 'bottom', type: 'dark', effect: 'solid' },
-	              _react2.default.createElement(
-	                'ul',
-	                null,
-	                _react2.default.createElement(
-	                  'li',
-	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'ID:'
-	                  ),
-	                  ' ',
-	                  tag.id
-	                ),
-	                _react2.default.createElement(
-	                  'li',
-	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'Value:'
-	                  ),
-	                  ' ',
-	                  tagValue
-	                ),
-	                tag.description && _react2.default.createElement(
-	                  'li',
-	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'Description:'
-	                  ),
-	                  ' ',
-	                  tag.description
-	                ),
-	                _react2.default.createElement(
-	                  'li',
-	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'Owner:'
-	                  ),
-	                  ' ',
-	                  tag.owner.omeName
-	                )
-	              )
-	            ),
-	            _react2.default.createElement(
-	              'span',
-	              { className: 'showTag dropdown-toggle',
-	                'data-toggle': 'dropdown',
-	                style: { display: 'none' } },
-	              'X'
-	            ),
-	            _react2.default.createElement(
-	              'ul',
-	              { className: 'dropdown-menu', role: 'menu' },
-	              menuNodes,
-	              _react2.default.createElement(_AutoTagHeaderRowMapMenuItem2.default, { tag: null,
-	                token: token,
-	                textValue: '(Select None)',
-	                selectMapping: this.props.selectMapping }),
-	              _react2.default.createElement('li', { className: 'divider' }),
-	              _react2.default.createElement(
-	                'li',
-	                null,
-	                _react2.default.createElement(
-	                  'a',
-	                  { className: 'token-map', onClick: this.props.newMapping.bind(null, token) },
-	                  'New/Existing Tag'
-	                )
-	              )
-	            )
-	          )
-	        )
-	      );
-	    }
-	  }]);
-
-	  return AutoTagHeaderRowTokenCell;
-	})(_react2.default.Component);
-
-	exports.default = AutoTagHeaderRowTokenCell;
-
-/***/ },
-/* 192 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
 	exports.__esModule = true;
 
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -24219,11 +23719,11 @@ var autotagform =
 
 	var _reactDom = __webpack_require__(158);
 
-	var _classnames = __webpack_require__(193);
+	var _classnames = __webpack_require__(190);
 
 	var _classnames2 = _interopRequireDefault(_classnames);
 
-	var _style = __webpack_require__(194);
+	var _style = __webpack_require__(191);
 
 	var _style2 = _interopRequireDefault(_style);
 
@@ -24613,7 +24113,7 @@ var autotagform =
 
 
 /***/ },
-/* 193 */
+/* 190 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -24662,7 +24162,7 @@ var autotagform =
 
 
 /***/ },
-/* 194 */
+/* 191 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -24671,6 +24171,463 @@ var autotagform =
 	exports['default'] = '.__react_component_tooltip{border-radius:3px;display:inline-block;font-size:13px;left:-999em;opacity:0;padding:8px 21px;position:fixed;transition:opacity 0.3s ease-out,margin-top 0.3s ease-out,margin-left 0.3s ease-out;top:-999em;visibility:hidden;z-index:999}.__react_component_tooltip:after{content:"";width:0;height:0;position:absolute}.__react_component_tooltip.show{opacity:0.9;margin-top:0px;margin-left:0px;visibility:visible}.__react_component_tooltip.type-dark{color:#fff;background-color:#222}.__react_component_tooltip.type-dark.place-top:after{border-top:8px solid #222}.__react_component_tooltip.type-dark.place-bottom:after{border-bottom:8px solid #222}.__react_component_tooltip.type-dark.place-left:after{border-left:6px solid #222}.__react_component_tooltip.type-dark.place-right:after{border-right:6px solid #222}.__react_component_tooltip.type-success{color:#fff;background-color:#8DC572}.__react_component_tooltip.type-success.place-top:after{border-top:8px solid #8DC572}.__react_component_tooltip.type-success.place-bottom:after{border-bottom:8px solid #8DC572}.__react_component_tooltip.type-success.place-left:after{border-left:6px solid #8DC572}.__react_component_tooltip.type-success.place-right:after{border-right:6px solid #8DC572}.__react_component_tooltip.type-warning{color:#fff;background-color:#F0AD4E}.__react_component_tooltip.type-warning.place-top:after{border-top:8px solid #F0AD4E}.__react_component_tooltip.type-warning.place-bottom:after{border-bottom:8px solid #F0AD4E}.__react_component_tooltip.type-warning.place-left:after{border-left:6px solid #F0AD4E}.__react_component_tooltip.type-warning.place-right:after{border-right:6px solid #F0AD4E}.__react_component_tooltip.type-error{color:#fff;background-color:#BE6464}.__react_component_tooltip.type-error.place-top:after{border-top:8px solid #BE6464}.__react_component_tooltip.type-error.place-bottom:after{border-bottom:8px solid #BE6464}.__react_component_tooltip.type-error.place-left:after{border-left:6px solid #BE6464}.__react_component_tooltip.type-error.place-right:after{border-right:6px solid #BE6464}.__react_component_tooltip.type-info{color:#fff;background-color:#337AB7}.__react_component_tooltip.type-info.place-top:after{border-top:8px solid #337AB7}.__react_component_tooltip.type-info.place-bottom:after{border-bottom:8px solid #337AB7}.__react_component_tooltip.type-info.place-left:after{border-left:6px solid #337AB7}.__react_component_tooltip.type-info.place-right:after{border-right:6px solid #337AB7}.__react_component_tooltip.type-light{color:#222;background-color:#fff}.__react_component_tooltip.type-light.place-top:after{border-top:8px solid #fff}.__react_component_tooltip.type-light.place-bottom:after{border-bottom:8px solid #fff}.__react_component_tooltip.type-light.place-left:after{border-left:6px solid #fff}.__react_component_tooltip.type-light.place-right:after{border-right:6px solid #fff}.__react_component_tooltip.place-top{margin-top:-10px}.__react_component_tooltip.place-top:after{border-left:10px solid transparent;border-right:10px solid transparent;bottom:-8px;left:50%;margin-left:-10px}.__react_component_tooltip.place-bottom{margin-top:10px}.__react_component_tooltip.place-bottom:after{border-left:10px solid transparent;border-right:10px solid transparent;top:-8px;left:50%;margin-left:-10px}.__react_component_tooltip.place-left{margin-left:-10px}.__react_component_tooltip.place-left:after{border-top:6px solid transparent;border-bottom:6px solid transparent;right:-6px;top:50%;margin-top:-5px}.__react_component_tooltip.place-right{margin-left:10px}.__react_component_tooltip.place-right:after{border-top:6px solid transparent;border-bottom:6px solid transparent;left:-6px;top:50%;margin-top:-5px}.__react_component_tooltip .multi-line{display:block;padding:2px 0px;text-align:center}';
 	module.exports = exports['default'];
 
+
+/***/ },
+/* 192 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reactDom = __webpack_require__(158);
+
+	var _reactDom2 = _interopRequireDefault(_reactDom);
+
+	var _AutoTagHeaderRow = __webpack_require__(193);
+
+	var _AutoTagHeaderRow2 = _interopRequireDefault(_AutoTagHeaderRow);
+
+	var _AutoTagImageRow = __webpack_require__(197);
+
+	var _AutoTagImageRow2 = _interopRequireDefault(_AutoTagImageRow);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
+
+	var AutoTagForm = (function (_React$Component) {
+	  _inherits(AutoTagForm, _React$Component);
+
+	  function AutoTagForm() {
+	    _classCallCheck(this, AutoTagForm);
+
+	    return _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagForm).apply(this, arguments));
+	  }
+
+	  _createClass(AutoTagForm, [{
+	    key: 'shouldComponentUpdate',
+	    value: function shouldComponentUpdate(nextProps, nextState) {
+	      // If it is a change in the required token cardinality (and unmapped tags are displayed)
+	      if (this.props.showUnmapped && nextProps.requiredTokenCardinality != this.props.requiredTokenCardinality && this.props.images === nextProps.images) {
+	        // Ensure it would actually result in a change of number of tags displayed
+	        return nextProps.tokenMap.size !== this.props.tokenMap.size;
+	      }
+
+	      // Always update for anything else
+	      return true;
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+	      var _this = this;
+
+	      // Sort the rows by name, then ID
+	      var rowNodes = [].concat(_toConsumableArray(this.props.images)).sort(function (a, b) {
+	        var caselessA = a.name.toLowerCase();
+	        var caselessB = b.name.toLowerCase();
+
+	        if (caselessA < caselessB) {
+	          return -1;
+	        }
+	        if (caselessA > caselessB) {
+	          return 1;
+	        }
+	        if (a.id < b.id) {
+	          return -1;
+	        }
+	        if (a.id > b.id) {
+	          return 1;
+	        }
+	        return 0;
+	      }).map(function (image) {
+	        return _react2.default.createElement(_AutoTagImageRow2.default, { key: image.id,
+	          image: image,
+	          tokenMap: _this.props.tokenMap,
+	          unmappedTags: _this.props.unmappedTags,
+	          cellCheckedChange: _this.props.cellCheckedChange,
+	          showUnmapped: _this.props.showUnmapped });
+	      });
+
+	      return _react2.default.createElement(
+	        'div',
+	        { style: { position: 'absolute',
+	            bottom: '25px',
+	            left: '0px',
+	            top: '29px',
+	            overflow: 'auto',
+	            marginTop: '0px',
+	            right: '0px' } },
+	        _react2.default.createElement(
+	          'table',
+	          { id: 'token-table',
+	            className: 'table table-bordered table-striped table-hover table-condensed hidePathTokens hideExtTokens' },
+	          _react2.default.createElement(_AutoTagHeaderRow2.default, { tokenMap: this.props.tokenMap,
+	            unmappedTags: this.props.unmappedTags,
+	            selectMapping: this.props.selectMapping,
+	            newMapping: this.props.newMapping,
+	            images: this.props.images,
+	            handleCheckedChangeAll: this.props.handleCheckedChangeAll,
+	            showUnmapped: this.props.showUnmapped }),
+	          _react2.default.createElement(
+	            'tbody',
+	            null,
+	            rowNodes
+	          )
+	        )
+	      );
+	    }
+	  }]);
+
+	  return AutoTagForm;
+	})(_react2.default.Component);
+
+	exports.default = AutoTagForm;
+
+/***/ },
+/* 193 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _AutoTagHeaderRowTokenCell = __webpack_require__(194);
+
+	var _AutoTagHeaderRowTokenCell2 = _interopRequireDefault(_AutoTagHeaderRowTokenCell);
+
+	var _AutoTagHeaderRowTagCell = __webpack_require__(196);
+
+	var _AutoTagHeaderRowTagCell2 = _interopRequireDefault(_AutoTagHeaderRowTagCell);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
+
+	var AutoTagHeadRow = (function (_React$Component) {
+	  _inherits(AutoTagHeadRow, _React$Component);
+
+	  function AutoTagHeadRow() {
+	    _classCallCheck(this, AutoTagHeadRow);
+
+	    return _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagHeadRow).apply(this, arguments));
+	  }
+
+	  _createClass(AutoTagHeadRow, [{
+	    key: 'render',
+	    value: function render() {
+	      var _this = this;
+
+	      var cellNodesToken = [].concat(_toConsumableArray(this.props.tokenMap)).map(function (kv) {
+	        var token = kv[1];
+	        var tag = token.activeTag;
+
+	        // Hide the unmapped columns if set
+	        if (_this.props.showUnmapped || token.possible.size > 0) {
+	          return _react2.default.createElement(_AutoTagHeaderRowTokenCell2.default, { token: token,
+	            tag: tag,
+	            tokenMap: _this.props.tokenMap,
+	            selectMapping: _this.props.selectMapping,
+	            newMapping: _this.props.newMapping,
+	            images: _this.props.images,
+	            handleCheckedChangeAll: _this.props.handleCheckedChangeAll,
+	            key: token.value });
+	        }
+	      });
+
+	      var cellNodesTag = [].concat(_toConsumableArray(this.props.unmappedTags)).map(function (tag) {
+	        return _react2.default.createElement(_AutoTagHeaderRowTagCell2.default, { tag: tag,
+	          images: _this.props.images,
+	          handleCheckedChangeAll: _this.props.handleCheckedChangeAll,
+	          key: tag.id });
+	      });
+
+	      return _react2.default.createElement(
+	        'thead',
+	        null,
+	        _react2.default.createElement(
+	          'tr',
+	          null,
+	          cellNodesToken,
+	          cellNodesTag,
+	          _react2.default.createElement(
+	            'th',
+	            null,
+	            'Original Import Path'
+	          )
+	        )
+	      );
+	    }
+	  }]);
+
+	  return AutoTagHeadRow;
+	})(_react2.default.Component);
+
+	exports.default = AutoTagHeadRow;
+
+/***/ },
+/* 194 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reactTooltip = __webpack_require__(189);
+
+	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
+
+	var _AutoTagHeaderRowMapMenuItem = __webpack_require__(195);
+
+	var _AutoTagHeaderRowMapMenuItem2 = _interopRequireDefault(_AutoTagHeaderRowMapMenuItem);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
+
+	var AutoTagHeaderRowTokenCell = (function (_React$Component) {
+	  _inherits(AutoTagHeaderRowTokenCell, _React$Component);
+
+	  function AutoTagHeaderRowTokenCell() {
+	    _classCallCheck(this, AutoTagHeaderRowTokenCell);
+
+	    // Prebind this to callback methods
+
+	    var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagHeaderRowTokenCell).call(this));
+
+	    _this2.handleCheckedChangeAll = _this2.handleCheckedChangeAll.bind(_this2);
+	    return _this2;
+	  }
+
+	  _createClass(AutoTagHeaderRowTokenCell, [{
+	    key: 'isChecked',
+	    value: function isChecked() {
+	      var _iteratorNormalCompletion = true;
+	      var _didIteratorError = false;
+	      var _iteratorError = undefined;
+
+	      try {
+
+	        for (var _iterator = this.props.images[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	          var image = _step.value;
+
+	          if (!image.checkedTokens.has(this.props.token)) {
+	            return false;
+	          }
+	        }
+	      } catch (err) {
+	        _didIteratorError = true;
+	        _iteratorError = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion && _iterator.return) {
+	            _iterator.return();
+	          }
+	        } finally {
+	          if (_didIteratorError) {
+	            throw _iteratorError;
+	          }
+	        }
+	      }
+
+	      return true;
+	    }
+	  }, {
+	    key: 'isDisabled',
+	    value: function isDisabled() {
+	      return this.props.tag === null;
+	    }
+	  }, {
+	    key: 'handleCheckedChangeAll',
+	    value: function handleCheckedChangeAll() {
+	      this.props.handleCheckedChangeAll(this.props.token, !this.isChecked());
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+	      var _this = this;
+
+	      var token = this.props.token;
+	      var tag = this.props.tag;
+
+	      // If there are options for mapping this tag, create menu items for them
+	      var menuNodes = [];
+
+	      menuNodes = [].concat(_toConsumableArray(token.possible)).map(function (tag) {
+	        return _react2.default.createElement(_AutoTagHeaderRowMapMenuItem2.default, { key: tag.id,
+	          token: token,
+	          tag: tag,
+	          textValue: tag.value,
+	          selectMapping: _this.props.selectMapping });
+	      });
+
+	      // Set default (i.e. unmatched) tagValue to non-breaking space
+	      var tagValue = ' ';
+	      var dropDownClassname = "tag_inner";
+	      if (tag !== null) {
+	        tagValue = tag.value;
+	      } else {
+	        dropDownClassname += " tagInactive";
+	      }
+
+	      var className = '' + token.type + 'Tokens';
+	      var tooltipID = 'tooltip-token-' + token.value;
+
+	      return _react2.default.createElement(
+	        'th',
+	        { className: className },
+	        _react2.default.createElement(
+	          'div',
+	          { className: 'token' },
+	          token.value,
+	          _react2.default.createElement('input', { type: 'checkbox',
+	            checked: this.isChecked(),
+	            disabled: this.isDisabled(),
+	            onChange: this.handleCheckedChangeAll })
+	        ),
+	        _react2.default.createElement(
+	          'div',
+	          { className: 'tag' },
+	          _react2.default.createElement(
+	            'span',
+	            { style: { position: 'relative' } },
+	            _react2.default.createElement(
+	              'a',
+	              { className: dropDownClassname,
+	                'data-tip': true,
+	                'data-for': tooltipID },
+	              tagValue
+	            ),
+	            tag && _react2.default.createElement(
+	              _reactTooltip2.default,
+	              { id: tooltipID, place: 'bottom', type: 'dark', effect: 'solid' },
+	              _react2.default.createElement(
+	                'ul',
+	                null,
+	                _react2.default.createElement(
+	                  'li',
+	                  null,
+	                  _react2.default.createElement(
+	                    'strong',
+	                    null,
+	                    'ID:'
+	                  ),
+	                  ' ',
+	                  tag.id
+	                ),
+	                _react2.default.createElement(
+	                  'li',
+	                  null,
+	                  _react2.default.createElement(
+	                    'strong',
+	                    null,
+	                    'Value:'
+	                  ),
+	                  ' ',
+	                  tagValue
+	                ),
+	                tag.description && _react2.default.createElement(
+	                  'li',
+	                  null,
+	                  _react2.default.createElement(
+	                    'strong',
+	                    null,
+	                    'Description:'
+	                  ),
+	                  ' ',
+	                  tag.description
+	                ),
+	                _react2.default.createElement(
+	                  'li',
+	                  null,
+	                  _react2.default.createElement(
+	                    'strong',
+	                    null,
+	                    'Owner:'
+	                  ),
+	                  ' ',
+	                  tag.owner.omeName
+	                )
+	              )
+	            ),
+	            _react2.default.createElement(
+	              'span',
+	              { className: 'showTag dropdown-toggle',
+	                'data-toggle': 'dropdown',
+	                style: { display: 'none' } },
+	              'X'
+	            ),
+	            _react2.default.createElement(
+	              'ul',
+	              { className: 'dropdown-menu', role: 'menu' },
+	              menuNodes,
+	              _react2.default.createElement(_AutoTagHeaderRowMapMenuItem2.default, { tag: null,
+	                token: token,
+	                textValue: '(Select None)',
+	                selectMapping: this.props.selectMapping }),
+	              _react2.default.createElement('li', { className: 'divider' }),
+	              _react2.default.createElement(
+	                'li',
+	                null,
+	                _react2.default.createElement(
+	                  'a',
+	                  { className: 'token-map', onClick: this.props.newMapping.bind(null, token) },
+	                  'New/Existing Tag'
+	                )
+	              )
+	            )
+	          )
+	        )
+	      );
+	    }
+	  }]);
+
+	  return AutoTagHeaderRowTokenCell;
+	})(_react2.default.Component);
+
+	exports.default = AutoTagHeaderRowTokenCell;
 
 /***/ },
 /* 195 */
@@ -24756,7 +24713,7 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactTooltip = __webpack_require__(192);
+	var _reactTooltip = __webpack_require__(189);
 
 	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
 
@@ -26409,6 +26366,12 @@ var autotagform =
 
 	var sizerStyle = { position: 'absolute', visibility: 'hidden', height: 0, width: 0, overflow: 'scroll', whiteSpace: 'nowrap' };
 
+	var nextFrame = typeof window !== 'undefined' ? (function () {
+		return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || function (callback) {
+			window.setTimeout(callback, 1000 / 60);
+		};
+	})().bind(window) : undefined; // If window is undefined, then we can't define a nextFrame function
+
 	var AutosizeInput = React.createClass({
 		displayName: 'AutosizeInput',
 
@@ -26438,7 +26401,7 @@ var autotagform =
 			this.updateInputWidth();
 		},
 		componentDidUpdate: function componentDidUpdate() {
-			this.updateInputWidth();
+			this.queueUpdateInputWidth();
 		},
 		copyInputStyles: function copyInputStyles() {
 			if (!this.isMounted() || !window.getComputedStyle) {
@@ -26448,19 +26411,26 @@ var autotagform =
 			var widthNode = this.refs.sizer;
 			widthNode.style.fontSize = inputStyle.fontSize;
 			widthNode.style.fontFamily = inputStyle.fontFamily;
+			widthNode.style.fontWeight = inputStyle.fontWeight;
+			widthNode.style.fontStyle = inputStyle.fontStyle;
 			widthNode.style.letterSpacing = inputStyle.letterSpacing;
 			if (this.props.placeholder) {
 				var placeholderNode = this.refs.placeholderSizer;
 				placeholderNode.style.fontSize = inputStyle.fontSize;
 				placeholderNode.style.fontFamily = inputStyle.fontFamily;
+				placeholderNode.style.fontWeight = inputStyle.fontWeight;
+				placeholderNode.style.fontStyle = inputStyle.fontStyle;
 				placeholderNode.style.letterSpacing = inputStyle.letterSpacing;
 			}
+		},
+		queueUpdateInputWidth: function queueUpdateInputWidth() {
+			nextFrame(this.updateInputWidth);
 		},
 		updateInputWidth: function updateInputWidth() {
 			if (!this.isMounted() || typeof this.refs.sizer.scrollWidth === 'undefined') {
 				return;
 			}
-			var newInputWidth;
+			var newInputWidth = undefined;
 			if (this.props.placeholder) {
 				newInputWidth = Math.max(this.refs.sizer.scrollWidth, this.refs.placeholderSizer.scrollWidth) + 2;
 			} else {
@@ -26481,11 +26451,14 @@ var autotagform =
 		focus: function focus() {
 			this.refs.input.focus();
 		},
+		blur: function blur() {
+			this.refs.input.blur();
+		},
 		select: function select() {
 			this.refs.input.select();
 		},
 		render: function render() {
-			var escapedValue = (this.props.value || '').replace(/\&/g, '&amp;').replace(/ /g, '&nbsp;').replace(/\</g, '&lt;').replace(/\>/g, '&gt;');
+			var escapedValue = (this.props.defaultValue || this.props.value || '').replace(/\&/g, '&amp;').replace(/ /g, '&nbsp;').replace(/\</g, '&lt;').replace(/\>/g, '&gt;');
 			var wrapperStyle = this.props.style || {};
 			if (!wrapperStyle.display) wrapperStyle.display = 'inline-block';
 			var inputStyle = _extends({}, this.props.inputStyle);
@@ -26512,8 +26485,8 @@ var autotagform =
 /* 203 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var __WEBPACK_AMD_DEFINE_RESULT__;/*!
-	  Copyright (c) 2015 Jed Watson.
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
+	  Copyright (c) 2016 Jed Watson.
 	  Licensed under the MIT License (MIT), see
 	  http://jedwatson.github.io/classnames
 	*/
@@ -26525,7 +26498,7 @@ var autotagform =
 		var hasOwn = {}.hasOwnProperty;
 
 		function classNames () {
-			var classes = '';
+			var classes = [];
 
 			for (var i = 0; i < arguments.length; i++) {
 				var arg = arguments[i];
@@ -26534,28 +26507,28 @@ var autotagform =
 				var argType = typeof arg;
 
 				if (argType === 'string' || argType === 'number') {
-					classes += ' ' + arg;
+					classes.push(arg);
 				} else if (Array.isArray(arg)) {
-					classes += ' ' + classNames.apply(null, arg);
+					classes.push(classNames.apply(null, arg));
 				} else if (argType === 'object') {
 					for (var key in arg) {
 						if (hasOwn.call(arg, key) && arg[key]) {
-							classes += ' ' + key;
+							classes.push(key);
 						}
 					}
 				}
 			}
 
-			return classes.substr(1);
+			return classes.join(' ');
 		}
 
 		if (typeof module !== 'undefined' && module.exports) {
 			module.exports = classNames;
 		} else if (true) {
 			// register as 'classnames', consistent with npm package name
-			!(__WEBPACK_AMD_DEFINE_RESULT__ = function () {
+			!(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = function () {
 				return classNames;
-			}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+			}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 		} else {
 			window.classNames = classNames;
 		}

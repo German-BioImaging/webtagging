@@ -82,7 +82,7 @@ export default class AutoTagForm extends React.Component {
 
   }
 
-  addOrUpdateToken(image, tagValuesMap, tokenMap, value, tokenType) {
+  addOrUpdateToken(image, tagValuesMap, tokenMap, value) {
 
     let token;
 
@@ -91,11 +91,11 @@ export default class AutoTagForm extends React.Component {
     // If the token is already in the map, just update that entry
     if (tokenMap.has(value)) {
       token = tokenMap.get(value);
-      token.increment(tokenType);
+      token.increment();
 
     // Otherwise, create the entry and do any token -> tag matching
     } else {
-      token = new Token(value, tokenType);
+      token = new Token(value);
       tokenMap.set(value, token);
 
       // When a token is first added, attempt to match it to tags
@@ -118,41 +118,12 @@ export default class AutoTagForm extends React.Component {
   }
 
   tokensInName(image, tagValuesMap, tokenMap) {
-    let pathNames = image.clientPath.split('/');
-    let fileName = pathNames.pop();
-    let extNames = fileName.split('.');
-    fileName = extNames.shift();
-
-    let pathTokens = pathNames.reduce((a, b) => {
-      return union(a, b.split('_'));
-    }, new Set());
-
-    let fileTokens = new Set(fileName.split('_'));
-
-    let extTokens = extNames.reduce((a, b) => {
-      return union(a, b.split('_'));
-    }, new Set());
-
-    // Based on precedence, drop repeated tokens. This is done here and then
-    // again when building the master token map because here it is being done
-    // to avoid boosting token counts when an image contains the same token more
-    // than once.
-    // Precedence: File > Extension > Path
-    extTokens = difference(extTokens, fileTokens);
-    pathTokens = difference(pathTokens, union(fileTokens, extTokens));
 
     let imageTokens = new Set();
 
-    pathTokens.forEach(value =>
-      imageTokens.add(this.addOrUpdateToken(image, tagValuesMap, tokenMap, value, Token.TYPEPATH))
-    );
-
-    fileTokens.forEach(value =>
-      imageTokens.add(this.addOrUpdateToken(image, tagValuesMap, tokenMap, value, Token.TYPEFILE))
-    );
-
-    extTokens.forEach(value =>
-      imageTokens.add(this.addOrUpdateToken(image, tagValuesMap, tokenMap, value, Token.TYPEEXT))
+    let tokens = image.clientPath.split(/[\/\\_\.\s]+/);
+    tokens.forEach(value =>
+      imageTokens.add(this.addOrUpdateToken(image, tagValuesMap, tokenMap, value))
     );
 
     // Return the set of tokens that are present on this image
