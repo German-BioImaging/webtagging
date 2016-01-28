@@ -23647,23 +23647,23 @@ var autotagform =
 	            null,
 	            _react2.default.createElement(
 	              'span',
-	              { 'data-tip': true, 'data-for': 'tooltip-toolbar-slider' },
+	              { 'data-tip': true, 'data-for': 'tooltip-toolbar-slider', style: { marginRight: '10px' } },
 	              'Rarity Threshold'
 	            ),
+	            this.props.requiredTokenCardinality,
 	            _react2.default.createElement(_reactRange2.default, { className: 'slider',
 	              onChange: this.handleChangeRequiredTokenCardinality,
 	              type: 'range',
 	              value: this.props.requiredTokenCardinality,
 	              min: 1,
 	              max: this.props.maxTokenCardinality,
-	              style: { marginLeft: '10px', marginRight: '5px' } }),
-	            this.props.requiredTokenCardinality
+	              style: { marginLeft: '10px', marginTop: '-1px', position: 'relative', bottom: '-3px' } })
 	          )
 	        ),
 	        _react2.default.createElement(
 	          _reactTooltip2.default,
 	          { id: 'tooltip-toolbar-slider', place: 'bottom', type: 'dark', effect: 'float' },
-	          'The number of files that tokens must be present on to be shown in the table.'
+	          'Hide columns if token is found on fewer than this number of images'
 	        ),
 	        _react2.default.createElement(
 	          'span',
@@ -23677,7 +23677,7 @@ var autotagform =
 	        _react2.default.createElement(
 	          _reactTooltip2.default,
 	          { id: 'tooltip-toolbar-show-all', place: 'bottom', type: 'dark', effect: 'float' },
-	          'Show all the tokens found in the filenames that do not match an existing tag.'
+	          'Show all the tokens found in the filenames that do not match an existing tag'
 	        ),
 	        _react2.default.createElement('input', { type: 'checkbox',
 	          checked: this.props.showUnmapped,
