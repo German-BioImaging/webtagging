@@ -22942,7 +22942,7 @@ var autotagform =
 
 
 	// module
-	exports.push([module.id, "\n.toolbar {\n    text-align:right;\n}\n\nth.pathTokens {\n    background-color:#FFFFCC;\n}\n\nth.extensionTokens {\n    background-color:#FFFFCC;\n}\n\n.table td {\n    text-align:center;\n}\n\n.table tbody tr > td.success {\n  background-color: #dff0d8 !important;\n}\n\n.table tbody tr > td.error {\n  background-color: #f2dede !important;\n}\n\n.table tbody tr > td.warning {\n  background-color: #fcf8e3 !important;\n}\n\n.table tbody tr > td.info {\n  background-color: #d9edf7 !important;\n}\n\n.table-hover tbody tr:hover > td.success {\n  background-color: #d0e9c6 !important;\n}\n\n.table-hover tbody tr:hover > td.error {\n  background-color: #ebcccc !important;\n}\n\n.table-hover tbody tr:hover > td.warning {\n  background-color: #faf2cc !important;\n}\n\n.table-hover tbody tr:hover > td.info {\n  background-color: #c4e3f3 !important;\n}\n\n.btn-default {\n  border: 0;\n/*  width: 14px;\n  height: 20px;*/\n  background-color:transparent;\n}\n\n.btn-default:focus {\n  outline: none;\n}\n\n/* Adapted from dusty .removeTag and .removeTag:hover */\n.showTag {\n    color: #000;\n    cursor:pointer;\n    font-weight:bold;\n    text-shadow: 0 1px 0 rgba(255,255,255,.7);\n    display:inline-block;\n    width:12px;\n    height:12px;\n    position:absolute;\n    z-index:90;\n    right:5px;\n    top:1px;\n    -webkit-border-radius:20px;\n    -moz-border-radius:20px;\n    border-radius:20px;\n    text-align:center;\n    margin-left:5px;\n    overflow:hidden;\n    display:block !important;\n    background:url(" + __webpack_require__(177) + ") center center no-repeat;\n    text-indent:-99px;\n}\n\n\n.showTag:hover {\n    background-color:hsla(350,40%,60%,.7);\n    color:hsl(355,20%,30%);\n    text-shadow: 0 1px 0 rgba(255,255,255,.5);\n}\n\n.tagInactive {\n    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(350, 65%, 85%)), to(hsl(350, 60%, 90%))) !important;\n\n    background:blue !important; /* Old browsers */\n    background-image:-moz-linear-gradient(top, hsl(350,65%,80%) 0%, hsl(350,60%,90%) 100%) !important; /* FF3.6+ */\n    background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(350,65%,85%)), color-stop(100%,hsl(350,60%,90%))) !important; /* Chrome,Safari4+ */\n    background-image:-webkit-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100% !important); /* Chrome10+,Safari5.1+ */\n    background-image:-o-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* Opera11.10+ */\n    background-image:-ms-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* IE10+ */\n    filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#4795CC', endColorstr='#3987BF',GradientType=0 ) !important; /* IE6-9 */\n    background:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* W3C */\n\n    text-decoration:none !important;\n    text-shadow: 0 1px 0 rgba(255,255,255,.4) !important;\n    color:hsl(350,30%,30%) !important;\n}\n\n.token {\n    text-align:center;\n}\n\n.tag {\n    white-space:nowrap;\n}\n\n/* Correct some aggressive CSS rules from dusty.css */\n.Select-arrow-zone {\n    display:table-cell !important;\n}\n\n.Select-clear-zone {\n    display:table-cell !important;\n}\n\n.Select-placeholder, .Select-option {\n    font-size:14px;\n}\n", ""]);
+	exports.push([module.id, "\n.toolbar {\n    text-align:right;\n}\n\nth.pathTokens {\n    background-color:#FFFFCC;\n}\n\nth.extensionTokens {\n    background-color:#FFFFCC;\n}\n\n.table td {\n    text-align:center;\n}\n\n.table tbody tr > td.success {\n  background-color: #dff0d8 !important;\n}\n\n.table tbody tr > td.error {\n  background-color: #f2dede !important;\n}\n\n.table tbody tr > td.warning {\n  background-color: #fcf8e3 !important;\n}\n\n.table tbody tr > td.info {\n  background-color: #d9edf7 !important;\n}\n\n.table-hover tbody tr:hover > td.success {\n  background-color: #d0e9c6 !important;\n}\n\n.table-hover tbody tr:hover > td.error {\n  background-color: #ebcccc !important;\n}\n\n.table-hover tbody tr:hover > td.warning {\n  background-color: #faf2cc !important;\n}\n\n.table-hover tbody tr:hover > td.info {\n  background-color: #c4e3f3 !important;\n}\n\n.btn-default {\n  border: 0;\n/*  width: 14px;\n  height: 20px;*/\n  background-color:transparent;\n}\n\n.btn-default:focus {\n  outline: none;\n}\n\n/* Adapted from dusty .removeTag and .removeTag:hover */\n.showTag {\n    color: #000;\n    cursor:pointer;\n    font-weight:bold;\n    text-shadow: 0 1px 0 rgba(255,255,255,.7);\n    display:inline-block;\n    width:12px;\n    height:12px;\n    position:absolute;\n    z-index:90;\n    right:5px;\n    top:1px;\n    -webkit-border-radius:20px;\n    -moz-border-radius:20px;\n    border-radius:20px;\n    text-align:center;\n    margin-left:5px;\n    overflow:hidden;\n    display:block !important;\n    background:url(" + __webpack_require__(177) + ") center center no-repeat;\n    text-indent:-99px;\n    pointer-events: none;\n}\n\n.tagInactive {\n    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(350, 65%, 85%)), to(hsl(350, 60%, 90%))) !important;\n\n    background:blue !important; /* Old browsers */\n    background-image:-moz-linear-gradient(top, hsl(350,65%,80%) 0%, hsl(350,60%,90%) 100%) !important; /* FF3.6+ */\n    background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(350,65%,85%)), color-stop(100%,hsl(350,60%,90%))) !important; /* Chrome,Safari4+ */\n    background-image:-webkit-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100% !important); /* Chrome10+,Safari5.1+ */\n    background-image:-o-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* Opera11.10+ */\n    background-image:-ms-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* IE10+ */\n    filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#4795CC', endColorstr='#3987BF',GradientType=0 ) !important; /* IE6-9 */\n    background:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* W3C */\n\n    text-decoration:none !important;\n    text-shadow: 0 1px 0 rgba(255,255,255,.4) !important;\n    color:hsl(350,30%,30%) !important;\n}\n\n.tagInactive:hover {\n    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(350, 70%, 75%)), to(hsl(350, 65%, 80%))) !important;\n\n\tbackground:blue; /* Old browsers */\n\tbackground-image:-moz-linear-gradient(top, hsl(350,65%,80%) 0%, hsl(350,70%,75%) 100%) !important; /* FF3.6+ */\n\tbackground-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(350,65%,80%)), color-stop(100%,hsl(350,70%,75%))) !important; /* Chrome,Safari4+ */\n\tbackground-image:-webkit-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* Chrome10+,Safari5.1+ */\n\tbackground-image:-o-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* Opera11.10+ */\n\tbackground-image:-ms-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* IE10+ */\n\tfilter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#4795CC', endColorstr='#3987BF',GradientType=0 ) !important; /* IE6-9 */\n\tbackground:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* W3C */\n\n\ttext-decoration:none !important;\n\ttext-shadow: 0 1px 0 rgba(255,255,255,.4) !important;\n\tcolor:hsl(350,30%,30%) !important;\n}\n\n.token {\n    text-align:center;\n}\n\n.tag {\n    white-space:nowrap;\n}\n\n/* Correct some aggressive CSS rules from dusty.css */\n.Select-arrow-zone {\n    display:table-cell !important;\n}\n\n.Select-clear-zone {\n    display:table-cell !important;\n}\n\n.Select-placeholder, .Select-option {\n    font-size:14px;\n}\n", ""]);
 
 	// exports
 
@@ -24506,11 +24506,11 @@ var autotagform =
 
 	      // Set default (i.e. unmatched) tagValue to non-breaking space
 	      var tagValue = ' ';
-	      var dropDownClassname = "tag_inner";
+	      var dropDownClassname = "tag_inner dropdown-toggle";
 	      if (tag !== null) {
 	        tagValue = tag.value;
 	      } else {
-	        dropDownClassname += " tagInactive";
+	        dropDownClassname += " tagInactive dropdown-toggle";
 	      }
 
 	      if (token.possible.size > 0) {
@@ -24542,8 +24542,29 @@ var autotagform =
 	              'a',
 	              { className: dropDownClassname,
 	                'data-tip': true,
-	                'data-for': tooltipID },
+	                'data-for': tooltipID,
+	                'data-toggle': 'dropdown',
+	                style: { cursor: 'pointer' } },
 	              tagValue
+	            ),
+	            _react2.default.createElement(
+	              'ul',
+	              { className: 'dropdown-menu', role: 'menu' },
+	              menuNodes,
+	              _react2.default.createElement(_AutoTagHeaderRowMapMenuItem2.default, { tag: null,
+	                token: token,
+	                textValue: '(Select None)',
+	                selectMapping: this.props.selectMapping }),
+	              _react2.default.createElement('li', { className: 'divider' }),
+	              _react2.default.createElement(
+	                'li',
+	                null,
+	                _react2.default.createElement(
+	                  'a',
+	                  { className: 'token-map', onClick: this.props.newMapping.bind(null, token) },
+	                  'New/Existing Tag'
+	                )
+	              )
 	            ),
 	            tag && _react2.default.createElement(
 	              _reactTooltip2.default,
@@ -24599,29 +24620,9 @@ var autotagform =
 	            ),
 	            _react2.default.createElement(
 	              'span',
-	              { className: 'showTag dropdown-toggle',
-	                'data-toggle': 'dropdown',
+	              { className: 'showTag',
 	                style: { display: 'none' } },
 	              'X'
-	            ),
-	            _react2.default.createElement(
-	              'ul',
-	              { className: 'dropdown-menu', role: 'menu' },
-	              menuNodes,
-	              _react2.default.createElement(_AutoTagHeaderRowMapMenuItem2.default, { tag: null,
-	                token: token,
-	                textValue: '(Select None)',
-	                selectMapping: this.props.selectMapping }),
-	              _react2.default.createElement('li', { className: 'divider' }),
-	              _react2.default.createElement(
-	                'li',
-	                null,
-	                _react2.default.createElement(
-	                  'a',
-	                  { className: 'token-map', onClick: this.props.newMapping.bind(null, token) },
-	                  'New/Existing Tag'
-	                )
-	              )
 	            )
 	          )
 	        )

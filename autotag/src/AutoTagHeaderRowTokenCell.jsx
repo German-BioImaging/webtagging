@@ -48,11 +48,11 @@ export default class AutoTagHeaderRowTokenCell extends React.Component {
 
     // Set default (i.e. unmatched) tagValue to non-breaking space
     let tagValue = '\u00a0';
-    let dropDownClassname = "tag_inner";
+    let dropDownClassname = "tag_inner dropdown-toggle";
     if (tag !== null) {
       tagValue = tag.value;
     } else {
-      dropDownClassname += " tagInactive";
+      dropDownClassname += " tagInactive dropdown-toggle";
     }
 
     if (token.possible.size > 0) {
@@ -75,8 +75,22 @@ export default class AutoTagHeaderRowTokenCell extends React.Component {
 
             <a className={dropDownClassname}
                data-tip
-               data-for={tooltipID}>{tagValue}
+               data-for={tooltipID}
+               data-toggle="dropdown"
+               style={{cursor: 'pointer'}}>{tagValue}
+
             </a>
+
+            <ul className={'dropdown-menu'} role="menu">
+              {menuNodes}
+              <AutoTagHeaderRowMapMenuItem tag={null}
+                                           token={token}
+                                           textValue="(Select None)"
+                                           selectMapping={this.props.selectMapping} />
+              <li className={'divider'}></li>
+              <li><a className={'token-map'} onClick={this.props.newMapping.bind(null, token)}>New/Existing Tag</a></li>
+            </ul>
+
             {
               tag &&
               <ReactTooltip id={tooltipID} place="bottom" type="dark" effect="solid">
@@ -92,19 +106,8 @@ export default class AutoTagHeaderRowTokenCell extends React.Component {
               </ReactTooltip>
             }
 
-            <span className={'showTag dropdown-toggle'}
-                  data-toggle="dropdown"
+            <span className={'showTag'}
                   style={{display: 'none'}}>X</span>
-
-            <ul className={'dropdown-menu'} role="menu">
-              {menuNodes}
-              <AutoTagHeaderRowMapMenuItem tag={null}
-                                           token={token}
-                                           textValue="(Select None)"
-                                           selectMapping={this.props.selectMapping} />
-              <li className={'divider'}></li>
-              <li><a className={'token-map'} onClick={this.props.newMapping.bind(null, token)}>New/Existing Tag</a></li>
-            </ul>
 
           </span>
         </div>

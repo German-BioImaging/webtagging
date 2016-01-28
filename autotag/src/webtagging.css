@@ -80,13 +80,7 @@ th.extensionTokens {
     display:block !important;
     background:url(tag_arrow_down.png) center center no-repeat;
     text-indent:-99px;
-}
-
-
-.showTag:hover {
-    background-color:hsla(350,40%,60%,.7);
-    color:hsl(355,20%,30%);
-    text-shadow: 0 1px 0 rgba(255,255,255,.5);
+    pointer-events: none;
 }
 
 .tagInactive {
@@ -104,6 +98,23 @@ th.extensionTokens {
     text-decoration:none !important;
     text-shadow: 0 1px 0 rgba(255,255,255,.4) !important;
     color:hsl(350,30%,30%) !important;
+}
+
+.tagInactive:hover {
+    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(350, 70%, 75%)), to(hsl(350, 65%, 80%))) !important;
+
+	background:blue; /* Old browsers */
+	background-image:-moz-linear-gradient(top, hsl(350,65%,80%) 0%, hsl(350,70%,75%) 100%) !important; /* FF3.6+ */
+	background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(350,65%,80%)), color-stop(100%,hsl(350,70%,75%))) !important; /* Chrome,Safari4+ */
+	background-image:-webkit-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* Chrome10+,Safari5.1+ */
+	background-image:-o-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* Opera11.10+ */
+	background-image:-ms-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* IE10+ */
+	filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#4795CC', endColorstr='#3987BF',GradientType=0 ) !important; /* IE6-9 */
+	background:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* W3C */
+
+	text-decoration:none !important;
+	text-shadow: 0 1px 0 rgba(255,255,255,.4) !important;
+	color:hsl(350,30%,30%) !important;
 }
 
 .token {
