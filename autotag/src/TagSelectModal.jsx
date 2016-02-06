@@ -40,8 +40,12 @@ export default class TagSelectModal extends React.Component {
 
     // If there is a selection, use that
     if (this.state.selected !== null) {
+      console.log('There was a selection, using that');
+      console.log(this.props.token);
+      console.log(this.state.selected);
+      console.log('---');
       // Resolve the selected tag ID to a tag and add the mapping
-      addMapping(this.props.token, this.props.tags.get(this.state.selected));
+      addMapping(this.props.token, this.props.tags.get(this.state.selected.value));
       closeDialog(e);
 
     // Otherwise, create a new tag with the input unless there is a problem
@@ -85,7 +89,8 @@ export default class TagSelectModal extends React.Component {
 
 
   }
-
+  // TODO Make the Select options have the tag as the value instead of an ID so
+  // then don't need to be looked up
   render() {
 
     // Get the tags that are already in use

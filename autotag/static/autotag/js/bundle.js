@@ -124,6 +124,7 @@ var autotagform =
 	});
 
 	React.__SECRET_DOM_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = ReactDOM;
+	React.__SECRET_DOM_SERVER_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = ReactDOMServer;
 
 	module.exports = React;
 
@@ -1088,7 +1089,7 @@ var autotagform =
 	 * will remain to ensure logic does not differ in production.
 	 */
 
-	var invariant = function (condition, format, a, b, c, d, e, f) {
+	function invariant(condition, format, a, b, c, d, e, f) {
 	  if (process.env.NODE_ENV !== 'production') {
 	    if (format === undefined) {
 	      throw new Error('invariant requires an error message argument');
@@ -1102,15 +1103,16 @@ var autotagform =
 	    } else {
 	      var args = [a, b, c, d, e, f];
 	      var argIndex = 0;
-	      error = new Error('Invariant Violation: ' + format.replace(/%s/g, function () {
+	      error = new Error(format.replace(/%s/g, function () {
 	        return args[argIndex++];
 	      }));
+	      error.name = 'Invariant Violation';
 	    }
 
 	    error.framesToPop = 1; // we don't care about invariant's own frame
 	    throw error;
 	  }
-	};
+	}
 
 	module.exports = invariant;
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4)))
@@ -4417,11 +4419,12 @@ var autotagform =
 	    var fakeNode = document.createElement('react');
 	    ReactErrorUtils.invokeGuardedCallback = function (name, func, a, b) {
 	      var boundFunc = func.bind(null, a, b);
-	      fakeNode.addEventListener(name, boundFunc, false);
+	      var evtType = 'react-' + name;
+	      fakeNode.addEventListener(evtType, boundFunc, false);
 	      var evt = document.createEvent('Event');
-	      evt.initEvent(name, false, false);
+	      evt.initEvent(evtType, false, false);
 	      fakeNode.dispatchEvent(evt);
-	      fakeNode.removeEventListener(name, boundFunc, false);
+	      fakeNode.removeEventListener(evtType, boundFunc, false);
 	    };
 	  }
 	}
@@ -5016,7 +5019,7 @@ var autotagform =
 	var canDefineProperty = false;
 	if (process.env.NODE_ENV !== 'production') {
 	  try {
-	    Object.defineProperty({}, 'x', {});
+	    Object.defineProperty({}, 'x', { get: function () {} });
 	    canDefineProperty = true;
 	  } catch (x) {
 	    // IE will fail on defineProperty
@@ -9328,6 +9331,7 @@ var autotagform =
 	 */
 	var EventInterface = {
 	  type: null,
+	  target: null,
 	  // currentTarget is set when dispatching; no use in copying it here
 	  currentTarget: emptyFunction.thatReturnsNull,
 	  eventPhase: null,
@@ -9361,8 +9365,6 @@ var autotagform =
 	  this.dispatchConfig = dispatchConfig;
 	  this.dispatchMarker = dispatchMarker;
 	  this.nativeEvent = nativeEvent;
-	  this.target = nativeEventTarget;
-	  this.currentTarget = nativeEventTarget;
 
 	  var Interface = this.constructor.Interface;
 	  for (var propName in Interface) {
@@ -9373,7 +9375,11 @@ var autotagform =
 	    if (normalize) {
 	      this[propName] = normalize(nativeEvent);
 	    } else {
-	      this[propName] = nativeEvent[propName];
+	      if (propName === 'target') {
+	        this.target = nativeEventTarget;
+	      } else {
+	        this[propName] = nativeEvent[propName];
+	      }
 	    }
 	  }
 
@@ -10450,6 +10456,7 @@ var autotagform =
 	    icon: null,
 	    id: MUST_USE_PROPERTY,
 	    inputMode: MUST_USE_ATTRIBUTE,
+	    integrity: null,
 	    is: MUST_USE_ATTRIBUTE,
 	    keyParams: MUST_USE_ATTRIBUTE,
 	    keyType: MUST_USE_ATTRIBUTE,
@@ -10472,6 +10479,7 @@ var autotagform =
 	    multiple: MUST_USE_PROPERTY | HAS_BOOLEAN_VALUE,
 	    muted: MUST_USE_PROPERTY | HAS_BOOLEAN_VALUE,
 	    name: null,
+	    nonce: MUST_USE_ATTRIBUTE,
 	    noValidate: HAS_BOOLEAN_VALUE,
 	    open: HAS_BOOLEAN_VALUE,
 	    optimum: null,
@@ -10483,6 +10491,7 @@ var autotagform =
 	    readOnly: MUST_USE_PROPERTY | HAS_BOOLEAN_VALUE,
 	    rel: null,
 	    required: HAS_BOOLEAN_VALUE,
+	    reversed: HAS_BOOLEAN_VALUE,
 	    role: MUST_USE_ATTRIBUTE,
 	    rows: MUST_USE_ATTRIBUTE | HAS_POSITIVE_NUMERIC_VALUE,
 	    rowSpan: null,
@@ -10533,8 +10542,8 @@ var autotagform =
 	     */
 	    // autoCapitalize and autoCorrect are supported in Mobile Safari for
 	    // keyboard hints.
-	    autoCapitalize: null,
-	    autoCorrect: null,
+	    autoCapitalize: MUST_USE_ATTRIBUTE,
+	    autoCorrect: MUST_USE_ATTRIBUTE,
 	    // autoSave allows WebKit/Blink to persist values of input fields on page reloads
 	    autoSave: null,
 	    // color is for Safari mask-icon link
@@ -10565,9 +10574,7 @@ var autotagform =
 	    httpEquiv: 'http-equiv'
 	  },
 	  DOMPropertyNames: {
-	    autoCapitalize: 'autocapitalize',
 	    autoComplete: 'autocomplete',
-	    autoCorrect: 'autocorrect',
 	    autoFocus: 'autofocus',
 	    autoPlay: 'autoplay',
 	    autoSave: 'autosave',
@@ -10809,6 +10816,7 @@ var autotagform =
 	// For quickly matching children type, to test if can be treated as content.
 	var CONTENT_TYPES = { 'string': true, 'number': true };
 
+	var CHILDREN = keyOf({ children: null });
 	var STYLE = keyOf({ style: null });
 	var HTML = keyOf({ __html: null });
 
@@ -11299,7 +11307,9 @@ var autotagform =
 	        }
 	        var markup = null;
 	        if (this._tag != null && isCustomComponent(this._tag, props)) {
-	          markup = DOMPropertyOperations.createMarkupForCustomAttribute(propKey, propValue);
+	          if (propKey !== CHILDREN) {
+	            markup = DOMPropertyOperations.createMarkupForCustomAttribute(propKey, propValue);
+	          }
 	        } else {
 	          markup = DOMPropertyOperations.createMarkupForProperty(propKey, propValue);
 	        }
@@ -11558,6 +11568,9 @@ var autotagform =
 	      } else if (isCustomComponent(this._tag, nextProps)) {
 	        if (!node) {
 	          node = ReactMount.getNode(this._rootNodeID);
+	        }
+	        if (propKey === CHILDREN) {
+	          nextProp = null;
 	        }
 	        DOMPropertyOperations.setValueForAttribute(node, propKey, nextProp);
 	      } else if (DOMProperty.properties[propKey] || DOMProperty.isCustomAttribute(propKey)) {
@@ -13215,7 +13228,10 @@ var autotagform =
 	      }
 	    });
 
-	    nativeProps.children = content;
+	    if (content) {
+	      nativeProps.children = content;
+	    }
+
 	    return nativeProps;
 	  }
 
@@ -13640,7 +13656,7 @@ var autotagform =
 	    var value = LinkedValueUtils.getValue(props);
 
 	    if (value != null) {
-	      updateOptions(this, props, value);
+	      updateOptions(this, Boolean(props.multiple), value);
 	    }
 	  }
 	}
@@ -16675,11 +16691,14 @@ var autotagform =
 	 * @typechecks
 	 */
 
+	/* eslint-disable fb-www/typeof-undefined */
+
 	/**
 	 * Same as document.activeElement but wraps in a try-catch block. In IE it is
 	 * not safe to call document.activeElement if there is nothing focused.
 	 *
-	 * The activeElement will be null only if the document or document body is not yet defined.
+	 * The activeElement will be null only if the document or document body is not
+	 * yet defined.
 	 */
 	'use strict';
 
@@ -16687,7 +16706,6 @@ var autotagform =
 	  if (typeof document === 'undefined') {
 	    return null;
 	  }
-
 	  try {
 	    return document.activeElement || document.body;
 	  } catch (e) {
@@ -18427,7 +18445,9 @@ var autotagform =
 	  'setValueForProperty': 'update attribute',
 	  'setValueForAttribute': 'update attribute',
 	  'deleteValueForProperty': 'remove attribute',
-	  'dangerouslyReplaceNodeWithMarkupByID': 'replace'
+	  'setValueForStyles': 'update styles',
+	  'replaceNodeWithMarkup': 'replace',
+	  'updateTextContent': 'set textContent'
 	};
 
 	function getTotalTime(measurements) {
@@ -18619,18 +18639,23 @@ var autotagform =
 	'use strict';
 
 	var performance = __webpack_require__(145);
-	var curPerformance = performance;
+
+	var performanceNow;
 
 	/**
 	 * Detect if we can use `window.performance.now()` and gracefully fallback to
 	 * `Date.now()` if it doesn't exist. We need to support Firefox < 15 for now
 	 * because of Facebook's testing infrastructure.
 	 */
-	if (!curPerformance || !curPerformance.now) {
-	  curPerformance = Date;
+	if (performance.now) {
+	  performanceNow = function () {
+	    return performance.now();
+	  };
+	} else {
+	  performanceNow = function () {
+	    return Date.now();
+	  };
 	}
-
-	var performanceNow = curPerformance.now.bind(curPerformance);
 
 	module.exports = performanceNow;
 
@@ -18679,7 +18704,7 @@ var autotagform =
 
 	'use strict';
 
-	module.exports = '0.14.1';
+	module.exports = '0.14.7';
 
 /***/ },
 /* 147 */
@@ -19656,7 +19681,7 @@ var autotagform =
 
 	'use strict';
 
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -19676,43 +19701,41 @@ var autotagform =
 
 	__webpack_require__(161);
 
-	__webpack_require__(174);
+	__webpack_require__(165);
 
-	__webpack_require__(179);
-
-	__webpack_require__(181);
-
-	var _Token = __webpack_require__(184);
+	var _Token = __webpack_require__(168);
 
 	var _Token2 = _interopRequireDefault(_Token);
 
-	var _Image = __webpack_require__(185);
+	var _Image = __webpack_require__(169);
 
 	var _Image2 = _interopRequireDefault(_Image);
 
-	var _Tag = __webpack_require__(186);
+	var _Tag = __webpack_require__(170);
 
 	var _Tag2 = _interopRequireDefault(_Tag);
 
-	var _User = __webpack_require__(187);
+	var _User = __webpack_require__(171);
 
 	var _User2 = _interopRequireDefault(_User);
 
-	var _SetUtils = __webpack_require__(188);
+	var _SetUtils = __webpack_require__(172);
 
-	var _AutoTagToolbar = __webpack_require__(189);
+	var _AutoTagToolbar = __webpack_require__(173);
 
 	var _AutoTagToolbar2 = _interopRequireDefault(_AutoTagToolbar);
 
-	var _AutoTagTable = __webpack_require__(193);
+	var _AutoTagTable = __webpack_require__(177);
 
 	var _AutoTagTable2 = _interopRequireDefault(_AutoTagTable);
 
-	var _TagSelectModal = __webpack_require__(201);
+	var _TagSelectModal = __webpack_require__(191);
 
 	var _TagSelectModal2 = _interopRequireDefault(_TagSelectModal);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -19720,19 +19743,15 @@ var autotagform =
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	function _instanceof(left, right) { if (right != null && right[Symbol.hasInstance]) { return right[Symbol.hasInstance](left); } else { return left instanceof right; } }
-
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
-
-	var AutoTagForm = (function (_React$Component) {
+	var AutoTagForm = function (_React$Component) {
 	  _inherits(AutoTagForm, _React$Component);
 
 	  function AutoTagForm() {
 	    _classCallCheck(this, AutoTagForm);
 
-	    var _this5 = _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagForm).call(this));
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagForm).call(this));
 
-	    _this5.state = {
+	    _this.state = {
 	      images: new Set(),
 	      users: new Map(),
 	      tags: new Map(),
@@ -19744,20 +19763,20 @@ var autotagform =
 	    };
 
 	    // Abort capable AJAX variables
-	    _this5.loadRequest = undefined;
+	    _this.loadRequest = undefined;
 
 	    // Prebind this to callback methods
-	    _this5.onSubmit = _this5.onSubmit.bind(_this5);
-	    _this5.cellCheckedChange = _this5.cellCheckedChange.bind(_this5);
-	    _this5.handleCheckedChangeAll = _this5.handleCheckedChangeAll.bind(_this5);
-	    _this5.selectMapping = _this5.selectMapping.bind(_this5);
-	    _this5.newMapping = _this5.newMapping.bind(_this5);
-	    _this5.addMapping = _this5.addMapping.bind(_this5);
-	    _this5.refreshForm = _this5.refreshForm.bind(_this5);
-	    _this5.toggleUnmapped = _this5.toggleUnmapped.bind(_this5);
-	    _this5.handleChangeRequiredTokenCardinality = _this5.handleChangeRequiredTokenCardinality.bind(_this5);
+	    _this.onSubmit = _this.onSubmit.bind(_this);
+	    _this.cellCheckedChange = _this.cellCheckedChange.bind(_this);
+	    _this.handleCheckedChangeAll = _this.handleCheckedChangeAll.bind(_this);
+	    _this.selectMapping = _this.selectMapping.bind(_this);
+	    _this.newMapping = _this.newMapping.bind(_this);
+	    _this.addMapping = _this.addMapping.bind(_this);
+	    _this.refreshForm = _this.refreshForm.bind(_this);
+	    _this.toggleUnmapped = _this.toggleUnmapped.bind(_this);
+	    _this.handleChangeRequiredTokenCardinality = _this.handleChangeRequiredTokenCardinality.bind(_this);
 
-	    return _this5;
+	    return _this;
 	  }
 
 	  _createClass(AutoTagForm, [{
@@ -19832,13 +19851,13 @@ var autotagform =
 	  }, {
 	    key: 'tokensInName',
 	    value: function tokensInName(image, tagValuesMap, tokenMap) {
-	      var _this = this;
+	      var _this2 = this;
 
 	      var imageTokens = new Set();
 
 	      var tokens = image.clientPath.split(/[\/\\_\.\s]+/);
 	      tokens.forEach(function (value) {
-	        return imageTokens.add(_this.addOrUpdateToken(image, tagValuesMap, tokenMap, value));
+	        return imageTokens.add(_this2.addOrUpdateToken(image, tagValuesMap, tokenMap, value));
 	      });
 
 	      // Return the set of tokens that are present on this image
@@ -19847,7 +19866,7 @@ var autotagform =
 	  }, {
 	    key: 'loadFromServer',
 	    value: function loadFromServer(imageIds) {
-	      var _this2 = this;
+	      var _this3 = this;
 
 	      // If there is a request in progress, abort it in favour of this one
 	      if (this.loadRequest && this.loadRequest.readyState !== 4) {
@@ -19932,7 +19951,7 @@ var autotagform =
 	          images.add(image);
 
 	          // Find the tokens on each image, updating the tokenMap in place
-	          image.tokens = _this2.tokensInName(image, tagValuesMap, tokenMap);
+	          image.tokens = _this3.tokensInName(image, tagValuesMap, tokenMap);
 
 	          // Check any tokens that exist on this image by default
 	          image.checkedTokens = new Set(image.tokens);
@@ -19988,7 +20007,7 @@ var autotagform =
 
 	        // Set the state
 	        // Special case requiredTokenCardinality for when there is only one image
-	        _this2.setState({
+	        _this3.setState({
 	          images: images,
 	          users: users,
 	          tags: tags,
@@ -20029,7 +20048,7 @@ var autotagform =
 	  }, {
 	    key: 'onSubmit',
 	    value: function onSubmit(e) {
-	      var _this3 = this;
+	      var _this4 = this;
 
 	      e.preventDefault();
 
@@ -20073,7 +20092,7 @@ var autotagform =
 
 	        // For each of the unmapedTags compare its checked status to its tagged
 	        // status
-	        _this3.state.unmappedTags.forEach(function (tag) {
+	        _this4.state.unmappedTags.forEach(function (tag) {
 
 	          // Get the checked and tagged states
 	          var checked = image.checkedTags.has(tag);
@@ -20133,10 +20152,10 @@ var autotagform =
 	        url: this.props.urlUpdate,
 	        type: "POST",
 	        data: JSON.stringify(changes),
-	        success: (function (data) {
+	        success: function (data) {
 	          // No action required
-	        }).bind(this),
-	        error: (function (xhr, status, err) {
+	        }.bind(this),
+	        error: function (xhr, status, err) {
 	          console.error(this.props.url, status, err.toString());
 
 	          // TODO Pop up a warning dialog
@@ -20145,7 +20164,7 @@ var autotagform =
 	          // or failed for complex reasons due to updates outside of the scope
 	          // of autotag
 	          this.refreshForm();
-	        }).bind(this)
+	        }.bind(this)
 	      });
 	    }
 	  }, {
@@ -20156,10 +20175,10 @@ var autotagform =
 	      // Dirty the image and checkedTokens/checkedTags
 	      var newImage = image.clone();
 
-	      if (_instanceof(tokenOrTag, _Token2.default)) {
+	      if (tokenOrTag instanceof _Token2.default) {
 	        newImage.checkedTokens = new Set(image.checkedTokens);
 	        newImage.checkedTokens.has(tokenOrTag) ? newImage.checkedTokens.delete(tokenOrTag) : newImage.checkedTokens.add(tokenOrTag);
-	      } else if (_instanceof(tokenOrTag, _Tag2.default)) {
+	      } else if (tokenOrTag instanceof _Tag2.default) {
 	        newImage.checkedTags = new Set(image.checkedTags);
 	        newImage.checkedTags.has(tokenOrTag) ? newImage.checkedTags.delete(tokenOrTag) : newImage.checkedTags.add(tokenOrTag);
 	      }
@@ -20179,7 +20198,7 @@ var autotagform =
 
 	      // Create mix of dirty and original images
 	      var newImages = undefined;
-	      if (_instanceof(tokenOrTag, _Token2.default)) {
+	      if (tokenOrTag instanceof _Token2.default) {
 	        newImages = new Set([].concat(_toConsumableArray(this.state.images)).map(function (image) {
 
 	          // If the image is not already correctly checked
@@ -20193,7 +20212,7 @@ var autotagform =
 	          // Otherwise, return the existing image
 	          return image;
 	        }));
-	      } else if (_instanceof(tokenOrTag, _Tag2.default)) {
+	      } else if (tokenOrTag instanceof _Tag2.default) {
 
 	        newImages = new Set([].concat(_toConsumableArray(this.state.images)).map(function (image) {
 
@@ -20298,10 +20317,14 @@ var autotagform =
 	  }, {
 	    key: 'addMapping',
 	    value: function addMapping(token, tag, tagValue, tagDescription) {
-
+	      console.log('blah');
+	      console.log(token);
+	      console.log(tag);
+	      console.log(tagValue);
+	      console.log(tagDescription);
 	      // Undefined tagValue means this is an existing tag
 	      if (tagValue === undefined && tag !== undefined) {
-
+	        console.log('foo');
 	        // Add the tag to the tokenMap for this token
 	        token.possible.add(tag);
 
@@ -20317,6 +20340,7 @@ var autotagform =
 
 	        // This is a new tag
 	      } else if (tagValue !== undefined) {
+	          console.log('bar');
 	          // Create the tag. In this case we can not update the form until the
 	          // ajax call is successful as the tag ID is not known until it returns
 	          // and that is important imformation
@@ -20328,7 +20352,7 @@ var autotagform =
 	              description: tagDescription
 	            }),
 	            dataType: 'json',
-	            success: (function (jsonTag) {
+	            success: function (jsonTag) {
 
 	              // Resolve the owner ID to a user
 	              var tagOwner = this.state.users.get(jsonTag.ownerId);
@@ -20347,10 +20371,10 @@ var autotagform =
 	              });
 
 	              this.selectMapping(token, tag);
-	            }).bind(this),
-	            error: (function (xhr, status, err) {
+	            }.bind(this),
+	            error: function (xhr, status, err) {
 	              console.error(this.props.url, status, err.toString());
-	            }).bind(this)
+	            }.bind(this)
 	          });
 	        }
 	    }
@@ -20376,7 +20400,7 @@ var autotagform =
 	  }, {
 	    key: 'filteredTokenMap',
 	    value: function filteredTokenMap() {
-	      var _this4 = this;
+	      var _this5 = this;
 
 	      // Filter out any tokens that do not meet the requirements
 	      // Requirements for inclusion:
@@ -20385,7 +20409,7 @@ var autotagform =
 	      var tokenMap = new Map([].concat(_toConsumableArray(this.state.tokenMap)).filter(function (kv) {
 	        var token = kv[1];
 
-	        return token.possible.size > 0 || token.count >= _this4.state.requiredTokenCardinality && _this4.tokenValueCheck(token.value);
+	        return token.possible.size > 0 || token.count >= _this5.state.requiredTokenCardinality && _this5.tokenValueCheck(token.value);
 	      }));
 	      return tokenMap;
 	    }
@@ -20418,7 +20442,7 @@ var autotagform =
 	  }]);
 
 	  return AutoTagForm;
-	})(_react2.default.Component);
+	}(_react2.default.Component);
 
 	exports.default = AutoTagForm;
 
@@ -20429,6 +20453,7 @@ var autotagform =
 	'use strict';
 
 	var React = __webpack_require__(1);
+	var ReactDOM = __webpack_require__(158);
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 	var Range = React.createClass({
@@ -20462,7 +20487,7 @@ var autotagform =
 	    this.props.onChange(e);
 	  },
 	  componentWillReceiveProps: function(props) {
-	    React.findDOMNode(this).value = props.value;
+	    ReactDOM.findDOMNode(this).value = props.value;
 	  },
 	  render: function() {
 	    var props = _extends({}, this.props, {
@@ -20487,2444 +20512,20 @@ var autotagform =
 /* 161 */
 /***/ function(module, exports, __webpack_require__) {
 
-	// This file is autogenerated via the `commonjs` Grunt task. You can require() this file in a CommonJS environment.
-	__webpack_require__(162)
-	__webpack_require__(163)
-	__webpack_require__(164)
-	__webpack_require__(165)
-	__webpack_require__(166)
-	__webpack_require__(167)
-	__webpack_require__(168)
-	__webpack_require__(169)
-	__webpack_require__(170)
-	__webpack_require__(171)
-	__webpack_require__(172)
-	__webpack_require__(173)
-
-/***/ },
-/* 162 */
-/***/ function(module, exports) {
-
-	/* ========================================================================
-	 * Bootstrap: transition.js v3.3.5
-	 * http://getbootstrap.com/javascript/#transitions
-	 * ========================================================================
-	 * Copyright 2011-2015 Twitter, Inc.
-	 * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-	 * ======================================================================== */
-
-
-	+function ($) {
-	  'use strict';
-
-	  // CSS TRANSITION SUPPORT (Shoutout: http://www.modernizr.com/)
-	  // ============================================================
-
-	  function transitionEnd() {
-	    var el = document.createElement('bootstrap')
-
-	    var transEndEventNames = {
-	      WebkitTransition : 'webkitTransitionEnd',
-	      MozTransition    : 'transitionend',
-	      OTransition      : 'oTransitionEnd otransitionend',
-	      transition       : 'transitionend'
-	    }
-
-	    for (var name in transEndEventNames) {
-	      if (el.style[name] !== undefined) {
-	        return { end: transEndEventNames[name] }
-	      }
-	    }
-
-	    return false // explicit for ie8 (  ._.)
-	  }
-
-	  // http://blog.alexmaccaw.com/css-transitions
-	  $.fn.emulateTransitionEnd = function (duration) {
-	    var called = false
-	    var $el = this
-	    $(this).one('bsTransitionEnd', function () { called = true })
-	    var callback = function () { if (!called) $($el).trigger($.support.transition.end) }
-	    setTimeout(callback, duration)
-	    return this
-	  }
-
-	  $(function () {
-	    $.support.transition = transitionEnd()
-
-	    if (!$.support.transition) return
-
-	    $.event.special.bsTransitionEnd = {
-	      bindType: $.support.transition.end,
-	      delegateType: $.support.transition.end,
-	      handle: function (e) {
-	        if ($(e.target).is(this)) return e.handleObj.handler.apply(this, arguments)
-	      }
-	    }
-	  })
-
-	}(jQuery);
-
-
-/***/ },
-/* 163 */
-/***/ function(module, exports) {
-
-	/* ========================================================================
-	 * Bootstrap: alert.js v3.3.5
-	 * http://getbootstrap.com/javascript/#alerts
-	 * ========================================================================
-	 * Copyright 2011-2015 Twitter, Inc.
-	 * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-	 * ======================================================================== */
-
-
-	+function ($) {
-	  'use strict';
-
-	  // ALERT CLASS DEFINITION
-	  // ======================
-
-	  var dismiss = '[data-dismiss="alert"]'
-	  var Alert   = function (el) {
-	    $(el).on('click', dismiss, this.close)
-	  }
-
-	  Alert.VERSION = '3.3.5'
-
-	  Alert.TRANSITION_DURATION = 150
-
-	  Alert.prototype.close = function (e) {
-	    var $this    = $(this)
-	    var selector = $this.attr('data-target')
-
-	    if (!selector) {
-	      selector = $this.attr('href')
-	      selector = selector && selector.replace(/.*(?=#[^\s]*$)/, '') // strip for ie7
-	    }
-
-	    var $parent = $(selector)
-
-	    if (e) e.preventDefault()
-
-	    if (!$parent.length) {
-	      $parent = $this.closest('.alert')
-	    }
-
-	    $parent.trigger(e = $.Event('close.bs.alert'))
-
-	    if (e.isDefaultPrevented()) return
-
-	    $parent.removeClass('in')
-
-	    function removeElement() {
-	      // detach from parent, fire event then clean up data
-	      $parent.detach().trigger('closed.bs.alert').remove()
-	    }
-
-	    $.support.transition && $parent.hasClass('fade') ?
-	      $parent
-	        .one('bsTransitionEnd', removeElement)
-	        .emulateTransitionEnd(Alert.TRANSITION_DURATION) :
-	      removeElement()
-	  }
-
-
-	  // ALERT PLUGIN DEFINITION
-	  // =======================
-
-	  function Plugin(option) {
-	    return this.each(function () {
-	      var $this = $(this)
-	      var data  = $this.data('bs.alert')
-
-	      if (!data) $this.data('bs.alert', (data = new Alert(this)))
-	      if (typeof option == 'string') data[option].call($this)
-	    })
-	  }
-
-	  var old = $.fn.alert
-
-	  $.fn.alert             = Plugin
-	  $.fn.alert.Constructor = Alert
-
-
-	  // ALERT NO CONFLICT
-	  // =================
-
-	  $.fn.alert.noConflict = function () {
-	    $.fn.alert = old
-	    return this
-	  }
-
-
-	  // ALERT DATA-API
-	  // ==============
-
-	  $(document).on('click.bs.alert.data-api', dismiss, Alert.prototype.close)
-
-	}(jQuery);
-
-
-/***/ },
-/* 164 */
-/***/ function(module, exports) {
-
-	/* ========================================================================
-	 * Bootstrap: button.js v3.3.5
-	 * http://getbootstrap.com/javascript/#buttons
-	 * ========================================================================
-	 * Copyright 2011-2015 Twitter, Inc.
-	 * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-	 * ======================================================================== */
-
-
-	+function ($) {
-	  'use strict';
-
-	  // BUTTON PUBLIC CLASS DEFINITION
-	  // ==============================
-
-	  var Button = function (element, options) {
-	    this.$element  = $(element)
-	    this.options   = $.extend({}, Button.DEFAULTS, options)
-	    this.isLoading = false
-	  }
-
-	  Button.VERSION  = '3.3.5'
-
-	  Button.DEFAULTS = {
-	    loadingText: 'loading...'
-	  }
-
-	  Button.prototype.setState = function (state) {
-	    var d    = 'disabled'
-	    var $el  = this.$element
-	    var val  = $el.is('input') ? 'val' : 'html'
-	    var data = $el.data()
-
-	    state += 'Text'
-
-	    if (data.resetText == null) $el.data('resetText', $el[val]())
-
-	    // push to event loop to allow forms to submit
-	    setTimeout($.proxy(function () {
-	      $el[val](data[state] == null ? this.options[state] : data[state])
-
-	      if (state == 'loadingText') {
-	        this.isLoading = true
-	        $el.addClass(d).attr(d, d)
-	      } else if (this.isLoading) {
-	        this.isLoading = false
-	        $el.removeClass(d).removeAttr(d)
-	      }
-	    }, this), 0)
-	  }
-
-	  Button.prototype.toggle = function () {
-	    var changed = true
-	    var $parent = this.$element.closest('[data-toggle="buttons"]')
-
-	    if ($parent.length) {
-	      var $input = this.$element.find('input')
-	      if ($input.prop('type') == 'radio') {
-	        if ($input.prop('checked')) changed = false
-	        $parent.find('.active').removeClass('active')
-	        this.$element.addClass('active')
-	      } else if ($input.prop('type') == 'checkbox') {
-	        if (($input.prop('checked')) !== this.$element.hasClass('active')) changed = false
-	        this.$element.toggleClass('active')
-	      }
-	      $input.prop('checked', this.$element.hasClass('active'))
-	      if (changed) $input.trigger('change')
-	    } else {
-	      this.$element.attr('aria-pressed', !this.$element.hasClass('active'))
-	      this.$element.toggleClass('active')
-	    }
-	  }
-
-
-	  // BUTTON PLUGIN DEFINITION
-	  // ========================
-
-	  function Plugin(option) {
-	    return this.each(function () {
-	      var $this   = $(this)
-	      var data    = $this.data('bs.button')
-	      var options = typeof option == 'object' && option
-
-	      if (!data) $this.data('bs.button', (data = new Button(this, options)))
-
-	      if (option == 'toggle') data.toggle()
-	      else if (option) data.setState(option)
-	    })
-	  }
-
-	  var old = $.fn.button
-
-	  $.fn.button             = Plugin
-	  $.fn.button.Constructor = Button
-
-
-	  // BUTTON NO CONFLICT
-	  // ==================
-
-	  $.fn.button.noConflict = function () {
-	    $.fn.button = old
-	    return this
-	  }
-
-
-	  // BUTTON DATA-API
-	  // ===============
-
-	  $(document)
-	    .on('click.bs.button.data-api', '[data-toggle^="button"]', function (e) {
-	      var $btn = $(e.target)
-	      if (!$btn.hasClass('btn')) $btn = $btn.closest('.btn')
-	      Plugin.call($btn, 'toggle')
-	      if (!($(e.target).is('input[type="radio"]') || $(e.target).is('input[type="checkbox"]'))) e.preventDefault()
-	    })
-	    .on('focus.bs.button.data-api blur.bs.button.data-api', '[data-toggle^="button"]', function (e) {
-	      $(e.target).closest('.btn').toggleClass('focus', /^focus(in)?$/.test(e.type))
-	    })
-
-	}(jQuery);
-
-
-/***/ },
-/* 165 */
-/***/ function(module, exports) {
-
-	/* ========================================================================
-	 * Bootstrap: carousel.js v3.3.5
-	 * http://getbootstrap.com/javascript/#carousel
-	 * ========================================================================
-	 * Copyright 2011-2015 Twitter, Inc.
-	 * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-	 * ======================================================================== */
-
-
-	+function ($) {
-	  'use strict';
-
-	  // CAROUSEL CLASS DEFINITION
-	  // =========================
-
-	  var Carousel = function (element, options) {
-	    this.$element    = $(element)
-	    this.$indicators = this.$element.find('.carousel-indicators')
-	    this.options     = options
-	    this.paused      = null
-	    this.sliding     = null
-	    this.interval    = null
-	    this.$active     = null
-	    this.$items      = null
-
-	    this.options.keyboard && this.$element.on('keydown.bs.carousel', $.proxy(this.keydown, this))
-
-	    this.options.pause == 'hover' && !('ontouchstart' in document.documentElement) && this.$element
-	      .on('mouseenter.bs.carousel', $.proxy(this.pause, this))
-	      .on('mouseleave.bs.carousel', $.proxy(this.cycle, this))
-	  }
-
-	  Carousel.VERSION  = '3.3.5'
-
-	  Carousel.TRANSITION_DURATION = 600
-
-	  Carousel.DEFAULTS = {
-	    interval: 5000,
-	    pause: 'hover',
-	    wrap: true,
-	    keyboard: true
-	  }
-
-	  Carousel.prototype.keydown = function (e) {
-	    if (/input|textarea/i.test(e.target.tagName)) return
-	    switch (e.which) {
-	      case 37: this.prev(); break
-	      case 39: this.next(); break
-	      default: return
-	    }
-
-	    e.preventDefault()
-	  }
-
-	  Carousel.prototype.cycle = function (e) {
-	    e || (this.paused = false)
-
-	    this.interval && clearInterval(this.interval)
-
-	    this.options.interval
-	      && !this.paused
-	      && (this.interval = setInterval($.proxy(this.next, this), this.options.interval))
-
-	    return this
-	  }
-
-	  Carousel.prototype.getItemIndex = function (item) {
-	    this.$items = item.parent().children('.item')
-	    return this.$items.index(item || this.$active)
-	  }
-
-	  Carousel.prototype.getItemForDirection = function (direction, active) {
-	    var activeIndex = this.getItemIndex(active)
-	    var willWrap = (direction == 'prev' && activeIndex === 0)
-	                || (direction == 'next' && activeIndex == (this.$items.length - 1))
-	    if (willWrap && !this.options.wrap) return active
-	    var delta = direction == 'prev' ? -1 : 1
-	    var itemIndex = (activeIndex + delta) % this.$items.length
-	    return this.$items.eq(itemIndex)
-	  }
-
-	  Carousel.prototype.to = function (pos) {
-	    var that        = this
-	    var activeIndex = this.getItemIndex(this.$active = this.$element.find('.item.active'))
-
-	    if (pos > (this.$items.length - 1) || pos < 0) return
-
-	    if (this.sliding)       return this.$element.one('slid.bs.carousel', function () { that.to(pos) }) // yes, "slid"
-	    if (activeIndex == pos) return this.pause().cycle()
-
-	    return this.slide(pos > activeIndex ? 'next' : 'prev', this.$items.eq(pos))
-	  }
-
-	  Carousel.prototype.pause = function (e) {
-	    e || (this.paused = true)
-
-	    if (this.$element.find('.next, .prev').length && $.support.transition) {
-	      this.$element.trigger($.support.transition.end)
-	      this.cycle(true)
-	    }
-
-	    this.interval = clearInterval(this.interval)
-
-	    return this
-	  }
-
-	  Carousel.prototype.next = function () {
-	    if (this.sliding) return
-	    return this.slide('next')
-	  }
-
-	  Carousel.prototype.prev = function () {
-	    if (this.sliding) return
-	    return this.slide('prev')
-	  }
-
-	  Carousel.prototype.slide = function (type, next) {
-	    var $active   = this.$element.find('.item.active')
-	    var $next     = next || this.getItemForDirection(type, $active)
-	    var isCycling = this.interval
-	    var direction = type == 'next' ? 'left' : 'right'
-	    var that      = this
-
-	    if ($next.hasClass('active')) return (this.sliding = false)
-
-	    var relatedTarget = $next[0]
-	    var slideEvent = $.Event('slide.bs.carousel', {
-	      relatedTarget: relatedTarget,
-	      direction: direction
-	    })
-	    this.$element.trigger(slideEvent)
-	    if (slideEvent.isDefaultPrevented()) return
-
-	    this.sliding = true
-
-	    isCycling && this.pause()
-
-	    if (this.$indicators.length) {
-	      this.$indicators.find('.active').removeClass('active')
-	      var $nextIndicator = $(this.$indicators.children()[this.getItemIndex($next)])
-	      $nextIndicator && $nextIndicator.addClass('active')
-	    }
-
-	    var slidEvent = $.Event('slid.bs.carousel', { relatedTarget: relatedTarget, direction: direction }) // yes, "slid"
-	    if ($.support.transition && this.$element.hasClass('slide')) {
-	      $next.addClass(type)
-	      $next[0].offsetWidth // force reflow
-	      $active.addClass(direction)
-	      $next.addClass(direction)
-	      $active
-	        .one('bsTransitionEnd', function () {
-	          $next.removeClass([type, direction].join(' ')).addClass('active')
-	          $active.removeClass(['active', direction].join(' '))
-	          that.sliding = false
-	          setTimeout(function () {
-	            that.$element.trigger(slidEvent)
-	          }, 0)
-	        })
-	        .emulateTransitionEnd(Carousel.TRANSITION_DURATION)
-	    } else {
-	      $active.removeClass('active')
-	      $next.addClass('active')
-	      this.sliding = false
-	      this.$element.trigger(slidEvent)
-	    }
-
-	    isCycling && this.cycle()
-
-	    return this
-	  }
-
-
-	  // CAROUSEL PLUGIN DEFINITION
-	  // ==========================
-
-	  function Plugin(option) {
-	    return this.each(function () {
-	      var $this   = $(this)
-	      var data    = $this.data('bs.carousel')
-	      var options = $.extend({}, Carousel.DEFAULTS, $this.data(), typeof option == 'object' && option)
-	      var action  = typeof option == 'string' ? option : options.slide
-
-	      if (!data) $this.data('bs.carousel', (data = new Carousel(this, options)))
-	      if (typeof option == 'number') data.to(option)
-	      else if (action) data[action]()
-	      else if (options.interval) data.pause().cycle()
-	    })
-	  }
-
-	  var old = $.fn.carousel
-
-	  $.fn.carousel             = Plugin
-	  $.fn.carousel.Constructor = Carousel
-
-
-	  // CAROUSEL NO CONFLICT
-	  // ====================
-
-	  $.fn.carousel.noConflict = function () {
-	    $.fn.carousel = old
-	    return this
-	  }
-
-
-	  // CAROUSEL DATA-API
-	  // =================
-
-	  var clickHandler = function (e) {
-	    var href
-	    var $this   = $(this)
-	    var $target = $($this.attr('data-target') || (href = $this.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '')) // strip for ie7
-	    if (!$target.hasClass('carousel')) return
-	    var options = $.extend({}, $target.data(), $this.data())
-	    var slideIndex = $this.attr('data-slide-to')
-	    if (slideIndex) options.interval = false
-
-	    Plugin.call($target, options)
-
-	    if (slideIndex) {
-	      $target.data('bs.carousel').to(slideIndex)
-	    }
-
-	    e.preventDefault()
-	  }
-
-	  $(document)
-	    .on('click.bs.carousel.data-api', '[data-slide]', clickHandler)
-	    .on('click.bs.carousel.data-api', '[data-slide-to]', clickHandler)
-
-	  $(window).on('load', function () {
-	    $('[data-ride="carousel"]').each(function () {
-	      var $carousel = $(this)
-	      Plugin.call($carousel, $carousel.data())
-	    })
-	  })
-
-	}(jQuery);
-
-
-/***/ },
-/* 166 */
-/***/ function(module, exports) {
-
-	/* ========================================================================
-	 * Bootstrap: collapse.js v3.3.5
-	 * http://getbootstrap.com/javascript/#collapse
-	 * ========================================================================
-	 * Copyright 2011-2015 Twitter, Inc.
-	 * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-	 * ======================================================================== */
-
-
-	+function ($) {
-	  'use strict';
-
-	  // COLLAPSE PUBLIC CLASS DEFINITION
-	  // ================================
-
-	  var Collapse = function (element, options) {
-	    this.$element      = $(element)
-	    this.options       = $.extend({}, Collapse.DEFAULTS, options)
-	    this.$trigger      = $('[data-toggle="collapse"][href="#' + element.id + '"],' +
-	                           '[data-toggle="collapse"][data-target="#' + element.id + '"]')
-	    this.transitioning = null
-
-	    if (this.options.parent) {
-	      this.$parent = this.getParent()
-	    } else {
-	      this.addAriaAndCollapsedClass(this.$element, this.$trigger)
-	    }
-
-	    if (this.options.toggle) this.toggle()
-	  }
-
-	  Collapse.VERSION  = '3.3.5'
-
-	  Collapse.TRANSITION_DURATION = 350
-
-	  Collapse.DEFAULTS = {
-	    toggle: true
-	  }
-
-	  Collapse.prototype.dimension = function () {
-	    var hasWidth = this.$element.hasClass('width')
-	    return hasWidth ? 'width' : 'height'
-	  }
-
-	  Collapse.prototype.show = function () {
-	    if (this.transitioning || this.$element.hasClass('in')) return
-
-	    var activesData
-	    var actives = this.$parent && this.$parent.children('.panel').children('.in, .collapsing')
-
-	    if (actives && actives.length) {
-	      activesData = actives.data('bs.collapse')
-	      if (activesData && activesData.transitioning) return
-	    }
-
-	    var startEvent = $.Event('show.bs.collapse')
-	    this.$element.trigger(startEvent)
-	    if (startEvent.isDefaultPrevented()) return
-
-	    if (actives && actives.length) {
-	      Plugin.call(actives, 'hide')
-	      activesData || actives.data('bs.collapse', null)
-	    }
-
-	    var dimension = this.dimension()
-
-	    this.$element
-	      .removeClass('collapse')
-	      .addClass('collapsing')[dimension](0)
-	      .attr('aria-expanded', true)
-
-	    this.$trigger
-	      .removeClass('collapsed')
-	      .attr('aria-expanded', true)
-
-	    this.transitioning = 1
-
-	    var complete = function () {
-	      this.$element
-	        .removeClass('collapsing')
-	        .addClass('collapse in')[dimension]('')
-	      this.transitioning = 0
-	      this.$element
-	        .trigger('shown.bs.collapse')
-	    }
-
-	    if (!$.support.transition) return complete.call(this)
-
-	    var scrollSize = $.camelCase(['scroll', dimension].join('-'))
-
-	    this.$element
-	      .one('bsTransitionEnd', $.proxy(complete, this))
-	      .emulateTransitionEnd(Collapse.TRANSITION_DURATION)[dimension](this.$element[0][scrollSize])
-	  }
-
-	  Collapse.prototype.hide = function () {
-	    if (this.transitioning || !this.$element.hasClass('in')) return
-
-	    var startEvent = $.Event('hide.bs.collapse')
-	    this.$element.trigger(startEvent)
-	    if (startEvent.isDefaultPrevented()) return
-
-	    var dimension = this.dimension()
-
-	    this.$element[dimension](this.$element[dimension]())[0].offsetHeight
-
-	    this.$element
-	      .addClass('collapsing')
-	      .removeClass('collapse in')
-	      .attr('aria-expanded', false)
-
-	    this.$trigger
-	      .addClass('collapsed')
-	      .attr('aria-expanded', false)
-
-	    this.transitioning = 1
-
-	    var complete = function () {
-	      this.transitioning = 0
-	      this.$element
-	        .removeClass('collapsing')
-	        .addClass('collapse')
-	        .trigger('hidden.bs.collapse')
-	    }
-
-	    if (!$.support.transition) return complete.call(this)
-
-	    this.$element
-	      [dimension](0)
-	      .one('bsTransitionEnd', $.proxy(complete, this))
-	      .emulateTransitionEnd(Collapse.TRANSITION_DURATION)
-	  }
-
-	  Collapse.prototype.toggle = function () {
-	    this[this.$element.hasClass('in') ? 'hide' : 'show']()
-	  }
-
-	  Collapse.prototype.getParent = function () {
-	    return $(this.options.parent)
-	      .find('[data-toggle="collapse"][data-parent="' + this.options.parent + '"]')
-	      .each($.proxy(function (i, element) {
-	        var $element = $(element)
-	        this.addAriaAndCollapsedClass(getTargetFromTrigger($element), $element)
-	      }, this))
-	      .end()
-	  }
-
-	  Collapse.prototype.addAriaAndCollapsedClass = function ($element, $trigger) {
-	    var isOpen = $element.hasClass('in')
-
-	    $element.attr('aria-expanded', isOpen)
-	    $trigger
-	      .toggleClass('collapsed', !isOpen)
-	      .attr('aria-expanded', isOpen)
-	  }
-
-	  function getTargetFromTrigger($trigger) {
-	    var href
-	    var target = $trigger.attr('data-target')
-	      || (href = $trigger.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '') // strip for ie7
-
-	    return $(target)
-	  }
-
-
-	  // COLLAPSE PLUGIN DEFINITION
-	  // ==========================
-
-	  function Plugin(option) {
-	    return this.each(function () {
-	      var $this   = $(this)
-	      var data    = $this.data('bs.collapse')
-	      var options = $.extend({}, Collapse.DEFAULTS, $this.data(), typeof option == 'object' && option)
-
-	      if (!data && options.toggle && /show|hide/.test(option)) options.toggle = false
-	      if (!data) $this.data('bs.collapse', (data = new Collapse(this, options)))
-	      if (typeof option == 'string') data[option]()
-	    })
-	  }
-
-	  var old = $.fn.collapse
-
-	  $.fn.collapse             = Plugin
-	  $.fn.collapse.Constructor = Collapse
-
-
-	  // COLLAPSE NO CONFLICT
-	  // ====================
-
-	  $.fn.collapse.noConflict = function () {
-	    $.fn.collapse = old
-	    return this
-	  }
-
-
-	  // COLLAPSE DATA-API
-	  // =================
-
-	  $(document).on('click.bs.collapse.data-api', '[data-toggle="collapse"]', function (e) {
-	    var $this   = $(this)
-
-	    if (!$this.attr('data-target')) e.preventDefault()
-
-	    var $target = getTargetFromTrigger($this)
-	    var data    = $target.data('bs.collapse')
-	    var option  = data ? 'toggle' : $this.data()
-
-	    Plugin.call($target, option)
-	  })
-
-	}(jQuery);
-
-
-/***/ },
-/* 167 */
-/***/ function(module, exports) {
-
-	/* ========================================================================
-	 * Bootstrap: dropdown.js v3.3.5
-	 * http://getbootstrap.com/javascript/#dropdowns
-	 * ========================================================================
-	 * Copyright 2011-2015 Twitter, Inc.
-	 * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-	 * ======================================================================== */
-
-
-	+function ($) {
-	  'use strict';
-
-	  // DROPDOWN CLASS DEFINITION
-	  // =========================
-
-	  var backdrop = '.dropdown-backdrop'
-	  var toggle   = '[data-toggle="dropdown"]'
-	  var Dropdown = function (element) {
-	    $(element).on('click.bs.dropdown', this.toggle)
-	  }
-
-	  Dropdown.VERSION = '3.3.5'
-
-	  function getParent($this) {
-	    var selector = $this.attr('data-target')
-
-	    if (!selector) {
-	      selector = $this.attr('href')
-	      selector = selector && /#[A-Za-z]/.test(selector) && selector.replace(/.*(?=#[^\s]*$)/, '') // strip for ie7
-	    }
-
-	    var $parent = selector && $(selector)
-
-	    return $parent && $parent.length ? $parent : $this.parent()
-	  }
-
-	  function clearMenus(e) {
-	    if (e && e.which === 3) return
-	    $(backdrop).remove()
-	    $(toggle).each(function () {
-	      var $this         = $(this)
-	      var $parent       = getParent($this)
-	      var relatedTarget = { relatedTarget: this }
-
-	      if (!$parent.hasClass('open')) return
-
-	      if (e && e.type == 'click' && /input|textarea/i.test(e.target.tagName) && $.contains($parent[0], e.target)) return
-
-	      $parent.trigger(e = $.Event('hide.bs.dropdown', relatedTarget))
-
-	      if (e.isDefaultPrevented()) return
-
-	      $this.attr('aria-expanded', 'false')
-	      $parent.removeClass('open').trigger('hidden.bs.dropdown', relatedTarget)
-	    })
-	  }
-
-	  Dropdown.prototype.toggle = function (e) {
-	    var $this = $(this)
-
-	    if ($this.is('.disabled, :disabled')) return
-
-	    var $parent  = getParent($this)
-	    var isActive = $parent.hasClass('open')
-
-	    clearMenus()
-
-	    if (!isActive) {
-	      if ('ontouchstart' in document.documentElement && !$parent.closest('.navbar-nav').length) {
-	        // if mobile we use a backdrop because click events don't delegate
-	        $(document.createElement('div'))
-	          .addClass('dropdown-backdrop')
-	          .insertAfter($(this))
-	          .on('click', clearMenus)
-	      }
-
-	      var relatedTarget = { relatedTarget: this }
-	      $parent.trigger(e = $.Event('show.bs.dropdown', relatedTarget))
-
-	      if (e.isDefaultPrevented()) return
-
-	      $this
-	        .trigger('focus')
-	        .attr('aria-expanded', 'true')
-
-	      $parent
-	        .toggleClass('open')
-	        .trigger('shown.bs.dropdown', relatedTarget)
-	    }
-
-	    return false
-	  }
-
-	  Dropdown.prototype.keydown = function (e) {
-	    if (!/(38|40|27|32)/.test(e.which) || /input|textarea/i.test(e.target.tagName)) return
-
-	    var $this = $(this)
-
-	    e.preventDefault()
-	    e.stopPropagation()
-
-	    if ($this.is('.disabled, :disabled')) return
-
-	    var $parent  = getParent($this)
-	    var isActive = $parent.hasClass('open')
-
-	    if (!isActive && e.which != 27 || isActive && e.which == 27) {
-	      if (e.which == 27) $parent.find(toggle).trigger('focus')
-	      return $this.trigger('click')
-	    }
-
-	    var desc = ' li:not(.disabled):visible a'
-	    var $items = $parent.find('.dropdown-menu' + desc)
-
-	    if (!$items.length) return
-
-	    var index = $items.index(e.target)
-
-	    if (e.which == 38 && index > 0)                 index--         // up
-	    if (e.which == 40 && index < $items.length - 1) index++         // down
-	    if (!~index)                                    index = 0
-
-	    $items.eq(index).trigger('focus')
-	  }
-
-
-	  // DROPDOWN PLUGIN DEFINITION
-	  // ==========================
-
-	  function Plugin(option) {
-	    return this.each(function () {
-	      var $this = $(this)
-	      var data  = $this.data('bs.dropdown')
-
-	      if (!data) $this.data('bs.dropdown', (data = new Dropdown(this)))
-	      if (typeof option == 'string') data[option].call($this)
-	    })
-	  }
-
-	  var old = $.fn.dropdown
-
-	  $.fn.dropdown             = Plugin
-	  $.fn.dropdown.Constructor = Dropdown
-
-
-	  // DROPDOWN NO CONFLICT
-	  // ====================
-
-	  $.fn.dropdown.noConflict = function () {
-	    $.fn.dropdown = old
-	    return this
-	  }
-
-
-	  // APPLY TO STANDARD DROPDOWN ELEMENTS
-	  // ===================================
-
-	  $(document)
-	    .on('click.bs.dropdown.data-api', clearMenus)
-	    .on('click.bs.dropdown.data-api', '.dropdown form', function (e) { e.stopPropagation() })
-	    .on('click.bs.dropdown.data-api', toggle, Dropdown.prototype.toggle)
-	    .on('keydown.bs.dropdown.data-api', toggle, Dropdown.prototype.keydown)
-	    .on('keydown.bs.dropdown.data-api', '.dropdown-menu', Dropdown.prototype.keydown)
-
-	}(jQuery);
-
-
-/***/ },
-/* 168 */
-/***/ function(module, exports) {
-
-	/* ========================================================================
-	 * Bootstrap: modal.js v3.3.5
-	 * http://getbootstrap.com/javascript/#modals
-	 * ========================================================================
-	 * Copyright 2011-2015 Twitter, Inc.
-	 * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-	 * ======================================================================== */
-
-
-	+function ($) {
-	  'use strict';
-
-	  // MODAL CLASS DEFINITION
-	  // ======================
-
-	  var Modal = function (element, options) {
-	    this.options             = options
-	    this.$body               = $(document.body)
-	    this.$element            = $(element)
-	    this.$dialog             = this.$element.find('.modal-dialog')
-	    this.$backdrop           = null
-	    this.isShown             = null
-	    this.originalBodyPad     = null
-	    this.scrollbarWidth      = 0
-	    this.ignoreBackdropClick = false
-
-	    if (this.options.remote) {
-	      this.$element
-	        .find('.modal-content')
-	        .load(this.options.remote, $.proxy(function () {
-	          this.$element.trigger('loaded.bs.modal')
-	        }, this))
-	    }
-	  }
-
-	  Modal.VERSION  = '3.3.5'
-
-	  Modal.TRANSITION_DURATION = 300
-	  Modal.BACKDROP_TRANSITION_DURATION = 150
-
-	  Modal.DEFAULTS = {
-	    backdrop: true,
-	    keyboard: true,
-	    show: true
-	  }
-
-	  Modal.prototype.toggle = function (_relatedTarget) {
-	    return this.isShown ? this.hide() : this.show(_relatedTarget)
-	  }
-
-	  Modal.prototype.show = function (_relatedTarget) {
-	    var that = this
-	    var e    = $.Event('show.bs.modal', { relatedTarget: _relatedTarget })
-
-	    this.$element.trigger(e)
-
-	    if (this.isShown || e.isDefaultPrevented()) return
-
-	    this.isShown = true
-
-	    this.checkScrollbar()
-	    this.setScrollbar()
-	    this.$body.addClass('modal-open')
-
-	    this.escape()
-	    this.resize()
-
-	    this.$element.on('click.dismiss.bs.modal', '[data-dismiss="modal"]', $.proxy(this.hide, this))
-
-	    this.$dialog.on('mousedown.dismiss.bs.modal', function () {
-	      that.$element.one('mouseup.dismiss.bs.modal', function (e) {
-	        if ($(e.target).is(that.$element)) that.ignoreBackdropClick = true
-	      })
-	    })
-
-	    this.backdrop(function () {
-	      var transition = $.support.transition && that.$element.hasClass('fade')
-
-	      if (!that.$element.parent().length) {
-	        that.$element.appendTo(that.$body) // don't move modals dom position
-	      }
-
-	      that.$element
-	        .show()
-	        .scrollTop(0)
-
-	      that.adjustDialog()
-
-	      if (transition) {
-	        that.$element[0].offsetWidth // force reflow
-	      }
-
-	      that.$element.addClass('in')
-
-	      that.enforceFocus()
-
-	      var e = $.Event('shown.bs.modal', { relatedTarget: _relatedTarget })
-
-	      transition ?
-	        that.$dialog // wait for modal to slide in
-	          .one('bsTransitionEnd', function () {
-	            that.$element.trigger('focus').trigger(e)
-	          })
-	          .emulateTransitionEnd(Modal.TRANSITION_DURATION) :
-	        that.$element.trigger('focus').trigger(e)
-	    })
-	  }
-
-	  Modal.prototype.hide = function (e) {
-	    if (e) e.preventDefault()
-
-	    e = $.Event('hide.bs.modal')
-
-	    this.$element.trigger(e)
-
-	    if (!this.isShown || e.isDefaultPrevented()) return
-
-	    this.isShown = false
-
-	    this.escape()
-	    this.resize()
-
-	    $(document).off('focusin.bs.modal')
-
-	    this.$element
-	      .removeClass('in')
-	      .off('click.dismiss.bs.modal')
-	      .off('mouseup.dismiss.bs.modal')
-
-	    this.$dialog.off('mousedown.dismiss.bs.modal')
-
-	    $.support.transition && this.$element.hasClass('fade') ?
-	      this.$element
-	        .one('bsTransitionEnd', $.proxy(this.hideModal, this))
-	        .emulateTransitionEnd(Modal.TRANSITION_DURATION) :
-	      this.hideModal()
-	  }
-
-	  Modal.prototype.enforceFocus = function () {
-	    $(document)
-	      .off('focusin.bs.modal') // guard against infinite focus loop
-	      .on('focusin.bs.modal', $.proxy(function (e) {
-	        if (this.$element[0] !== e.target && !this.$element.has(e.target).length) {
-	          this.$element.trigger('focus')
-	        }
-	      }, this))
-	  }
-
-	  Modal.prototype.escape = function () {
-	    if (this.isShown && this.options.keyboard) {
-	      this.$element.on('keydown.dismiss.bs.modal', $.proxy(function (e) {
-	        e.which == 27 && this.hide()
-	      }, this))
-	    } else if (!this.isShown) {
-	      this.$element.off('keydown.dismiss.bs.modal')
-	    }
-	  }
-
-	  Modal.prototype.resize = function () {
-	    if (this.isShown) {
-	      $(window).on('resize.bs.modal', $.proxy(this.handleUpdate, this))
-	    } else {
-	      $(window).off('resize.bs.modal')
-	    }
-	  }
-
-	  Modal.prototype.hideModal = function () {
-	    var that = this
-	    this.$element.hide()
-	    this.backdrop(function () {
-	      that.$body.removeClass('modal-open')
-	      that.resetAdjustments()
-	      that.resetScrollbar()
-	      that.$element.trigger('hidden.bs.modal')
-	    })
-	  }
-
-	  Modal.prototype.removeBackdrop = function () {
-	    this.$backdrop && this.$backdrop.remove()
-	    this.$backdrop = null
-	  }
-
-	  Modal.prototype.backdrop = function (callback) {
-	    var that = this
-	    var animate = this.$element.hasClass('fade') ? 'fade' : ''
-
-	    if (this.isShown && this.options.backdrop) {
-	      var doAnimate = $.support.transition && animate
-
-	      this.$backdrop = $(document.createElement('div'))
-	        .addClass('modal-backdrop ' + animate)
-	        .appendTo(this.$body)
-
-	      this.$element.on('click.dismiss.bs.modal', $.proxy(function (e) {
-	        if (this.ignoreBackdropClick) {
-	          this.ignoreBackdropClick = false
-	          return
-	        }
-	        if (e.target !== e.currentTarget) return
-	        this.options.backdrop == 'static'
-	          ? this.$element[0].focus()
-	          : this.hide()
-	      }, this))
-
-	      if (doAnimate) this.$backdrop[0].offsetWidth // force reflow
-
-	      this.$backdrop.addClass('in')
-
-	      if (!callback) return
-
-	      doAnimate ?
-	        this.$backdrop
-	          .one('bsTransitionEnd', callback)
-	          .emulateTransitionEnd(Modal.BACKDROP_TRANSITION_DURATION) :
-	        callback()
-
-	    } else if (!this.isShown && this.$backdrop) {
-	      this.$backdrop.removeClass('in')
-
-	      var callbackRemove = function () {
-	        that.removeBackdrop()
-	        callback && callback()
-	      }
-	      $.support.transition && this.$element.hasClass('fade') ?
-	        this.$backdrop
-	          .one('bsTransitionEnd', callbackRemove)
-	          .emulateTransitionEnd(Modal.BACKDROP_TRANSITION_DURATION) :
-	        callbackRemove()
-
-	    } else if (callback) {
-	      callback()
-	    }
-	  }
-
-	  // these following methods are used to handle overflowing modals
-
-	  Modal.prototype.handleUpdate = function () {
-	    this.adjustDialog()
-	  }
-
-	  Modal.prototype.adjustDialog = function () {
-	    var modalIsOverflowing = this.$element[0].scrollHeight > document.documentElement.clientHeight
-
-	    this.$element.css({
-	      paddingLeft:  !this.bodyIsOverflowing && modalIsOverflowing ? this.scrollbarWidth : '',
-	      paddingRight: this.bodyIsOverflowing && !modalIsOverflowing ? this.scrollbarWidth : ''
-	    })
-	  }
-
-	  Modal.prototype.resetAdjustments = function () {
-	    this.$element.css({
-	      paddingLeft: '',
-	      paddingRight: ''
-	    })
-	  }
-
-	  Modal.prototype.checkScrollbar = function () {
-	    var fullWindowWidth = window.innerWidth
-	    if (!fullWindowWidth) { // workaround for missing window.innerWidth in IE8
-	      var documentElementRect = document.documentElement.getBoundingClientRect()
-	      fullWindowWidth = documentElementRect.right - Math.abs(documentElementRect.left)
-	    }
-	    this.bodyIsOverflowing = document.body.clientWidth < fullWindowWidth
-	    this.scrollbarWidth = this.measureScrollbar()
-	  }
-
-	  Modal.prototype.setScrollbar = function () {
-	    var bodyPad = parseInt((this.$body.css('padding-right') || 0), 10)
-	    this.originalBodyPad = document.body.style.paddingRight || ''
-	    if (this.bodyIsOverflowing) this.$body.css('padding-right', bodyPad + this.scrollbarWidth)
-	  }
-
-	  Modal.prototype.resetScrollbar = function () {
-	    this.$body.css('padding-right', this.originalBodyPad)
-	  }
-
-	  Modal.prototype.measureScrollbar = function () { // thx walsh
-	    var scrollDiv = document.createElement('div')
-	    scrollDiv.className = 'modal-scrollbar-measure'
-	    this.$body.append(scrollDiv)
-	    var scrollbarWidth = scrollDiv.offsetWidth - scrollDiv.clientWidth
-	    this.$body[0].removeChild(scrollDiv)
-	    return scrollbarWidth
-	  }
-
-
-	  // MODAL PLUGIN DEFINITION
-	  // =======================
-
-	  function Plugin(option, _relatedTarget) {
-	    return this.each(function () {
-	      var $this   = $(this)
-	      var data    = $this.data('bs.modal')
-	      var options = $.extend({}, Modal.DEFAULTS, $this.data(), typeof option == 'object' && option)
-
-	      if (!data) $this.data('bs.modal', (data = new Modal(this, options)))
-	      if (typeof option == 'string') data[option](_relatedTarget)
-	      else if (options.show) data.show(_relatedTarget)
-	    })
-	  }
-
-	  var old = $.fn.modal
-
-	  $.fn.modal             = Plugin
-	  $.fn.modal.Constructor = Modal
-
-
-	  // MODAL NO CONFLICT
-	  // =================
-
-	  $.fn.modal.noConflict = function () {
-	    $.fn.modal = old
-	    return this
-	  }
-
-
-	  // MODAL DATA-API
-	  // ==============
-
-	  $(document).on('click.bs.modal.data-api', '[data-toggle="modal"]', function (e) {
-	    var $this   = $(this)
-	    var href    = $this.attr('href')
-	    var $target = $($this.attr('data-target') || (href && href.replace(/.*(?=#[^\s]+$)/, ''))) // strip for ie7
-	    var option  = $target.data('bs.modal') ? 'toggle' : $.extend({ remote: !/#/.test(href) && href }, $target.data(), $this.data())
-
-	    if ($this.is('a')) e.preventDefault()
-
-	    $target.one('show.bs.modal', function (showEvent) {
-	      if (showEvent.isDefaultPrevented()) return // only register focus restorer if modal will actually get shown
-	      $target.one('hidden.bs.modal', function () {
-	        $this.is(':visible') && $this.trigger('focus')
-	      })
-	    })
-	    Plugin.call($target, option, this)
-	  })
-
-	}(jQuery);
-
-
-/***/ },
-/* 169 */
-/***/ function(module, exports) {
-
-	/* ========================================================================
-	 * Bootstrap: tooltip.js v3.3.5
-	 * http://getbootstrap.com/javascript/#tooltip
-	 * Inspired by the original jQuery.tipsy by Jason Frame
-	 * ========================================================================
-	 * Copyright 2011-2015 Twitter, Inc.
-	 * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-	 * ======================================================================== */
-
-
-	+function ($) {
-	  'use strict';
-
-	  // TOOLTIP PUBLIC CLASS DEFINITION
-	  // ===============================
-
-	  var Tooltip = function (element, options) {
-	    this.type       = null
-	    this.options    = null
-	    this.enabled    = null
-	    this.timeout    = null
-	    this.hoverState = null
-	    this.$element   = null
-	    this.inState    = null
-
-	    this.init('tooltip', element, options)
-	  }
-
-	  Tooltip.VERSION  = '3.3.5'
-
-	  Tooltip.TRANSITION_DURATION = 150
-
-	  Tooltip.DEFAULTS = {
-	    animation: true,
-	    placement: 'top',
-	    selector: false,
-	    template: '<div class="tooltip" role="tooltip"><div class="tooltip-arrow"></div><div class="tooltip-inner"></div></div>',
-	    trigger: 'hover focus',
-	    title: '',
-	    delay: 0,
-	    html: false,
-	    container: false,
-	    viewport: {
-	      selector: 'body',
-	      padding: 0
-	    }
-	  }
-
-	  Tooltip.prototype.init = function (type, element, options) {
-	    this.enabled   = true
-	    this.type      = type
-	    this.$element  = $(element)
-	    this.options   = this.getOptions(options)
-	    this.$viewport = this.options.viewport && $($.isFunction(this.options.viewport) ? this.options.viewport.call(this, this.$element) : (this.options.viewport.selector || this.options.viewport))
-	    this.inState   = { click: false, hover: false, focus: false }
-
-	    if (this.$element[0] instanceof document.constructor && !this.options.selector) {
-	      throw new Error('`selector` option must be specified when initializing ' + this.type + ' on the window.document object!')
-	    }
-
-	    var triggers = this.options.trigger.split(' ')
-
-	    for (var i = triggers.length; i--;) {
-	      var trigger = triggers[i]
-
-	      if (trigger == 'click') {
-	        this.$element.on('click.' + this.type, this.options.selector, $.proxy(this.toggle, this))
-	      } else if (trigger != 'manual') {
-	        var eventIn  = trigger == 'hover' ? 'mouseenter' : 'focusin'
-	        var eventOut = trigger == 'hover' ? 'mouseleave' : 'focusout'
-
-	        this.$element.on(eventIn  + '.' + this.type, this.options.selector, $.proxy(this.enter, this))
-	        this.$element.on(eventOut + '.' + this.type, this.options.selector, $.proxy(this.leave, this))
-	      }
-	    }
-
-	    this.options.selector ?
-	      (this._options = $.extend({}, this.options, { trigger: 'manual', selector: '' })) :
-	      this.fixTitle()
-	  }
-
-	  Tooltip.prototype.getDefaults = function () {
-	    return Tooltip.DEFAULTS
-	  }
-
-	  Tooltip.prototype.getOptions = function (options) {
-	    options = $.extend({}, this.getDefaults(), this.$element.data(), options)
-
-	    if (options.delay && typeof options.delay == 'number') {
-	      options.delay = {
-	        show: options.delay,
-	        hide: options.delay
-	      }
-	    }
-
-	    return options
-	  }
-
-	  Tooltip.prototype.getDelegateOptions = function () {
-	    var options  = {}
-	    var defaults = this.getDefaults()
-
-	    this._options && $.each(this._options, function (key, value) {
-	      if (defaults[key] != value) options[key] = value
-	    })
-
-	    return options
-	  }
-
-	  Tooltip.prototype.enter = function (obj) {
-	    var self = obj instanceof this.constructor ?
-	      obj : $(obj.currentTarget).data('bs.' + this.type)
-
-	    if (!self) {
-	      self = new this.constructor(obj.currentTarget, this.getDelegateOptions())
-	      $(obj.currentTarget).data('bs.' + this.type, self)
-	    }
-
-	    if (obj instanceof $.Event) {
-	      self.inState[obj.type == 'focusin' ? 'focus' : 'hover'] = true
-	    }
-
-	    if (self.tip().hasClass('in') || self.hoverState == 'in') {
-	      self.hoverState = 'in'
-	      return
-	    }
-
-	    clearTimeout(self.timeout)
-
-	    self.hoverState = 'in'
-
-	    if (!self.options.delay || !self.options.delay.show) return self.show()
-
-	    self.timeout = setTimeout(function () {
-	      if (self.hoverState == 'in') self.show()
-	    }, self.options.delay.show)
-	  }
-
-	  Tooltip.prototype.isInStateTrue = function () {
-	    for (var key in this.inState) {
-	      if (this.inState[key]) return true
-	    }
-
-	    return false
-	  }
-
-	  Tooltip.prototype.leave = function (obj) {
-	    var self = obj instanceof this.constructor ?
-	      obj : $(obj.currentTarget).data('bs.' + this.type)
-
-	    if (!self) {
-	      self = new this.constructor(obj.currentTarget, this.getDelegateOptions())
-	      $(obj.currentTarget).data('bs.' + this.type, self)
-	    }
-
-	    if (obj instanceof $.Event) {
-	      self.inState[obj.type == 'focusout' ? 'focus' : 'hover'] = false
-	    }
-
-	    if (self.isInStateTrue()) return
-
-	    clearTimeout(self.timeout)
-
-	    self.hoverState = 'out'
-
-	    if (!self.options.delay || !self.options.delay.hide) return self.hide()
-
-	    self.timeout = setTimeout(function () {
-	      if (self.hoverState == 'out') self.hide()
-	    }, self.options.delay.hide)
-	  }
-
-	  Tooltip.prototype.show = function () {
-	    var e = $.Event('show.bs.' + this.type)
-
-	    if (this.hasContent() && this.enabled) {
-	      this.$element.trigger(e)
-
-	      var inDom = $.contains(this.$element[0].ownerDocument.documentElement, this.$element[0])
-	      if (e.isDefaultPrevented() || !inDom) return
-	      var that = this
-
-	      var $tip = this.tip()
-
-	      var tipId = this.getUID(this.type)
-
-	      this.setContent()
-	      $tip.attr('id', tipId)
-	      this.$element.attr('aria-describedby', tipId)
-
-	      if (this.options.animation) $tip.addClass('fade')
-
-	      var placement = typeof this.options.placement == 'function' ?
-	        this.options.placement.call(this, $tip[0], this.$element[0]) :
-	        this.options.placement
-
-	      var autoToken = /\s?auto?\s?/i
-	      var autoPlace = autoToken.test(placement)
-	      if (autoPlace) placement = placement.replace(autoToken, '') || 'top'
-
-	      $tip
-	        .detach()
-	        .css({ top: 0, left: 0, display: 'block' })
-	        .addClass(placement)
-	        .data('bs.' + this.type, this)
-
-	      this.options.container ? $tip.appendTo(this.options.container) : $tip.insertAfter(this.$element)
-	      this.$element.trigger('inserted.bs.' + this.type)
-
-	      var pos          = this.getPosition()
-	      var actualWidth  = $tip[0].offsetWidth
-	      var actualHeight = $tip[0].offsetHeight
-
-	      if (autoPlace) {
-	        var orgPlacement = placement
-	        var viewportDim = this.getPosition(this.$viewport)
-
-	        placement = placement == 'bottom' && pos.bottom + actualHeight > viewportDim.bottom ? 'top'    :
-	                    placement == 'top'    && pos.top    - actualHeight < viewportDim.top    ? 'bottom' :
-	                    placement == 'right'  && pos.right  + actualWidth  > viewportDim.width  ? 'left'   :
-	                    placement == 'left'   && pos.left   - actualWidth  < viewportDim.left   ? 'right'  :
-	                    placement
-
-	        $tip
-	          .removeClass(orgPlacement)
-	          .addClass(placement)
-	      }
-
-	      var calculatedOffset = this.getCalculatedOffset(placement, pos, actualWidth, actualHeight)
-
-	      this.applyPlacement(calculatedOffset, placement)
-
-	      var complete = function () {
-	        var prevHoverState = that.hoverState
-	        that.$element.trigger('shown.bs.' + that.type)
-	        that.hoverState = null
-
-	        if (prevHoverState == 'out') that.leave(that)
-	      }
-
-	      $.support.transition && this.$tip.hasClass('fade') ?
-	        $tip
-	          .one('bsTransitionEnd', complete)
-	          .emulateTransitionEnd(Tooltip.TRANSITION_DURATION) :
-	        complete()
-	    }
-	  }
-
-	  Tooltip.prototype.applyPlacement = function (offset, placement) {
-	    var $tip   = this.tip()
-	    var width  = $tip[0].offsetWidth
-	    var height = $tip[0].offsetHeight
-
-	    // manually read margins because getBoundingClientRect includes difference
-	    var marginTop = parseInt($tip.css('margin-top'), 10)
-	    var marginLeft = parseInt($tip.css('margin-left'), 10)
-
-	    // we must check for NaN for ie 8/9
-	    if (isNaN(marginTop))  marginTop  = 0
-	    if (isNaN(marginLeft)) marginLeft = 0
-
-	    offset.top  += marginTop
-	    offset.left += marginLeft
-
-	    // $.fn.offset doesn't round pixel values
-	    // so we use setOffset directly with our own function B-0
-	    $.offset.setOffset($tip[0], $.extend({
-	      using: function (props) {
-	        $tip.css({
-	          top: Math.round(props.top),
-	          left: Math.round(props.left)
-	        })
-	      }
-	    }, offset), 0)
-
-	    $tip.addClass('in')
-
-	    // check to see if placing tip in new offset caused the tip to resize itself
-	    var actualWidth  = $tip[0].offsetWidth
-	    var actualHeight = $tip[0].offsetHeight
-
-	    if (placement == 'top' && actualHeight != height) {
-	      offset.top = offset.top + height - actualHeight
-	    }
-
-	    var delta = this.getViewportAdjustedDelta(placement, offset, actualWidth, actualHeight)
-
-	    if (delta.left) offset.left += delta.left
-	    else offset.top += delta.top
-
-	    var isVertical          = /top|bottom/.test(placement)
-	    var arrowDelta          = isVertical ? delta.left * 2 - width + actualWidth : delta.top * 2 - height + actualHeight
-	    var arrowOffsetPosition = isVertical ? 'offsetWidth' : 'offsetHeight'
-
-	    $tip.offset(offset)
-	    this.replaceArrow(arrowDelta, $tip[0][arrowOffsetPosition], isVertical)
-	  }
-
-	  Tooltip.prototype.replaceArrow = function (delta, dimension, isVertical) {
-	    this.arrow()
-	      .css(isVertical ? 'left' : 'top', 50 * (1 - delta / dimension) + '%')
-	      .css(isVertical ? 'top' : 'left', '')
-	  }
-
-	  Tooltip.prototype.setContent = function () {
-	    var $tip  = this.tip()
-	    var title = this.getTitle()
-
-	    $tip.find('.tooltip-inner')[this.options.html ? 'html' : 'text'](title)
-	    $tip.removeClass('fade in top bottom left right')
-	  }
-
-	  Tooltip.prototype.hide = function (callback) {
-	    var that = this
-	    var $tip = $(this.$tip)
-	    var e    = $.Event('hide.bs.' + this.type)
-
-	    function complete() {
-	      if (that.hoverState != 'in') $tip.detach()
-	      that.$element
-	        .removeAttr('aria-describedby')
-	        .trigger('hidden.bs.' + that.type)
-	      callback && callback()
-	    }
-
-	    this.$element.trigger(e)
-
-	    if (e.isDefaultPrevented()) return
-
-	    $tip.removeClass('in')
-
-	    $.support.transition && $tip.hasClass('fade') ?
-	      $tip
-	        .one('bsTransitionEnd', complete)
-	        .emulateTransitionEnd(Tooltip.TRANSITION_DURATION) :
-	      complete()
-
-	    this.hoverState = null
-
-	    return this
-	  }
-
-	  Tooltip.prototype.fixTitle = function () {
-	    var $e = this.$element
-	    if ($e.attr('title') || typeof $e.attr('data-original-title') != 'string') {
-	      $e.attr('data-original-title', $e.attr('title') || '').attr('title', '')
-	    }
-	  }
-
-	  Tooltip.prototype.hasContent = function () {
-	    return this.getTitle()
-	  }
-
-	  Tooltip.prototype.getPosition = function ($element) {
-	    $element   = $element || this.$element
-
-	    var el     = $element[0]
-	    var isBody = el.tagName == 'BODY'
-
-	    var elRect    = el.getBoundingClientRect()
-	    if (elRect.width == null) {
-	      // width and height are missing in IE8, so compute them manually; see https://github.com/twbs/bootstrap/issues/14093
-	      elRect = $.extend({}, elRect, { width: elRect.right - elRect.left, height: elRect.bottom - elRect.top })
-	    }
-	    var elOffset  = isBody ? { top: 0, left: 0 } : $element.offset()
-	    var scroll    = { scroll: isBody ? document.documentElement.scrollTop || document.body.scrollTop : $element.scrollTop() }
-	    var outerDims = isBody ? { width: $(window).width(), height: $(window).height() } : null
-
-	    return $.extend({}, elRect, scroll, outerDims, elOffset)
-	  }
-
-	  Tooltip.prototype.getCalculatedOffset = function (placement, pos, actualWidth, actualHeight) {
-	    return placement == 'bottom' ? { top: pos.top + pos.height,   left: pos.left + pos.width / 2 - actualWidth / 2 } :
-	           placement == 'top'    ? { top: pos.top - actualHeight, left: pos.left + pos.width / 2 - actualWidth / 2 } :
-	           placement == 'left'   ? { top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left - actualWidth } :
-	        /* placement == 'right' */ { top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left + pos.width }
-
-	  }
-
-	  Tooltip.prototype.getViewportAdjustedDelta = function (placement, pos, actualWidth, actualHeight) {
-	    var delta = { top: 0, left: 0 }
-	    if (!this.$viewport) return delta
-
-	    var viewportPadding = this.options.viewport && this.options.viewport.padding || 0
-	    var viewportDimensions = this.getPosition(this.$viewport)
-
-	    if (/right|left/.test(placement)) {
-	      var topEdgeOffset    = pos.top - viewportPadding - viewportDimensions.scroll
-	      var bottomEdgeOffset = pos.top + viewportPadding - viewportDimensions.scroll + actualHeight
-	      if (topEdgeOffset < viewportDimensions.top) { // top overflow
-	        delta.top = viewportDimensions.top - topEdgeOffset
-	      } else if (bottomEdgeOffset > viewportDimensions.top + viewportDimensions.height) { // bottom overflow
-	        delta.top = viewportDimensions.top + viewportDimensions.height - bottomEdgeOffset
-	      }
-	    } else {
-	      var leftEdgeOffset  = pos.left - viewportPadding
-	      var rightEdgeOffset = pos.left + viewportPadding + actualWidth
-	      if (leftEdgeOffset < viewportDimensions.left) { // left overflow
-	        delta.left = viewportDimensions.left - leftEdgeOffset
-	      } else if (rightEdgeOffset > viewportDimensions.right) { // right overflow
-	        delta.left = viewportDimensions.left + viewportDimensions.width - rightEdgeOffset
-	      }
-	    }
-
-	    return delta
-	  }
-
-	  Tooltip.prototype.getTitle = function () {
-	    var title
-	    var $e = this.$element
-	    var o  = this.options
-
-	    title = $e.attr('data-original-title')
-	      || (typeof o.title == 'function' ? o.title.call($e[0]) :  o.title)
-
-	    return title
-	  }
-
-	  Tooltip.prototype.getUID = function (prefix) {
-	    do prefix += ~~(Math.random() * 1000000)
-	    while (document.getElementById(prefix))
-	    return prefix
-	  }
-
-	  Tooltip.prototype.tip = function () {
-	    if (!this.$tip) {
-	      this.$tip = $(this.options.template)
-	      if (this.$tip.length != 1) {
-	        throw new Error(this.type + ' `template` option must consist of exactly 1 top-level element!')
-	      }
-	    }
-	    return this.$tip
-	  }
-
-	  Tooltip.prototype.arrow = function () {
-	    return (this.$arrow = this.$arrow || this.tip().find('.tooltip-arrow'))
-	  }
-
-	  Tooltip.prototype.enable = function () {
-	    this.enabled = true
-	  }
-
-	  Tooltip.prototype.disable = function () {
-	    this.enabled = false
-	  }
-
-	  Tooltip.prototype.toggleEnabled = function () {
-	    this.enabled = !this.enabled
-	  }
-
-	  Tooltip.prototype.toggle = function (e) {
-	    var self = this
-	    if (e) {
-	      self = $(e.currentTarget).data('bs.' + this.type)
-	      if (!self) {
-	        self = new this.constructor(e.currentTarget, this.getDelegateOptions())
-	        $(e.currentTarget).data('bs.' + this.type, self)
-	      }
-	    }
-
-	    if (e) {
-	      self.inState.click = !self.inState.click
-	      if (self.isInStateTrue()) self.enter(self)
-	      else self.leave(self)
-	    } else {
-	      self.tip().hasClass('in') ? self.leave(self) : self.enter(self)
-	    }
-	  }
-
-	  Tooltip.prototype.destroy = function () {
-	    var that = this
-	    clearTimeout(this.timeout)
-	    this.hide(function () {
-	      that.$element.off('.' + that.type).removeData('bs.' + that.type)
-	      if (that.$tip) {
-	        that.$tip.detach()
-	      }
-	      that.$tip = null
-	      that.$arrow = null
-	      that.$viewport = null
-	    })
-	  }
-
-
-	  // TOOLTIP PLUGIN DEFINITION
-	  // =========================
-
-	  function Plugin(option) {
-	    return this.each(function () {
-	      var $this   = $(this)
-	      var data    = $this.data('bs.tooltip')
-	      var options = typeof option == 'object' && option
-
-	      if (!data && /destroy|hide/.test(option)) return
-	      if (!data) $this.data('bs.tooltip', (data = new Tooltip(this, options)))
-	      if (typeof option == 'string') data[option]()
-	    })
-	  }
-
-	  var old = $.fn.tooltip
-
-	  $.fn.tooltip             = Plugin
-	  $.fn.tooltip.Constructor = Tooltip
-
-
-	  // TOOLTIP NO CONFLICT
-	  // ===================
-
-	  $.fn.tooltip.noConflict = function () {
-	    $.fn.tooltip = old
-	    return this
-	  }
-
-	}(jQuery);
-
-
-/***/ },
-/* 170 */
-/***/ function(module, exports) {
-
-	/* ========================================================================
-	 * Bootstrap: popover.js v3.3.5
-	 * http://getbootstrap.com/javascript/#popovers
-	 * ========================================================================
-	 * Copyright 2011-2015 Twitter, Inc.
-	 * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-	 * ======================================================================== */
-
-
-	+function ($) {
-	  'use strict';
-
-	  // POPOVER PUBLIC CLASS DEFINITION
-	  // ===============================
-
-	  var Popover = function (element, options) {
-	    this.init('popover', element, options)
-	  }
-
-	  if (!$.fn.tooltip) throw new Error('Popover requires tooltip.js')
-
-	  Popover.VERSION  = '3.3.5'
-
-	  Popover.DEFAULTS = $.extend({}, $.fn.tooltip.Constructor.DEFAULTS, {
-	    placement: 'right',
-	    trigger: 'click',
-	    content: '',
-	    template: '<div class="popover" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'
-	  })
-
-
-	  // NOTE: POPOVER EXTENDS tooltip.js
-	  // ================================
-
-	  Popover.prototype = $.extend({}, $.fn.tooltip.Constructor.prototype)
-
-	  Popover.prototype.constructor = Popover
-
-	  Popover.prototype.getDefaults = function () {
-	    return Popover.DEFAULTS
-	  }
-
-	  Popover.prototype.setContent = function () {
-	    var $tip    = this.tip()
-	    var title   = this.getTitle()
-	    var content = this.getContent()
-
-	    $tip.find('.popover-title')[this.options.html ? 'html' : 'text'](title)
-	    $tip.find('.popover-content').children().detach().end()[ // we use append for html objects to maintain js events
-	      this.options.html ? (typeof content == 'string' ? 'html' : 'append') : 'text'
-	    ](content)
-
-	    $tip.removeClass('fade top bottom left right in')
-
-	    // IE8 doesn't accept hiding via the `:empty` pseudo selector, we have to do
-	    // this manually by checking the contents.
-	    if (!$tip.find('.popover-title').html()) $tip.find('.popover-title').hide()
-	  }
-
-	  Popover.prototype.hasContent = function () {
-	    return this.getTitle() || this.getContent()
-	  }
-
-	  Popover.prototype.getContent = function () {
-	    var $e = this.$element
-	    var o  = this.options
-
-	    return $e.attr('data-content')
-	      || (typeof o.content == 'function' ?
-	            o.content.call($e[0]) :
-	            o.content)
-	  }
-
-	  Popover.prototype.arrow = function () {
-	    return (this.$arrow = this.$arrow || this.tip().find('.arrow'))
-	  }
-
-
-	  // POPOVER PLUGIN DEFINITION
-	  // =========================
-
-	  function Plugin(option) {
-	    return this.each(function () {
-	      var $this   = $(this)
-	      var data    = $this.data('bs.popover')
-	      var options = typeof option == 'object' && option
-
-	      if (!data && /destroy|hide/.test(option)) return
-	      if (!data) $this.data('bs.popover', (data = new Popover(this, options)))
-	      if (typeof option == 'string') data[option]()
-	    })
-	  }
-
-	  var old = $.fn.popover
-
-	  $.fn.popover             = Plugin
-	  $.fn.popover.Constructor = Popover
-
-
-	  // POPOVER NO CONFLICT
-	  // ===================
-
-	  $.fn.popover.noConflict = function () {
-	    $.fn.popover = old
-	    return this
-	  }
-
-	}(jQuery);
-
-
-/***/ },
-/* 171 */
-/***/ function(module, exports) {
-
-	/* ========================================================================
-	 * Bootstrap: scrollspy.js v3.3.5
-	 * http://getbootstrap.com/javascript/#scrollspy
-	 * ========================================================================
-	 * Copyright 2011-2015 Twitter, Inc.
-	 * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-	 * ======================================================================== */
-
-
-	+function ($) {
-	  'use strict';
-
-	  // SCROLLSPY CLASS DEFINITION
-	  // ==========================
-
-	  function ScrollSpy(element, options) {
-	    this.$body          = $(document.body)
-	    this.$scrollElement = $(element).is(document.body) ? $(window) : $(element)
-	    this.options        = $.extend({}, ScrollSpy.DEFAULTS, options)
-	    this.selector       = (this.options.target || '') + ' .nav li > a'
-	    this.offsets        = []
-	    this.targets        = []
-	    this.activeTarget   = null
-	    this.scrollHeight   = 0
-
-	    this.$scrollElement.on('scroll.bs.scrollspy', $.proxy(this.process, this))
-	    this.refresh()
-	    this.process()
-	  }
-
-	  ScrollSpy.VERSION  = '3.3.5'
-
-	  ScrollSpy.DEFAULTS = {
-	    offset: 10
-	  }
-
-	  ScrollSpy.prototype.getScrollHeight = function () {
-	    return this.$scrollElement[0].scrollHeight || Math.max(this.$body[0].scrollHeight, document.documentElement.scrollHeight)
-	  }
-
-	  ScrollSpy.prototype.refresh = function () {
-	    var that          = this
-	    var offsetMethod  = 'offset'
-	    var offsetBase    = 0
-
-	    this.offsets      = []
-	    this.targets      = []
-	    this.scrollHeight = this.getScrollHeight()
-
-	    if (!$.isWindow(this.$scrollElement[0])) {
-	      offsetMethod = 'position'
-	      offsetBase   = this.$scrollElement.scrollTop()
-	    }
-
-	    this.$body
-	      .find(this.selector)
-	      .map(function () {
-	        var $el   = $(this)
-	        var href  = $el.data('target') || $el.attr('href')
-	        var $href = /^#./.test(href) && $(href)
-
-	        return ($href
-	          && $href.length
-	          && $href.is(':visible')
-	          && [[$href[offsetMethod]().top + offsetBase, href]]) || null
-	      })
-	      .sort(function (a, b) { return a[0] - b[0] })
-	      .each(function () {
-	        that.offsets.push(this[0])
-	        that.targets.push(this[1])
-	      })
-	  }
-
-	  ScrollSpy.prototype.process = function () {
-	    var scrollTop    = this.$scrollElement.scrollTop() + this.options.offset
-	    var scrollHeight = this.getScrollHeight()
-	    var maxScroll    = this.options.offset + scrollHeight - this.$scrollElement.height()
-	    var offsets      = this.offsets
-	    var targets      = this.targets
-	    var activeTarget = this.activeTarget
-	    var i
-
-	    if (this.scrollHeight != scrollHeight) {
-	      this.refresh()
-	    }
-
-	    if (scrollTop >= maxScroll) {
-	      return activeTarget != (i = targets[targets.length - 1]) && this.activate(i)
-	    }
-
-	    if (activeTarget && scrollTop < offsets[0]) {
-	      this.activeTarget = null
-	      return this.clear()
-	    }
-
-	    for (i = offsets.length; i--;) {
-	      activeTarget != targets[i]
-	        && scrollTop >= offsets[i]
-	        && (offsets[i + 1] === undefined || scrollTop < offsets[i + 1])
-	        && this.activate(targets[i])
-	    }
-	  }
-
-	  ScrollSpy.prototype.activate = function (target) {
-	    this.activeTarget = target
-
-	    this.clear()
-
-	    var selector = this.selector +
-	      '[data-target="' + target + '"],' +
-	      this.selector + '[href="' + target + '"]'
-
-	    var active = $(selector)
-	      .parents('li')
-	      .addClass('active')
-
-	    if (active.parent('.dropdown-menu').length) {
-	      active = active
-	        .closest('li.dropdown')
-	        .addClass('active')
-	    }
-
-	    active.trigger('activate.bs.scrollspy')
-	  }
-
-	  ScrollSpy.prototype.clear = function () {
-	    $(this.selector)
-	      .parentsUntil(this.options.target, '.active')
-	      .removeClass('active')
-	  }
-
-
-	  // SCROLLSPY PLUGIN DEFINITION
-	  // ===========================
-
-	  function Plugin(option) {
-	    return this.each(function () {
-	      var $this   = $(this)
-	      var data    = $this.data('bs.scrollspy')
-	      var options = typeof option == 'object' && option
-
-	      if (!data) $this.data('bs.scrollspy', (data = new ScrollSpy(this, options)))
-	      if (typeof option == 'string') data[option]()
-	    })
-	  }
-
-	  var old = $.fn.scrollspy
-
-	  $.fn.scrollspy             = Plugin
-	  $.fn.scrollspy.Constructor = ScrollSpy
-
-
-	  // SCROLLSPY NO CONFLICT
-	  // =====================
-
-	  $.fn.scrollspy.noConflict = function () {
-	    $.fn.scrollspy = old
-	    return this
-	  }
-
-
-	  // SCROLLSPY DATA-API
-	  // ==================
-
-	  $(window).on('load.bs.scrollspy.data-api', function () {
-	    $('[data-spy="scroll"]').each(function () {
-	      var $spy = $(this)
-	      Plugin.call($spy, $spy.data())
-	    })
-	  })
-
-	}(jQuery);
-
-
-/***/ },
-/* 172 */
-/***/ function(module, exports) {
-
-	/* ========================================================================
-	 * Bootstrap: tab.js v3.3.5
-	 * http://getbootstrap.com/javascript/#tabs
-	 * ========================================================================
-	 * Copyright 2011-2015 Twitter, Inc.
-	 * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-	 * ======================================================================== */
-
-
-	+function ($) {
-	  'use strict';
-
-	  // TAB CLASS DEFINITION
-	  // ====================
-
-	  var Tab = function (element) {
-	    // jscs:disable requireDollarBeforejQueryAssignment
-	    this.element = $(element)
-	    // jscs:enable requireDollarBeforejQueryAssignment
-	  }
-
-	  Tab.VERSION = '3.3.5'
-
-	  Tab.TRANSITION_DURATION = 150
-
-	  Tab.prototype.show = function () {
-	    var $this    = this.element
-	    var $ul      = $this.closest('ul:not(.dropdown-menu)')
-	    var selector = $this.data('target')
-
-	    if (!selector) {
-	      selector = $this.attr('href')
-	      selector = selector && selector.replace(/.*(?=#[^\s]*$)/, '') // strip for ie7
-	    }
-
-	    if ($this.parent('li').hasClass('active')) return
-
-	    var $previous = $ul.find('.active:last a')
-	    var hideEvent = $.Event('hide.bs.tab', {
-	      relatedTarget: $this[0]
-	    })
-	    var showEvent = $.Event('show.bs.tab', {
-	      relatedTarget: $previous[0]
-	    })
-
-	    $previous.trigger(hideEvent)
-	    $this.trigger(showEvent)
-
-	    if (showEvent.isDefaultPrevented() || hideEvent.isDefaultPrevented()) return
-
-	    var $target = $(selector)
-
-	    this.activate($this.closest('li'), $ul)
-	    this.activate($target, $target.parent(), function () {
-	      $previous.trigger({
-	        type: 'hidden.bs.tab',
-	        relatedTarget: $this[0]
-	      })
-	      $this.trigger({
-	        type: 'shown.bs.tab',
-	        relatedTarget: $previous[0]
-	      })
-	    })
-	  }
-
-	  Tab.prototype.activate = function (element, container, callback) {
-	    var $active    = container.find('> .active')
-	    var transition = callback
-	      && $.support.transition
-	      && ($active.length && $active.hasClass('fade') || !!container.find('> .fade').length)
-
-	    function next() {
-	      $active
-	        .removeClass('active')
-	        .find('> .dropdown-menu > .active')
-	          .removeClass('active')
-	        .end()
-	        .find('[data-toggle="tab"]')
-	          .attr('aria-expanded', false)
-
-	      element
-	        .addClass('active')
-	        .find('[data-toggle="tab"]')
-	          .attr('aria-expanded', true)
-
-	      if (transition) {
-	        element[0].offsetWidth // reflow for transition
-	        element.addClass('in')
-	      } else {
-	        element.removeClass('fade')
-	      }
-
-	      if (element.parent('.dropdown-menu').length) {
-	        element
-	          .closest('li.dropdown')
-	            .addClass('active')
-	          .end()
-	          .find('[data-toggle="tab"]')
-	            .attr('aria-expanded', true)
-	      }
-
-	      callback && callback()
-	    }
-
-	    $active.length && transition ?
-	      $active
-	        .one('bsTransitionEnd', next)
-	        .emulateTransitionEnd(Tab.TRANSITION_DURATION) :
-	      next()
-
-	    $active.removeClass('in')
-	  }
-
-
-	  // TAB PLUGIN DEFINITION
-	  // =====================
-
-	  function Plugin(option) {
-	    return this.each(function () {
-	      var $this = $(this)
-	      var data  = $this.data('bs.tab')
-
-	      if (!data) $this.data('bs.tab', (data = new Tab(this)))
-	      if (typeof option == 'string') data[option]()
-	    })
-	  }
-
-	  var old = $.fn.tab
-
-	  $.fn.tab             = Plugin
-	  $.fn.tab.Constructor = Tab
-
-
-	  // TAB NO CONFLICT
-	  // ===============
-
-	  $.fn.tab.noConflict = function () {
-	    $.fn.tab = old
-	    return this
-	  }
-
-
-	  // TAB DATA-API
-	  // ============
-
-	  var clickHandler = function (e) {
-	    e.preventDefault()
-	    Plugin.call($(this), 'show')
-	  }
-
-	  $(document)
-	    .on('click.bs.tab.data-api', '[data-toggle="tab"]', clickHandler)
-	    .on('click.bs.tab.data-api', '[data-toggle="pill"]', clickHandler)
-
-	}(jQuery);
-
-
-/***/ },
-/* 173 */
-/***/ function(module, exports) {
-
-	/* ========================================================================
-	 * Bootstrap: affix.js v3.3.5
-	 * http://getbootstrap.com/javascript/#affix
-	 * ========================================================================
-	 * Copyright 2011-2015 Twitter, Inc.
-	 * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-	 * ======================================================================== */
-
-
-	+function ($) {
-	  'use strict';
-
-	  // AFFIX CLASS DEFINITION
-	  // ======================
-
-	  var Affix = function (element, options) {
-	    this.options = $.extend({}, Affix.DEFAULTS, options)
-
-	    this.$target = $(this.options.target)
-	      .on('scroll.bs.affix.data-api', $.proxy(this.checkPosition, this))
-	      .on('click.bs.affix.data-api',  $.proxy(this.checkPositionWithEventLoop, this))
-
-	    this.$element     = $(element)
-	    this.affixed      = null
-	    this.unpin        = null
-	    this.pinnedOffset = null
-
-	    this.checkPosition()
-	  }
-
-	  Affix.VERSION  = '3.3.5'
-
-	  Affix.RESET    = 'affix affix-top affix-bottom'
-
-	  Affix.DEFAULTS = {
-	    offset: 0,
-	    target: window
-	  }
-
-	  Affix.prototype.getState = function (scrollHeight, height, offsetTop, offsetBottom) {
-	    var scrollTop    = this.$target.scrollTop()
-	    var position     = this.$element.offset()
-	    var targetHeight = this.$target.height()
-
-	    if (offsetTop != null && this.affixed == 'top') return scrollTop < offsetTop ? 'top' : false
-
-	    if (this.affixed == 'bottom') {
-	      if (offsetTop != null) return (scrollTop + this.unpin <= position.top) ? false : 'bottom'
-	      return (scrollTop + targetHeight <= scrollHeight - offsetBottom) ? false : 'bottom'
-	    }
-
-	    var initializing   = this.affixed == null
-	    var colliderTop    = initializing ? scrollTop : position.top
-	    var colliderHeight = initializing ? targetHeight : height
-
-	    if (offsetTop != null && scrollTop <= offsetTop) return 'top'
-	    if (offsetBottom != null && (colliderTop + colliderHeight >= scrollHeight - offsetBottom)) return 'bottom'
-
-	    return false
-	  }
-
-	  Affix.prototype.getPinnedOffset = function () {
-	    if (this.pinnedOffset) return this.pinnedOffset
-	    this.$element.removeClass(Affix.RESET).addClass('affix')
-	    var scrollTop = this.$target.scrollTop()
-	    var position  = this.$element.offset()
-	    return (this.pinnedOffset = position.top - scrollTop)
-	  }
-
-	  Affix.prototype.checkPositionWithEventLoop = function () {
-	    setTimeout($.proxy(this.checkPosition, this), 1)
-	  }
-
-	  Affix.prototype.checkPosition = function () {
-	    if (!this.$element.is(':visible')) return
-
-	    var height       = this.$element.height()
-	    var offset       = this.options.offset
-	    var offsetTop    = offset.top
-	    var offsetBottom = offset.bottom
-	    var scrollHeight = Math.max($(document).height(), $(document.body).height())
-
-	    if (typeof offset != 'object')         offsetBottom = offsetTop = offset
-	    if (typeof offsetTop == 'function')    offsetTop    = offset.top(this.$element)
-	    if (typeof offsetBottom == 'function') offsetBottom = offset.bottom(this.$element)
-
-	    var affix = this.getState(scrollHeight, height, offsetTop, offsetBottom)
-
-	    if (this.affixed != affix) {
-	      if (this.unpin != null) this.$element.css('top', '')
-
-	      var affixType = 'affix' + (affix ? '-' + affix : '')
-	      var e         = $.Event(affixType + '.bs.affix')
-
-	      this.$element.trigger(e)
-
-	      if (e.isDefaultPrevented()) return
-
-	      this.affixed = affix
-	      this.unpin = affix == 'bottom' ? this.getPinnedOffset() : null
-
-	      this.$element
-	        .removeClass(Affix.RESET)
-	        .addClass(affixType)
-	        .trigger(affixType.replace('affix', 'affixed') + '.bs.affix')
-	    }
-
-	    if (affix == 'bottom') {
-	      this.$element.offset({
-	        top: scrollHeight - height - offsetBottom
-	      })
-	    }
-	  }
-
-
-	  // AFFIX PLUGIN DEFINITION
-	  // =======================
-
-	  function Plugin(option) {
-	    return this.each(function () {
-	      var $this   = $(this)
-	      var data    = $this.data('bs.affix')
-	      var options = typeof option == 'object' && option
-
-	      if (!data) $this.data('bs.affix', (data = new Affix(this, options)))
-	      if (typeof option == 'string') data[option]()
-	    })
-	  }
-
-	  var old = $.fn.affix
-
-	  $.fn.affix             = Plugin
-	  $.fn.affix.Constructor = Affix
-
-
-	  // AFFIX NO CONFLICT
-	  // =================
-
-	  $.fn.affix.noConflict = function () {
-	    $.fn.affix = old
-	    return this
-	  }
-
-
-	  // AFFIX DATA-API
-	  // ==============
-
-	  $(window).on('load', function () {
-	    $('[data-spy="affix"]').each(function () {
-	      var $spy = $(this)
-	      var data = $spy.data()
-
-	      data.offset = data.offset || {}
-
-	      if (data.offsetBottom != null) data.offset.bottom = data.offsetBottom
-	      if (data.offsetTop    != null) data.offset.top    = data.offsetTop
-
-	      Plugin.call($spy, data)
-	    })
-	  })
-
-	}(jQuery);
-
-
-/***/ },
-/* 174 */
-/***/ function(module, exports, __webpack_require__) {
-
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(175);
+	var content = __webpack_require__(162);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(178)(content, {});
+	var update = __webpack_require__(164)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
 		// When the styles change, update the <style> tags
 		if(!content.locals) {
-			module.hot.accept("!!./../node_modules/css-loader/index.js!./webtagging.css", function() {
-				var newContent = require("!!./../node_modules/css-loader/index.js!./webtagging.css");
+			module.hot.accept("!!./../../css-loader/index.js!./react-select.css", function() {
+				var newContent = require("!!./../../css-loader/index.js!./react-select.css");
 				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 				update(newContent);
 			});
@@ -22934,21 +20535,21 @@ var autotagform =
 	}
 
 /***/ },
-/* 175 */
+/* 162 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(176)();
+	exports = module.exports = __webpack_require__(163)();
 	// imports
 
 
 	// module
-	exports.push([module.id, "\n.toolbar {\n    text-align:right;\n}\n\nth.pathTokens {\n    background-color:#FFFFCC;\n}\n\nth.extensionTokens {\n    background-color:#FFFFCC;\n}\n\n.table td {\n    text-align:center;\n}\n\n.table tbody tr > td.success {\n  background-color: #dff0d8 !important;\n}\n\n.table tbody tr > td.error {\n  background-color: #f2dede !important;\n}\n\n.table tbody tr > td.warning {\n  background-color: #fcf8e3 !important;\n}\n\n.table tbody tr > td.info {\n  background-color: #d9edf7 !important;\n}\n\n.table-hover tbody tr:hover > td.success {\n  background-color: #d0e9c6 !important;\n}\n\n.table-hover tbody tr:hover > td.error {\n  background-color: #ebcccc !important;\n}\n\n.table-hover tbody tr:hover > td.warning {\n  background-color: #faf2cc !important;\n}\n\n.table-hover tbody tr:hover > td.info {\n  background-color: #c4e3f3 !important;\n}\n\n.btn-default {\n  border: 0;\n/*  width: 14px;\n  height: 20px;*/\n  background-color:transparent;\n}\n\n.btn-default:focus {\n  outline: none;\n}\n\n/* Adapted from dusty .removeTag and .removeTag:hover */\n.showTag {\n    color: #000;\n    cursor:pointer;\n    font-weight:bold;\n    text-shadow: 0 1px 0 rgba(255,255,255,.7);\n    display:inline-block;\n    width:12px;\n    height:12px;\n    position:absolute;\n    z-index:90;\n    right:5px;\n    top:1px;\n    -webkit-border-radius:20px;\n    -moz-border-radius:20px;\n    border-radius:20px;\n    text-align:center;\n    margin-left:5px;\n    overflow:hidden;\n    display:block !important;\n    background:url(" + __webpack_require__(177) + ") center center no-repeat;\n    text-indent:-99px;\n    pointer-events: none;\n}\n\n.tagInactive {\n    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(350, 65%, 85%)), to(hsl(350, 60%, 90%))) !important;\n\n    background:blue !important; /* Old browsers */\n    background-image:-moz-linear-gradient(top, hsl(350,65%,80%) 0%, hsl(350,60%,90%) 100%) !important; /* FF3.6+ */\n    background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(350,65%,85%)), color-stop(100%,hsl(350,60%,90%))) !important; /* Chrome,Safari4+ */\n    background-image:-webkit-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100% !important); /* Chrome10+,Safari5.1+ */\n    background-image:-o-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* Opera11.10+ */\n    background-image:-ms-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* IE10+ */\n    filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#4795CC', endColorstr='#3987BF',GradientType=0 ) !important; /* IE6-9 */\n    background:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* W3C */\n\n    text-decoration:none !important;\n    text-shadow: 0 1px 0 rgba(255,255,255,.4) !important;\n    color:hsl(350,30%,30%) !important;\n}\n\n.tagInactive:hover {\n    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(350, 70%, 75%)), to(hsl(350, 65%, 80%))) !important;\n\n\tbackground:blue; /* Old browsers */\n\tbackground-image:-moz-linear-gradient(top, hsl(350,65%,80%) 0%, hsl(350,70%,75%) 100%) !important; /* FF3.6+ */\n\tbackground-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(350,65%,80%)), color-stop(100%,hsl(350,70%,75%))) !important; /* Chrome,Safari4+ */\n\tbackground-image:-webkit-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* Chrome10+,Safari5.1+ */\n\tbackground-image:-o-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* Opera11.10+ */\n\tbackground-image:-ms-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* IE10+ */\n\tfilter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#4795CC', endColorstr='#3987BF',GradientType=0 ) !important; /* IE6-9 */\n\tbackground:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* W3C */\n\n\ttext-decoration:none !important;\n\ttext-shadow: 0 1px 0 rgba(255,255,255,.4) !important;\n\tcolor:hsl(350,30%,30%) !important;\n}\n\n.token {\n    text-align:center;\n}\n\n.tag {\n    white-space:nowrap;\n}\n\n/* Correct some aggressive CSS rules from dusty.css */\n.Select-arrow-zone {\n    display:table-cell !important;\n}\n\n.Select-clear-zone {\n    display:table-cell !important;\n}\n\n.Select-placeholder, .Select-option {\n    font-size:14px;\n}\n", ""]);
+	exports.push([module.id, "/**\n * React Select\n * ============\n * Created by Jed Watson and Joss Mackison for KeystoneJS, http://www.keystonejs.com/\n * https://twitter.com/jedwatson https://twitter.com/jossmackison https://twitter.com/keystonejs\n * MIT License: https://github.com/keystonejs/react-select\n*/\n.Select {\n  position: relative;\n}\n.Select,\n.Select div,\n.Select input,\n.Select span {\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n.Select.is-disabled > .Select-control {\n  background-color: #f9f9f9;\n}\n.Select.is-disabled > .Select-control:hover {\n  box-shadow: none;\n}\n.Select.is-disabled .Select-arrow-zone {\n  cursor: default;\n  pointer-events: none;\n}\n.Select-control {\n  background-color: #fff;\n  border-color: #d9d9d9 #ccc #b3b3b3;\n  border-radius: 4px;\n  border: 1px solid #ccc;\n  color: #333;\n  cursor: default;\n  display: table;\n  height: 36px;\n  outline: none;\n  overflow: hidden;\n  position: relative;\n  width: 100%;\n}\n.Select-control:hover {\n  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);\n}\n.is-searchable.is-open > .Select-control {\n  cursor: text;\n}\n.is-open > .Select-control {\n  border-bottom-right-radius: 0;\n  border-bottom-left-radius: 0;\n  background: #fff;\n  border-color: #b3b3b3 #ccc #d9d9d9;\n}\n.is-open > .Select-control > .Select-arrow {\n  border-color: transparent transparent #999;\n  border-width: 0 5px 5px;\n}\n.is-searchable.is-focused:not(.is-open) > .Select-control {\n  cursor: text;\n}\n.is-focused:not(.is-open) > .Select-control {\n  border-color: #007eff;\n  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 0 3px rgba(0, 126, 255, 0.1);\n}\n.Select-placeholder,\n:not(.Select--multi) > .Select-control .Select-value {\n  bottom: 0;\n  color: #aaa;\n  left: 0;\n  line-height: 34px;\n  padding-left: 10px;\n  padding-right: 10px;\n  position: absolute;\n  right: 0;\n  top: 0;\n  max-width: 100%;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.has-value:not(.Select--multi) > .Select-control > .Select-value .Select-value-label,\n.has-value.is-pseudo-focused:not(.Select--multi) > .Select-control > .Select-value .Select-value-label {\n  color: #333;\n}\n.has-value:not(.Select--multi) > .Select-control > .Select-value a.Select-value-label,\n.has-value.is-pseudo-focused:not(.Select--multi) > .Select-control > .Select-value a.Select-value-label {\n  cursor: pointer;\n  text-decoration: none;\n}\n.has-value:not(.Select--multi) > .Select-control > .Select-value a.Select-value-label:hover,\n.has-value.is-pseudo-focused:not(.Select--multi) > .Select-control > .Select-value a.Select-value-label:hover,\n.has-value:not(.Select--multi) > .Select-control > .Select-value a.Select-value-label:focus,\n.has-value.is-pseudo-focused:not(.Select--multi) > .Select-control > .Select-value a.Select-value-label:focus {\n  color: #007eff;\n  outline: none;\n  text-decoration: underline;\n}\n.Select-input {\n  height: 34px;\n  padding-left: 10px;\n  padding-right: 10px;\n  vertical-align: middle;\n}\n.Select-input > input {\n  background: none transparent;\n  border: 0 none;\n  box-shadow: none;\n  cursor: default;\n  display: inline-block;\n  font-family: inherit;\n  font-size: inherit;\n  height: 34px;\n  margin: 0;\n  outline: none;\n  padding: 0;\n  -webkit-appearance: none;\n}\n.is-focused .Select-input > input {\n  cursor: text;\n}\n.has-value.is-pseudo-focused .Select-input {\n  opacity: 0;\n}\n.Select-control:not(.is-searchable) > .Select-input {\n  outline: none;\n}\n.Select-loading-zone {\n  cursor: pointer;\n  display: table-cell;\n  position: relative;\n  text-align: center;\n  vertical-align: middle;\n  width: 16px;\n}\n.Select-loading {\n  -webkit-animation: Select-animation-spin 400ms infinite linear;\n  -o-animation: Select-animation-spin 400ms infinite linear;\n  animation: Select-animation-spin 400ms infinite linear;\n  width: 16px;\n  height: 16px;\n  box-sizing: border-box;\n  border-radius: 50%;\n  border: 2px solid #ccc;\n  border-right-color: #333;\n  display: inline-block;\n  position: relative;\n  vertical-align: middle;\n}\n.Select-clear-zone {\n  -webkit-animation: Select-animation-fadeIn 200ms;\n  -o-animation: Select-animation-fadeIn 200ms;\n  animation: Select-animation-fadeIn 200ms;\n  color: #999;\n  cursor: pointer;\n  display: table-cell;\n  position: relative;\n  text-align: center;\n  vertical-align: middle;\n  width: 17px;\n}\n.Select-clear-zone:hover {\n  color: #D0021B;\n}\n.Select-clear {\n  display: inline-block;\n  font-size: 18px;\n  line-height: 1;\n}\n.Select--multi .Select-clear-zone {\n  width: 17px;\n}\n.Select-arrow-zone {\n  cursor: pointer;\n  display: table-cell;\n  position: relative;\n  text-align: center;\n  vertical-align: middle;\n  width: 25px;\n  padding-right: 5px;\n}\n.Select-arrow {\n  border-color: #999 transparent transparent;\n  border-style: solid;\n  border-width: 5px 5px 2.5px;\n  display: inline-block;\n  height: 0;\n  width: 0;\n}\n.is-open .Select-arrow,\n.Select-arrow-zone:hover > .Select-arrow {\n  border-top-color: #666;\n}\n@-webkit-keyframes Select-animation-fadeIn {\n  from {\n    opacity: 0;\n  }\n  to {\n    opacity: 1;\n  }\n}\n@keyframes Select-animation-fadeIn {\n  from {\n    opacity: 0;\n  }\n  to {\n    opacity: 1;\n  }\n}\n.Select-menu-outer {\n  border-bottom-right-radius: 4px;\n  border-bottom-left-radius: 4px;\n  background-color: #fff;\n  border: 1px solid #ccc;\n  border-top-color: #e6e6e6;\n  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);\n  box-sizing: border-box;\n  margin-top: -1px;\n  max-height: 200px;\n  position: absolute;\n  top: 100%;\n  width: 100%;\n  z-index: 1;\n  -webkit-overflow-scrolling: touch;\n}\n.Select-menu {\n  max-height: 198px;\n  overflow-y: auto;\n}\n.Select-option {\n  box-sizing: border-box;\n  background-color: #fff;\n  color: #666666;\n  cursor: pointer;\n  display: block;\n  padding: 8px 10px;\n}\n.Select-option:last-child {\n  border-bottom-right-radius: 4px;\n  border-bottom-left-radius: 4px;\n}\n.Select-option.is-focused {\n  background-color: rgba(0, 126, 255, 0.08);\n  color: #333;\n}\n.Select-option.is-disabled {\n  color: #cccccc;\n  cursor: default;\n}\n.Select-noresults {\n  box-sizing: border-box;\n  color: #999999;\n  cursor: default;\n  display: block;\n  padding: 8px 10px;\n}\n.Select--multi .Select-input {\n  vertical-align: middle;\n  margin-left: 10px;\n  padding: 0;\n}\n.Select--multi.has-value .Select-input {\n  margin-left: 5px;\n}\n.Select--multi .Select-value {\n  background-color: rgba(0, 126, 255, 0.08);\n  border-radius: 2px;\n  border: 1px solid rgba(0, 126, 255, 0.24);\n  color: #007eff;\n  display: inline-block;\n  font-size: 0.9em;\n  line-height: 1.4;\n  margin-left: 5px;\n  margin-top: 5px;\n  vertical-align: top;\n}\n.Select--multi .Select-value-icon,\n.Select--multi .Select-value-label {\n  display: inline-block;\n  vertical-align: middle;\n}\n.Select--multi .Select-value-label {\n  border-bottom-right-radius: 2px;\n  border-top-right-radius: 2px;\n  cursor: default;\n  padding: 2px 5px;\n}\n.Select--multi a.Select-value-label {\n  color: #007eff;\n  cursor: pointer;\n  text-decoration: none;\n}\n.Select--multi a.Select-value-label:hover {\n  text-decoration: underline;\n}\n.Select--multi .Select-value-icon {\n  cursor: pointer;\n  border-bottom-left-radius: 2px;\n  border-top-left-radius: 2px;\n  border-right: 1px solid rgba(0, 126, 255, 0.24);\n  padding: 1px 5px 3px;\n}\n.Select--multi .Select-value-icon:hover,\n.Select--multi .Select-value-icon:focus {\n  background-color: rgba(0, 113, 230, 0.08);\n  color: #0071e6;\n}\n.Select--multi .Select-value-icon:active {\n  background-color: rgba(0, 126, 255, 0.24);\n}\n.Select--multi.is-disabled .Select-value {\n  background-color: #fcfcfc;\n  border: 1px solid #e3e3e3;\n  color: #333;\n}\n.Select--multi.is-disabled .Select-value-icon {\n  cursor: not-allowed;\n  border-right: 1px solid #e3e3e3;\n}\n.Select--multi.is-disabled .Select-value-icon:hover,\n.Select--multi.is-disabled .Select-value-icon:focus,\n.Select--multi.is-disabled .Select-value-icon:active {\n  background-color: #fcfcfc;\n}\n@keyframes Select-animation-spin {\n  to {\n    transform: rotate(1turn);\n  }\n}\n@-webkit-keyframes Select-animation-spin {\n  to {\n    -webkit-transform: rotate(1turn);\n  }\n}\n", ""]);
 
 	// exports
 
 
 /***/ },
-/* 176 */
+/* 163 */
 /***/ function(module, exports) {
 
 	/*
@@ -23004,13 +20605,7 @@ var autotagform =
 
 
 /***/ },
-/* 177 */
-/***/ function(module, exports) {
-
-	module.exports = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAGCAYAAAD68A/GAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA5NpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpDMDk5ODU0N0U5MjA2ODExODhDNkJBNzRDM0U2QkE2NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo3NzdGNkM5Nzc4MTkxMUUxOTY2OEJEQjhGOUExQ0Y3RCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo3NzdGNkM5Njc4MTkxMUUxOTY2OEJEQjhGOUExQ0Y3RCIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M2ICgxMy4wIDIwMTIwMzA1Lm0uNDE1IDIwMTIvMDMvMDU6MjE6MDA6MDApICAoTWFjaW50b3NoKSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkMwOTk4NTQ3RTkyMDY4MTE4OEM2QkE3NEMzRTZCQTY3IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkMwOTk4NTQ3RTkyMDY4MTE4OEM2QkE3NEMzRTZCQTY3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+ywbCkAAAAIBJREFUeNpi1NfXb2BgYKhnwA8amV+8eMHw/PlzxVevXilwcnIyoGN3d/eDK1euXMD4//9/kA6HyZMnN5w+fdoe2RhTU9ODubm5IBsPwBSCFU+dOrXh7NmzYMXGxsYHs7OzwYrAsiCFSNihu7v7AAiD2MhyyCbCTYbSB5AFAQIMAPZnSFpKuI9/AAAAAElFTkSuQmCC"
-
-/***/ },
-/* 178 */
+/* 164 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -23264,23 +20859,23 @@ var autotagform =
 
 
 /***/ },
-/* 179 */
+/* 165 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(180);
+	var content = __webpack_require__(166);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(178)(content, {});
+	var update = __webpack_require__(164)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
 		// When the styles change, update the <style> tags
 		if(!content.locals) {
-			module.hot.accept("!!./../node_modules/css-loader/index.js!./bootstrap.css", function() {
-				var newContent = require("!!./../node_modules/css-loader/index.js!./bootstrap.css");
+			module.hot.accept("!!./../node_modules/css-loader/index.js!./webtagging.css", function() {
+				var newContent = require("!!./../node_modules/css-loader/index.js!./webtagging.css");
 				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 				update(newContent);
 			});
@@ -23290,67 +20885,32 @@ var autotagform =
 	}
 
 /***/ },
-/* 180 */
+/* 166 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(176)();
+	exports = module.exports = __webpack_require__(163)();
 	// imports
 
 
 	// module
-	exports.push([module.id, "/*!\n * Bootstrap v3.0.0\n *\n * Copyright 2013 Twitter, Inc\n * Licensed under the Apache License v2.0\n * http://www.apache.org/licenses/LICENSE-2.0\n *\n * Designed and built with all the love in the world @twitter by @mdo and @fat.\n */\n\n\n#auto_tag_panel th {\n  text-align: left;\n}\n#auto_tag_panel .table {\n  width: 100%;\n  margin-bottom: 20px;\n}\n#auto_tag_panel .table thead > tr > th,\n#auto_tag_panel .table tbody > tr > th,\n#auto_tag_panel .table tfoot > tr > th,\n#auto_tag_panel .table thead > tr > td,\n#auto_tag_panel .table tbody > tr > td,\n#auto_tag_panel .table tfoot > tr > td {\n  padding: 8px;\n  line-height: 1.428571429;\n  vertical-align: top;\n  border-top: 1px solid #dddddd;\n}\n#auto_tag_panel .table thead > tr > th {\n  vertical-align: bottom;\n  border-bottom: 2px solid #dddddd;\n}\n#auto_tag_panel .table caption + thead tr:first-child th,\n#auto_tag_panel .table colgroup + thead tr:first-child th,\n#auto_tag_panel .table thead:first-child tr:first-child th,\n#auto_tag_panel .table caption + thead tr:first-child td,\n#auto_tag_panel .table colgroup + thead tr:first-child td,\n#auto_tag_panel .table thead:first-child tr:first-child td {\n  border-top: 0;\n}\n#auto_tag_panel .table tbody + tbody {\n  border-top: 2px solid #dddddd;\n}\n#auto_tag_panel .table {\n  background-color: #ffffff;\n}\n#auto_tag_panel .table-condensed thead > tr > th,\n#auto_tag_panel .table-condensed tbody > tr > th,\n#auto_tag_panel .table-condensed tfoot > tr > th,\n#auto_tag_panel .table-condensed thead > tr > td,\n#auto_tag_panel .table-condensed tbody > tr > td,\n#auto_tag_panel .table-condensed tfoot > tr > td {\n  padding: 5px;\n}\n#auto_tag_panel .table-bordered {\n  border: 1px solid #dddddd;\n}\n#auto_tag_panel .table-bordered > thead > tr > th,\n#auto_tag_panel .table-bordered > tbody > tr > th,\n#auto_tag_panel .table-bordered > tfoot > tr > th,\n#auto_tag_panel .table-bordered > thead > tr > td,\n#auto_tag_panel .table-bordered > tbody > tr > td,\n#auto_tag_panel .table-bordered > tfoot > tr > td {\n  border: 1px solid #dddddd;\n}\n#auto_tag_panel .table-bordered > thead > tr > th,\n#auto_tag_panel .table-bordered > thead > tr > td {\n  border-bottom-width: 2px;\n}\n#auto_tag_panel .table-striped > tbody > tr:nth-child(odd) > td,\n#auto_tag_panel .table-striped > tbody > tr:nth-child(odd) > th {\n  background-color: #f9f9f9;\n}\n#auto_tag_panel .table-hover > tbody > tr:hover > td,\n#auto_tag_panel .table-hover > tbody > tr:hover > th {\n  background-color: #f5f5f5;\n}\n#auto_tag_panel table col[class*=\"col-\"] {\n  float: none;\n  display: table-column;\n}\n#auto_tag_panel table td[class*=\"col-\"],\n#auto_tag_panel table th[class*=\"col-\"] {\n  float: none;\n  display: table-cell;\n}\n#auto_tag_panel .table > thead > tr > td.active,\n#auto_tag_panel .table > tbody > tr > td.active,\n#auto_tag_panel .table > tfoot > tr > td.active,\n#auto_tag_panel .table > thead > tr > th.active,\n#auto_tag_panel .table > tbody > tr > th.active,\n#auto_tag_panel .table > tfoot > tr > th.active,\n#auto_tag_panel .table > thead > tr.active > td,\n#auto_tag_panel .table > tbody > tr.active > td,\n#auto_tag_panel .table > tfoot > tr.active > td,\n#auto_tag_panel .table > thead > tr.active > th,\n#auto_tag_panel .table > tbody > tr.active > th,\n#auto_tag_panel .table > tfoot > tr.active > th {\n  background-color: #f5f5f5;\n}\n#auto_tag_panel .table > thead > tr > td.success,\n#auto_tag_panel .table > tbody > tr > td.success,\n#auto_tag_panel .table > tfoot > tr > td.success,\n#auto_tag_panel .table > thead > tr > th.success,\n#auto_tag_panel .table > tbody > tr > th.success,\n#auto_tag_panel .table > tfoot > tr > th.success,\n#auto_tag_panel .table > thead > tr.success > td,\n#auto_tag_panel .table > tbody > tr.success > td,\n#auto_tag_panel .table > tfoot > tr.success > td,\n#auto_tag_panel .table > thead > tr.success > th,\n#auto_tag_panel .table > tbody > tr.success > th,\n#auto_tag_panel .table > tfoot > tr.success > th {\n  background-color: #dff0d8;\n  border-color: #d6e9c6;\n}\n#auto_tag_panel .table-hover > tbody > tr > td.success:hover,\n#auto_tag_panel .table-hover > tbody > tr > th.success:hover,\n#auto_tag_panel .table-hover > tbody > tr.success:hover > td {\n  background-color: #d0e9c6;\n  border-color: #c9e2b3;\n}\n#auto_tag_panel .table > thead > tr > td.danger,\n#auto_tag_panel .table > tbody > tr > td.danger,\n#auto_tag_panel .table > tfoot > tr > td.danger,\n#auto_tag_panel .table > thead > tr > th.danger,\n#auto_tag_panel .table > tbody > tr > th.danger,\n#auto_tag_panel .table > tfoot > tr > th.danger,\n#auto_tag_panel .table > thead > tr.danger > td,\n#auto_tag_panel .table > tbody > tr.danger > td,\n#auto_tag_panel .table > tfoot > tr.danger > td,\n#auto_tag_panel .table > thead > tr.danger > th,\n#auto_tag_panel .table > tbody > tr.danger > th,\n#auto_tag_panel .table > tfoot > tr.danger > th {\n  background-color: #f2dede;\n  border-color: #eed3d7;\n}\n#auto_tag_panel .table-hover > tbody > tr > td.danger:hover,\n#auto_tag_panel .table-hover > tbody > tr > th.danger:hover,\n#auto_tag_panel .table-hover > tbody > tr.danger:hover > td {\n  background-color: #ebcccc;\n  border-color: #e6c1c7;\n}\n#auto_tag_panel .table > thead > tr > td.warning,\n#auto_tag_panel .table > tbody > tr > td.warning,\n#auto_tag_panel .table > tfoot > tr > td.warning,\n#auto_tag_panel .table > thead > tr > th.warning,\n#auto_tag_panel .table > tbody > tr > th.warning,\n#auto_tag_panel .table > tfoot > tr > th.warning,\n#auto_tag_panel .table > thead > tr.warning > td,\n#auto_tag_panel .table > tbody > tr.warning > td,\n#auto_tag_panel .table > tfoot > tr.warning > td,\n#auto_tag_panel .table > thead > tr.warning > th,\n#auto_tag_panel .table > tbody > tr.warning > th,\n#auto_tag_panel .table > tfoot > tr.warning > th {\n  background-color: #fcf8e3;\n  border-color: #fbeed5;\n}\n#auto_tag_panel .table-hover > tbody > tr > td.warning:hover,\n#auto_tag_panel .table-hover > tbody > tr > th.warning:hover,\n#auto_tag_panel .table-hover > tbody > tr.warning:hover > td {\n  background-color: #faf2cc;\n  border-color: #f8e5be;\n}\n@media (max-width: 768px) {\n  #auto_tag_panel .table-responsive {\n    width: 100%;\n    margin-bottom: 15px;\n    overflow-y: hidden;\n    overflow-x: scroll;\n    border: 1px solid #dddddd;\n  }\n  #auto_tag_panel .table-responsive > .table {\n    margin-bottom: 0;\n    background-color: #fff;\n  }\n  #auto_tag_panel .table-responsive > .table > thead > tr > th,\n  #auto_tag_panel .table-responsive > .table > tbody > tr > th,\n  #auto_tag_panel .table-responsive > .table > tfoot > tr > th,\n  #auto_tag_panel .table-responsive > .table > thead > tr > td,\n  #auto_tag_panel .table-responsive > .table > tbody > tr > td,\n  #auto_tag_panel .table-responsive > .table > tfoot > tr > td {\n    white-space: nowrap;\n  }\n  #auto_tag_panel .table-responsive > .table-bordered {\n    border: 0;\n  }\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr > th:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr > th:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr > th:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr > td:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr > td:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr > td:first-child {\n    border-left: 0;\n  }\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr > th:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr > th:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr > th:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr > td:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr > td:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr > td:last-child {\n    border-right: 0;\n  }\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr:last-child > th,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr:last-child > th,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr:last-child > th,\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr:last-child > td,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr:last-child > td,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr:last-child > td {\n    border-bottom: 0;\n  }\n}\n#auto_tag_panel .caret {\n  display: inline-block;\n  width: 0;\n  height: 0;\n  margin-left: 2px;\n  vertical-align: middle;\n  border-top: 4px solid #000000;\n  border-right: 4px solid transparent;\n  border-left: 4px solid transparent;\n  border-bottom: 0 dotted;\n  content: \"\";\n}\n#auto_tag_panel .dropdown {\n  position: relative;\n}\n#auto_tag_panel .dropdown-toggle:focus {\n  outline: 0;\n}\n#auto_tag_panel .dropdown-menu {\n  position: absolute;\n  top: 100%;\n  left: 0;\n  z-index: 1000;\n  display: none;\n  float: left;\n  min-width: 160px;\n  padding: 5px 0;\n  margin: 2px 0 0;\n  list-style: none;\n  font-size: 14px;\n  background-color: #ffffff;\n  border: 1px solid #cccccc;\n  border: 1px solid rgba(0, 0, 0, 0.15);\n  border-radius: 4px;\n  -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);\n  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);\n  background-clip: padding-box;\n}\n#auto_tag_panel .dropdown-menu.pull-right {\n  right: 0;\n  left: auto;\n}\n#auto_tag_panel .dropdown-menu .divider {\n  height: 1px;\n  margin: 9px 0;\n  overflow: hidden;\n  background-color: #e5e5e5;\n}\n#auto_tag_panel .dropdown-menu > li > a {\n  display: block;\n  padding: 3px 20px;\n  clear: both;\n  font-weight: normal;\n  line-height: 1.428571429;\n  color: #333333;\n  white-space: nowrap;\n}\n#auto_tag_panel .dropdown-menu > li > a:hover,\n#auto_tag_panel .dropdown-menu > li > a:focus {\n  text-decoration: none;\n  color: #ffffff;\n  background-color: #428bca;\n}\n#auto_tag_panel .dropdown-menu > .active > a,\n#auto_tag_panel .dropdown-menu > .active > a:hover,\n#auto_tag_panel .dropdown-menu > .active > a:focus {\n  color: #ffffff;\n  text-decoration: none;\n  outline: 0;\n  background-color: #428bca;\n}\n#auto_tag_panel .dropdown-menu > .disabled > a,\n#auto_tag_panel .dropdown-menu > .disabled > a:hover,\n#auto_tag_panel .dropdown-menu > .disabled > a:focus {\n  color: #999999;\n}\n#auto_tag_panel .dropdown-menu > .disabled > a:hover,\n#auto_tag_panel .dropdown-menu > .disabled > a:focus {\n  text-decoration: none;\n  background-color: transparent;\n  background-image: none;\n  filter: progid:DXImageTransform.Microsoft.gradient(enabled = false);\n  cursor: not-allowed;\n}\n#auto_tag_panel .open > .dropdown-menu {\n  display: block;\n}\n#auto_tag_panel .open > a {\n  outline: 0;\n}\n#auto_tag_panel .dropdown-header {\n  display: block;\n  padding: 3px 20px;\n  font-size: 12px;\n  line-height: 1.428571429;\n  color: #999999;\n}\n#auto_tag_panel .dropdown-backdrop {\n  position: fixed;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  top: 0;\n  z-index: 990;\n}\n#auto_tag_panel .pull-right > .dropdown-menu {\n  right: 0;\n  left: auto;\n}\n#auto_tag_panel .dropup .caret,\n#auto_tag_panel .navbar-fixed-bottom .dropdown .caret {\n  border-top: 0 dotted;\n  border-bottom: 4px solid #000000;\n  content: \"\";\n}\n#auto_tag_panel .dropup .dropdown-menu,\n#auto_tag_panel .navbar-fixed-bottom .dropdown .dropdown-menu {\n  top: auto;\n  bottom: 100%;\n  margin-bottom: 1px;\n}\n@media (min-width: 768px) {\n  #auto_tag_panel .navbar-right .dropdown-menu {\n    right: 0;\n    left: auto;\n  }\n}\n\n#auto_tag_panel .tag .tag_unmatched {\n  background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(100, 65%, 85%)), to(hsl(205, 60%, 90%))) !important;\n  background-image:-moz-linear-gradient(top, hsl(100,60%,90%) 0%, hsl(100,35%,85%) 100%) !important; /* FF3.6+ */\n  background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(100,60%,90%)), color-stop(100%,hsl(100,35%,85%))) !important; /* Chrome,Safari4+ */\n  background-image:-webkit-linear-gradient(top, hsl(100,60%,90%) 0%,hsl(100,35%,85%) 100%) !important; /* Chrome10+,Safari5.1+ */\n  background-image:-o-linear-gradient(top, hsl(100,60%,90%) 0%,hsl(100,35%,85%) 100%) !important; /* Opera11.10+ */\n  background-image:-ms-linear-gradient(top, hsl(100,60%,90%) 0%,hsl(100,35%,85%) 100%) !important; /* IE10+ */\n  filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#5CACE6', endColorstr='#8DB9D9',GradientType=0 ) !important; /* IE6-9 */\n  background:linear-gradient(top, hsl(100,60%,90%) 0%,hsl(100,35%,85%) 100%) !important; /* W3C */\n\n  color:hsl(100,10%,15%) !important;\n}\n", ""]);
+	exports.push([module.id, "\n.toolbar {\n    text-align:right;\n}\n\nth.pathTokens {\n    background-color:#FFFFCC;\n}\n\nth.extensionTokens {\n    background-color:#FFFFCC;\n}\n\n.table td {\n    text-align:center;\n}\n\n.table tbody tr > td.success {\n  background-color: #dff0d8 !important;\n}\n\n.table tbody tr > td.error {\n  background-color: #f2dede !important;\n}\n\n.table tbody tr > td.warning {\n  background-color: #fcf8e3 !important;\n}\n\n.table tbody tr > td.info {\n  background-color: #d9edf7 !important;\n}\n\n.table-hover tbody tr:hover > td.success {\n  background-color: #d0e9c6 !important;\n}\n\n.table-hover tbody tr:hover > td.error {\n  background-color: #ebcccc !important;\n}\n\n.table-hover tbody tr:hover > td.warning {\n  background-color: #faf2cc !important;\n}\n\n.table-hover tbody tr:hover > td.info {\n  background-color: #c4e3f3 !important;\n}\n\n.btn-default {\n  border: 0;\n/*  width: 14px;\n  height: 20px;*/\n  background-color:transparent;\n}\n\n.btn-default:focus {\n  outline: none;\n}\n\n/* Adapted from dusty .removeTag and .removeTag:hover */\n.showTag {\n    color: #000;\n    cursor:pointer;\n    font-weight:bold;\n    text-shadow: 0 1px 0 rgba(255,255,255,.7);\n    display:inline-block;\n    width:12px;\n    height:12px;\n    position:absolute;\n    z-index:90;\n    right:5px;\n    top:1px;\n    -webkit-border-radius:20px;\n    -moz-border-radius:20px;\n    border-radius:20px;\n    text-align:center;\n    margin-left:5px;\n    overflow:hidden;\n    display:block !important;\n    background:url(" + __webpack_require__(167) + ") center center no-repeat;\n    text-indent:-99px;\n    pointer-events: none;\n}\n\n.tagInactive {\n    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(350, 65%, 85%)), to(hsl(350, 60%, 90%))) !important;\n\n    background:blue !important; /* Old browsers */\n    background-image:-moz-linear-gradient(top, hsl(350,65%,80%) 0%, hsl(350,60%,90%) 100%) !important; /* FF3.6+ */\n    background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(350,65%,85%)), color-stop(100%,hsl(350,60%,90%))) !important; /* Chrome,Safari4+ */\n    background-image:-webkit-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100% !important); /* Chrome10+,Safari5.1+ */\n    background-image:-o-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* Opera11.10+ */\n    background-image:-ms-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* IE10+ */\n    filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#4795CC', endColorstr='#3987BF',GradientType=0 ) !important; /* IE6-9 */\n    background:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* W3C */\n\n    text-decoration:none !important;\n    text-shadow: 0 1px 0 rgba(255,255,255,.4) !important;\n    color:hsl(350,30%,30%) !important;\n}\n\n.tagInactive:hover {\n    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(350, 70%, 75%)), to(hsl(350, 65%, 80%))) !important;\n\n\tbackground:blue; /* Old browsers */\n\tbackground-image:-moz-linear-gradient(top, hsl(350,65%,80%) 0%, hsl(350,70%,75%) 100%) !important; /* FF3.6+ */\n\tbackground-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(350,65%,80%)), color-stop(100%,hsl(350,70%,75%))) !important; /* Chrome,Safari4+ */\n\tbackground-image:-webkit-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* Chrome10+,Safari5.1+ */\n\tbackground-image:-o-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* Opera11.10+ */\n\tbackground-image:-ms-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* IE10+ */\n\tfilter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#4795CC', endColorstr='#3987BF',GradientType=0 ) !important; /* IE6-9 */\n\tbackground:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* W3C */\n\n\ttext-decoration:none !important;\n\ttext-shadow: 0 1px 0 rgba(255,255,255,.4) !important;\n\tcolor:hsl(350,30%,30%) !important;\n}\n\n.token {\n    text-align:center;\n}\n\n.tag {\n    white-space:nowrap;\n}\n\n/* Correct some aggressive CSS rules from dusty.css */\n.Select-arrow-zone {\n    display:table-cell !important;\n}\n\n.Select-clear-zone {\n    display:table-cell !important;\n}\n\n.Select-placeholder, .Select-option {\n    font-size:14px;\n}\n\n#auto_tag_panel .table {\n  width: 100%;\n  margin-bottom: 20px;\n}\n#auto_tag_panel .table thead > tr > th,\n#auto_tag_panel .table tbody > tr > th,\n#auto_tag_panel .table tfoot > tr > th,\n#auto_tag_panel .table thead > tr > td,\n#auto_tag_panel .table tbody > tr > td,\n#auto_tag_panel .table tfoot > tr > td {\n  padding: 8px;\n  line-height: 1.428571429;\n  vertical-align: top;\n  border-top: 1px solid #dddddd;\n}\n#auto_tag_panel .table thead > tr > th {\n  vertical-align: bottom;\n  border-bottom: 2px solid #dddddd;\n}\n#auto_tag_panel .table caption + thead tr:first-child th,\n#auto_tag_panel .table colgroup + thead tr:first-child th,\n#auto_tag_panel .table thead:first-child tr:first-child th,\n#auto_tag_panel .table caption + thead tr:first-child td,\n#auto_tag_panel .table colgroup + thead tr:first-child td,\n#auto_tag_panel .table thead:first-child tr:first-child td {\n  border-top: 0;\n}\n#auto_tag_panel .table tbody + tbody {\n  border-top: 2px solid #dddddd;\n}\n#auto_tag_panel .table {\n  background-color: #ffffff;\n}\n#auto_tag_panel .table-condensed thead > tr > th,\n#auto_tag_panel .table-condensed tbody > tr > th,\n#auto_tag_panel .table-condensed tfoot > tr > th,\n#auto_tag_panel .table-condensed thead > tr > td,\n#auto_tag_panel .table-condensed tbody > tr > td,\n#auto_tag_panel .table-condensed tfoot > tr > td {\n  padding: 5px;\n}\n#auto_tag_panel .table-bordered {\n  border: 1px solid #dddddd;\n}\n#auto_tag_panel .table-bordered > thead > tr > th,\n#auto_tag_panel .table-bordered > tbody > tr > th,\n#auto_tag_panel .table-bordered > tfoot > tr > th,\n#auto_tag_panel .table-bordered > thead > tr > td,\n#auto_tag_panel .table-bordered > tbody > tr > td,\n#auto_tag_panel .table-bordered > tfoot > tr > td {\n  border: 1px solid #dddddd;\n}\n#auto_tag_panel .table-bordered > thead > tr > th,\n#auto_tag_panel .table-bordered > thead > tr > td {\n  border-bottom-width: 2px;\n}\n#auto_tag_panel .table-striped > tbody > tr:nth-child(odd) > td,\n#auto_tag_panel .table-striped > tbody > tr:nth-child(odd) > th {\n  background-color: #f9f9f9;\n}\n#auto_tag_panel .table-hover > tbody > tr:hover > td,\n#auto_tag_panel .table-hover > tbody > tr:hover > th {\n  background-color: #f5f5f5;\n}\n#auto_tag_panel table col[class*=\"col-\"] {\n  float: none;\n  display: table-column;\n}\n#auto_tag_panel table td[class*=\"col-\"],\n#auto_tag_panel table th[class*=\"col-\"] {\n  float: none;\n  display: table-cell;\n}\n#auto_tag_panel .table > thead > tr > td.active,\n#auto_tag_panel .table > tbody > tr > td.active,\n#auto_tag_panel .table > tfoot > tr > td.active,\n#auto_tag_panel .table > thead > tr > th.active,\n#auto_tag_panel .table > tbody > tr > th.active,\n#auto_tag_panel .table > tfoot > tr > th.active,\n#auto_tag_panel .table > thead > tr.active > td,\n#auto_tag_panel .table > tbody > tr.active > td,\n#auto_tag_panel .table > tfoot > tr.active > td,\n#auto_tag_panel .table > thead > tr.active > th,\n#auto_tag_panel .table > tbody > tr.active > th,\n#auto_tag_panel .table > tfoot > tr.active > th {\n  background-color: #f5f5f5;\n}\n#auto_tag_panel .table > thead > tr > td.success,\n#auto_tag_panel .table > tbody > tr > td.success,\n#auto_tag_panel .table > tfoot > tr > td.success,\n#auto_tag_panel .table > thead > tr > th.success,\n#auto_tag_panel .table > tbody > tr > th.success,\n#auto_tag_panel .table > tfoot > tr > th.success,\n#auto_tag_panel .table > thead > tr.success > td,\n#auto_tag_panel .table > tbody > tr.success > td,\n#auto_tag_panel .table > tfoot > tr.success > td,\n#auto_tag_panel .table > thead > tr.success > th,\n#auto_tag_panel .table > tbody > tr.success > th,\n#auto_tag_panel .table > tfoot > tr.success > th {\n  background-color: #dff0d8;\n  border-color: #d6e9c6;\n}\n#auto_tag_panel .table-hover > tbody > tr > td.success:hover,\n#auto_tag_panel .table-hover > tbody > tr > th.success:hover,\n#auto_tag_panel .table-hover > tbody > tr.success:hover > td {\n  background-color: #d0e9c6;\n  border-color: #c9e2b3;\n}\n#auto_tag_panel .table > thead > tr > td.danger,\n#auto_tag_panel .table > tbody > tr > td.danger,\n#auto_tag_panel .table > tfoot > tr > td.danger,\n#auto_tag_panel .table > thead > tr > th.danger,\n#auto_tag_panel .table > tbody > tr > th.danger,\n#auto_tag_panel .table > tfoot > tr > th.danger,\n#auto_tag_panel .table > thead > tr.danger > td,\n#auto_tag_panel .table > tbody > tr.danger > td,\n#auto_tag_panel .table > tfoot > tr.danger > td,\n#auto_tag_panel .table > thead > tr.danger > th,\n#auto_tag_panel .table > tbody > tr.danger > th,\n#auto_tag_panel .table > tfoot > tr.danger > th {\n  background-color: #f2dede;\n  border-color: #eed3d7;\n}\n#auto_tag_panel .table-hover > tbody > tr > td.danger:hover,\n#auto_tag_panel .table-hover > tbody > tr > th.danger:hover,\n#auto_tag_panel .table-hover > tbody > tr.danger:hover > td {\n  background-color: #ebcccc;\n  border-color: #e6c1c7;\n}\n#auto_tag_panel .table > thead > tr > td.warning,\n#auto_tag_panel .table > tbody > tr > td.warning,\n#auto_tag_panel .table > tfoot > tr > td.warning,\n#auto_tag_panel .table > thead > tr > th.warning,\n#auto_tag_panel .table > tbody > tr > th.warning,\n#auto_tag_panel .table > tfoot > tr > th.warning,\n#auto_tag_panel .table > thead > tr.warning > td,\n#auto_tag_panel .table > tbody > tr.warning > td,\n#auto_tag_panel .table > tfoot > tr.warning > td,\n#auto_tag_panel .table > thead > tr.warning > th,\n#auto_tag_panel .table > tbody > tr.warning > th,\n#auto_tag_panel .table > tfoot > tr.warning > th {\n  background-color: #fcf8e3;\n  border-color: #fbeed5;\n}\n#auto_tag_panel .table-hover > tbody > tr > td.warning:hover,\n#auto_tag_panel .table-hover > tbody > tr > th.warning:hover,\n#auto_tag_panel .table-hover > tbody > tr.warning:hover > td {\n  background-color: #faf2cc;\n  border-color: #f8e5be;\n}\n@media (max-width: 768px) {\n  #auto_tag_panel .table-responsive {\n    width: 100%;\n    margin-bottom: 15px;\n    overflow-y: hidden;\n    overflow-x: scroll;\n    border: 1px solid #dddddd;\n  }\n  #auto_tag_panel .table-responsive > .table {\n    margin-bottom: 0;\n    background-color: #fff;\n  }\n  #auto_tag_panel .table-responsive > .table > thead > tr > th,\n  #auto_tag_panel .table-responsive > .table > tbody > tr > th,\n  #auto_tag_panel .table-responsive > .table > tfoot > tr > th,\n  #auto_tag_panel .table-responsive > .table > thead > tr > td,\n  #auto_tag_panel .table-responsive > .table > tbody > tr > td,\n  #auto_tag_panel .table-responsive > .table > tfoot > tr > td {\n    white-space: nowrap;\n  }\n  #auto_tag_panel .table-responsive > .table-bordered {\n    border: 0;\n  }\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr > th:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr > th:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr > th:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr > td:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr > td:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr > td:first-child {\n    border-left: 0;\n  }\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr > th:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr > th:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr > th:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr > td:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr > td:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr > td:last-child {\n    border-right: 0;\n  }\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr:last-child > th,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr:last-child > th,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr:last-child > th,\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr:last-child > td,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr:last-child > td,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr:last-child > td {\n    border-bottom: 0;\n  }\n}\n\n#auto_tag_panel .Select-placeholder,\n#auto_tag_panel .Select-value {\n  padding-left: 5px;\n  padding-right: 5px;\n  white-space: nowrap;\n  position:inherit;\n  display: table-cell;\n}\n\n#auto_tag_panel .Select-control {\n    line-height:inherit;\n    height: auto;\n}\n\n#auto_tag_panel .Select-placeholder,\n#auto_tag_panel .Select-value,\n#auto_tag_panel .Select-clear-zone,\n#auto_tag_panel .Select-arrow-zone {\n  line-height: inherit;\n  height: auto;\n}\n\n#auto_tag_panel .Select-input {\n    line-height: inherit;\n    height: auto;\n    padding-left: 0;\n    padding-right: 0;\n}\n\n#auto_tag_panel .Select-clear-zone,\n#auto_tag_panel .Select-arrow-zone {\n    padding: 0px 2px 0px 2px;\n}\n\n#auto_tag_panel .Select-arrow-zone {\n    padding-top: 2px;\n}\n\n#auto_tag_panel .Select-control {\n  background: none transparent;\n}\n\n#auto_tag_panel .tag_button{\n\tdisplay:inline-block;\n    -webkit-border-radius: 30px;\n\t-moz-border-radius: 30px;\n\tborder-radius: 30px;\n\tborder:solid 1px hsl(205,40%,60%);\n\tbackground-image: -webkit-gradient(linear, left bottom, left top, from(hsl(205, 65%, 85%)), to(hsl(205, 60%, 90%)));\n\n\tbackground-image:-moz-linear-gradient(top, hsl(205,60%,90%) 0%, hsl(205,35%,85%) 100%); /* FF3.6+ */\n\tbackground-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(205,60%,90%)), color-stop(100%,hsl(205,35%,85%))); /* Chrome,Safari4+ */\n\tbackground-image:-webkit-linear-gradient(top, hsl(205,60%,90%) 0%,hsl(205,35%,85%) 100%); /* Chrome10+,Safari5.1+ */\n\tbackground-image:-o-linear-gradient(top, hsl(205,60%,90%) 0%,hsl(205,35%,85%) 100%); /* Opera11.10+ */\n\tbackground-image:-ms-linear-gradient(top, hsl(205,60%,90%) 0%,hsl(205,35%,85%) 100%); /* IE10+ */\n\tfilter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#5CACE6', endColorstr='#8DB9D9',GradientType=0 ); /* IE6-9 */\n\tbackground:linear-gradient(top, hsl(205,60%,90%) 0%,hsl(205,35%,85%) 100%); /* W3C */\n\n\tcolor:hsl(205,30%,35%) !important;\n\t-webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n\t-moz-box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n\tbox-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n}\n\n#auto_tag_panel .Select-placeholder {\n    font-size: inherit;\n    color: inherit;\n}\n\n#auto_tag_panel .Select-clear {\n    font-size: 10px;\n    color: black;\n}\n\n\n#auto_tag_panel .tag_button_inactive{\n\tdisplay:inline-block;\n    -webkit-border-radius: 30px;\n\t-moz-border-radius: 30px;\n\tborder-radius: 30px;\n\tborder:solid 1px hsl(205,40%,60%);\n\n    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(350, 65%, 85%)), to(hsl(350, 60%, 90%))) !important;\n\n    background:blue !important; /* Old browsers */\n    background-image:-moz-linear-gradient(top, hsl(350,65%,80%) 0%, hsl(350,60%,90%) 100%) !important; /* FF3.6+ */\n    background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(350,65%,85%)), color-stop(100%,hsl(350,60%,90%))) !important; /* Chrome,Safari4+ */\n    background-image:-webkit-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100% !important); /* Chrome10+,Safari5.1+ */\n    background-image:-o-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* Opera11.10+ */\n    background-image:-ms-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* IE10+ */\n    filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#4795CC', endColorstr='#3987BF',GradientType=0 ) !important; /* IE6-9 */\n    background:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* W3C */\n\n    text-decoration:none !important;\n    text-shadow: 0 1px 0 rgba(255,255,255,.4) !important;\n    color:hsl(350,30%,30%) !important;\n    -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n    -moz-box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n    box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n}\n\n#auto_tag_panel .tag_button_unmatched{\n\n    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(100, 65%, 85%)), to(hsl(205, 60%, 90%))) !important;\n    background-image:-moz-linear-gradient(top, hsl(100,60%,90%) 0%, hsl(100,35%,85%) 100%) !important; /* FF3.6+ */\n    background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(100,60%,90%)), color-stop(100%,hsl(100,35%,85%))) !important; /* Chrome,Safari4+ */\n    background-image:-webkit-linear-gradient(top, hsl(100,60%,90%) 0%,hsl(100,35%,85%) 100%) !important; /* Chrome10+,Safari5.1+ */\n    background-image:-o-linear-gradient(top, hsl(100,60%,90%) 0%,hsl(100,35%,85%) 100%) !important; /* Opera11.10+ */\n    background-image:-ms-linear-gradient(top, hsl(100,60%,90%) 0%,hsl(100,35%,85%) 100%) !important; /* IE10+ */\n    filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#5CACE6', endColorstr='#8DB9D9',GradientType=0 ) !important; /* IE6-9 */\n    background:linear-gradient(top, hsl(100,60%,90%) 0%,hsl(100,35%,85%) 100%) !important; /* W3C */\n\n    color:hsl(100,10%,15%) !important;\n    -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n    -moz-box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n    box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n}\n", ""]);
 
 	// exports
 
 
 /***/ },
-/* 181 */
-/***/ function(module, exports, __webpack_require__) {
+/* 167 */
+/***/ function(module, exports) {
 
-	// style-loader: Adds some css to the DOM by adding a <style> tag
-
-	// load the styles
-	var content = __webpack_require__(182);
-	if(typeof content === 'string') content = [[module.id, content, '']];
-	// add the styles to the DOM
-	var update = __webpack_require__(178)(content, {});
-	if(content.locals) module.exports = content.locals;
-	// Hot Module Replacement
-	if(false) {
-		// When the styles change, update the <style> tags
-		if(!content.locals) {
-			module.hot.accept("!!./../../css-loader/index.js!./react-select.css", function() {
-				var newContent = require("!!./../../css-loader/index.js!./react-select.css");
-				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-				update(newContent);
-			});
-		}
-		// When the module is disposed, remove the <style> tags
-		module.hot.dispose(function() { update(); });
-	}
+	module.exports = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAGCAYAAAD68A/GAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA5NpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpDMDk5ODU0N0U5MjA2ODExODhDNkJBNzRDM0U2QkE2NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo3NzdGNkM5Nzc4MTkxMUUxOTY2OEJEQjhGOUExQ0Y3RCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo3NzdGNkM5Njc4MTkxMUUxOTY2OEJEQjhGOUExQ0Y3RCIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M2ICgxMy4wIDIwMTIwMzA1Lm0uNDE1IDIwMTIvMDMvMDU6MjE6MDA6MDApICAoTWFjaW50b3NoKSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkMwOTk4NTQ3RTkyMDY4MTE4OEM2QkE3NEMzRTZCQTY3IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkMwOTk4NTQ3RTkyMDY4MTE4OEM2QkE3NEMzRTZCQTY3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+ywbCkAAAAIBJREFUeNpi1NfXb2BgYKhnwA8amV+8eMHw/PlzxVevXilwcnIyoGN3d/eDK1euXMD4//9/kA6HyZMnN5w+fdoe2RhTU9ODubm5IBsPwBSCFU+dOrXh7NmzYMXGxsYHs7OzwYrAsiCFSNihu7v7AAiD2MhyyCbCTYbSB5AFAQIMAPZnSFpKuI9/AAAAAElFTkSuQmCC"
 
 /***/ },
-/* 182 */
-/***/ function(module, exports, __webpack_require__) {
-
-	exports = module.exports = __webpack_require__(176)();
-	// imports
-
-
-	// module
-	exports.push([module.id, "/**\n * React Select\n * ============\n * Created by Jed Watson and Joss Mackison for KeystoneJS, http://www.keystonejs.com/\n * https://twitter.com/jedwatson https://twitter.com/jossmackison https://twitter.com/keystonejs\n * MIT License: https://github.com/keystonejs/react-select\n*/\n.Select {\n  position: relative;\n}\n.Select,\n.Select div,\n.Select input,\n.Select span {\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n.Select.is-disabled > .Select-control {\n  background-color: #f6f6f6;\n}\n.Select.is-disabled .Select-arrow-zone {\n  cursor: default;\n  pointer-events: none;\n}\n.Select-control {\n  background-color: #fff;\n  border-color: #d9d9d9 #ccc #b3b3b3;\n  border-radius: 4px;\n  border: 1px solid #ccc;\n  color: #333;\n  cursor: default;\n  display: table;\n  height: 36px;\n  outline: none;\n  overflow: hidden;\n  position: relative;\n  width: 100%;\n}\n.Select-control:hover {\n  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);\n}\n.is-searchable.is-open > .Select-control {\n  cursor: text;\n}\n.is-open > .Select-control {\n  border-bottom-right-radius: 0;\n  border-bottom-left-radius: 0;\n  background: #fff;\n  border-color: #b3b3b3 #ccc #d9d9d9;\n}\n.is-open > .Select-control > .Select-arrow {\n  border-color: transparent transparent #999;\n  border-width: 0 5px 5px;\n}\n.is-searchable.is-focused:not(.is-open) > .Select-control {\n  cursor: text;\n}\n.is-focused:not(.is-open) > .Select-control {\n  border-color: #08c #0099e6 #0099e6;\n  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 5px -1px rgba(0, 136, 204, 0.5);\n}\n.Select-placeholder {\n  bottom: 0;\n  color: #aaa;\n  left: 0;\n  line-height: 34px;\n  padding-left: 10px;\n  padding-right: 10px;\n  position: absolute;\n  right: 0;\n  top: 0;\n  max-width: 100%;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.has-value > .Select-control > .Select-placeholder {\n  color: #333;\n}\n.Select-value {\n  color: #aaa;\n  left: 0;\n  padding: 8px 52px 8px 10px;\n  position: absolute;\n  right: -15px;\n  top: 0;\n  max-width: 100%;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.has-value > .Select-control > .Select-value {\n  color: #333;\n}\n.Select-input {\n  height: 34px;\n  padding-left: 10px;\n  padding-right: 10px;\n  vertical-align: middle;\n}\n.Select-input > input {\n  background: none transparent;\n  border: 0 none;\n  box-shadow: none;\n  cursor: default;\n  display: inline-block;\n  font-family: inherit;\n  font-size: inherit;\n  height: 34px;\n  margin: 0;\n  outline: none;\n  padding: 0;\n  -webkit-appearance: none;\n}\n.is-focused .Select-input > input {\n  cursor: text;\n}\n.Select-control:not(.is-searchable) > .Select-input {\n  outline: none;\n}\n.Select-loading-zone {\n  cursor: pointer;\n  display: table-cell;\n  position: relative;\n  text-align: center;\n  vertical-align: middle;\n  width: 16px;\n}\n.Select-loading {\n  -webkit-animation: Select-animation-spin 400ms infinite linear;\n  -o-animation: Select-animation-spin 400ms infinite linear;\n  animation: Select-animation-spin 400ms infinite linear;\n  width: 16px;\n  height: 16px;\n  box-sizing: border-box;\n  border-radius: 50%;\n  border: 2px solid #ccc;\n  border-right-color: #333;\n  display: inline-block;\n  position: relative;\n  vertical-align: middle;\n}\n.Select-clear-zone {\n  -webkit-animation: Select-animation-fadeIn 200ms;\n  -o-animation: Select-animation-fadeIn 200ms;\n  animation: Select-animation-fadeIn 200ms;\n  color: #999;\n  cursor: pointer;\n  display: table-cell;\n  position: relative;\n  text-align: center;\n  vertical-align: middle;\n  width: 17px;\n}\n.Select-clear-zone:hover {\n  color: #D0021B;\n}\n.Select-clear {\n  display: inline-block;\n  font-size: 18px;\n  line-height: 1;\n}\n.Select--multi .Select-clear-zone {\n  width: 17px;\n}\n.Select-arrow-zone {\n  cursor: pointer;\n  display: table-cell;\n  position: relative;\n  text-align: center;\n  vertical-align: middle;\n  width: 25px;\n  padding-right: 5px;\n}\n.Select-arrow {\n  border-color: #999 transparent transparent;\n  border-style: solid;\n  border-width: 5px 5px 2.5px;\n  display: inline-block;\n  height: 0;\n  width: 0;\n}\n.is-open .Select-arrow,\n.Select-arrow-zone:hover > .Select-arrow {\n  border-top-color: #666;\n}\n@-webkit-keyframes Select-animation-fadeIn {\n  from {\n    opacity: 0;\n  }\n  to {\n    opacity: 1;\n  }\n}\n@keyframes Select-animation-fadeIn {\n  from {\n    opacity: 0;\n  }\n  to {\n    opacity: 1;\n  }\n}\n.Select-menu-outer {\n  border-bottom-right-radius: 4px;\n  border-bottom-left-radius: 4px;\n  background-color: #fff;\n  border: 1px solid #ccc;\n  border-top-color: #e6e6e6;\n  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);\n  box-sizing: border-box;\n  margin-top: -1px;\n  max-height: 200px;\n  position: absolute;\n  top: 100%;\n  width: 100%;\n  z-index: 1000;\n  -webkit-overflow-scrolling: touch;\n}\n.Select-menu {\n  max-height: 198px;\n  overflow-y: auto;\n}\n.Select-option {\n  box-sizing: border-box;\n  color: #666666;\n  cursor: pointer;\n  display: block;\n  padding: 8px 10px;\n}\n.Select-option:last-child {\n  border-bottom-right-radius: 4px;\n  border-bottom-left-radius: 4px;\n}\n.Select-option.is-focused {\n  background-color: #f2f9fc;\n  color: #333;\n}\n.Select-option.is-disabled {\n  color: #cccccc;\n  cursor: not-allowed;\n}\n.Select-noresults,\n.Select-search-prompt,\n.Select-searching {\n  box-sizing: border-box;\n  color: #999999;\n  cursor: default;\n  display: block;\n  padding: 8px 10px;\n}\n.Select--multi .Select-input {\n  vertical-align: middle;\n  margin-left: 10px;\n  padding: 0;\n}\n.Select--multi.has-value .Select-input {\n  margin-left: 5px;\n}\n.Select-item {\n  background-color: #f2f9fc;\n  border-radius: 2px;\n  border: 1px solid #c9e6f2;\n  color: #08c;\n  display: inline-block;\n  font-size: 0.9em;\n  margin-left: 5px;\n  margin-top: 5px;\n  vertical-align: top;\n}\n.Select-item-icon,\n.Select-item-label {\n  display: inline-block;\n  vertical-align: middle;\n}\n.Select-item-label {\n  border-bottom-right-radius: 2px;\n  border-top-right-radius: 2px;\n  cursor: default;\n  padding: 2px 5px;\n}\n.Select-item-label .Select-item-label__a {\n  color: #08c;\n  cursor: pointer;\n}\n.Select-item-icon {\n  cursor: pointer;\n  border-bottom-left-radius: 2px;\n  border-top-left-radius: 2px;\n  border-right: 1px solid #c9e6f2;\n  padding: 1px 5px 3px;\n}\n.Select-item-icon:hover,\n.Select-item-icon:focus {\n  background-color: #ddeff7;\n  color: #0077b3;\n}\n.Select-item-icon:active {\n  background-color: #c9e6f2;\n}\n.Select--multi.is-disabled .Select-item {\n  background-color: #f2f2f2;\n  border: 1px solid #d9d9d9;\n  color: #888;\n}\n.Select--multi.is-disabled .Select-item-icon {\n  cursor: not-allowed;\n  border-right: 1px solid #d9d9d9;\n}\n.Select--multi.is-disabled .Select-item-icon:hover,\n.Select--multi.is-disabled .Select-item-icon:focus,\n.Select--multi.is-disabled .Select-item-icon:active {\n  background-color: #f2f2f2;\n}\n@keyframes Select-animation-spin {\n  to {\n    transform: rotate(1turn);\n  }\n}\n@-webkit-keyframes Select-animation-spin {\n  to {\n    -webkit-transform: rotate(1turn);\n  }\n}\n", ""]);
-
-	// exports
-
-
-/***/ },
-/* 183 */,
-/* 184 */
+/* 168 */
 /***/ function(module, exports) {
 
 	"use strict";
 
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -23358,7 +20918,7 @@ var autotagform =
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var Token = (function () {
+	var Token = function () {
 	  function Token(value) {
 	    _classCallCheck(this, Token);
 
@@ -23388,17 +20948,17 @@ var autotagform =
 	  }]);
 
 	  return Token;
-	})();
+	}();
 
 	exports.default = Token;
 
 /***/ },
-/* 185 */
+/* 169 */
 /***/ function(module, exports) {
 
 	"use strict";
 
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -23406,7 +20966,7 @@ var autotagform =
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var Image = (function () {
+	var Image = function () {
 	  function Image(id, name, owner, permissions, clientPath, tags) {
 	    var tokens = arguments.length <= 6 || arguments[6] === undefined ? new Set() : arguments[6];
 	    var checkedTokens = arguments.length <= 7 || arguments[7] === undefined ? new Set() : arguments[7];
@@ -23451,17 +21011,17 @@ var autotagform =
 	  }]);
 
 	  return Image;
-	})();
+	}();
 
 	exports.default = Image;
 
 /***/ },
-/* 186 */
+/* 170 */
 /***/ function(module, exports) {
 
 	"use strict";
 
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -23469,7 +21029,7 @@ var autotagform =
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var Tag = (function () {
+	var Tag = function () {
 	  function Tag(id, value, description, owner, permissions, set) {
 	    _classCallCheck(this, Tag);
 
@@ -23492,12 +21052,12 @@ var autotagform =
 	  }]);
 
 	  return Tag;
-	})();
+	}();
 
 	exports.default = Tag;
 
 /***/ },
-/* 187 */
+/* 171 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -23521,7 +21081,7 @@ var autotagform =
 	exports.default = User;
 
 /***/ },
-/* 188 */
+/* 172 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -23533,7 +21093,7 @@ var autotagform =
 	exports.intersection = intersection;
 	exports.difference = difference;
 
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 	function union(a, b) {
 	  return new Set([].concat(_toConsumableArray(a), _toConsumableArray(b)));
@@ -23552,12 +21112,12 @@ var autotagform =
 	}
 
 /***/ },
-/* 189 */
+/* 173 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -23571,7 +21131,7 @@ var autotagform =
 
 	var _reactRange2 = _interopRequireDefault(_reactRange);
 
-	var _reactTooltip = __webpack_require__(190);
+	var _reactTooltip = __webpack_require__(174);
 
 	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
 
@@ -23583,7 +21143,7 @@ var autotagform =
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	var AutoTagToolbar = (function (_React$Component) {
+	var AutoTagToolbar = function (_React$Component) {
 	  _inherits(AutoTagToolbar, _React$Component);
 
 	  function AutoTagToolbar() {
@@ -23694,12 +21254,12 @@ var autotagform =
 	  }]);
 
 	  return AutoTagToolbar;
-	})(_react2.default.Component);
+	}(_react2.default.Component);
 
 	exports.default = AutoTagToolbar;
 
 /***/ },
-/* 190 */
+/* 174 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -23720,35 +21280,57 @@ var autotagform =
 
 	var _reactDom = __webpack_require__(158);
 
-	var _classnames = __webpack_require__(191);
+	var _classnames = __webpack_require__(175);
 
 	var _classnames2 = _interopRequireDefault(_classnames);
 
-	var _style = __webpack_require__(192);
+	var _style = __webpack_require__(176);
 
 	var _style2 = _interopRequireDefault(_style);
 
 	var ReactTooltip = (function (_Component) {
 	  _inherits(ReactTooltip, _Component);
 
-	  ReactTooltip.prototype._bind = function _bind() {
-	    var _this = this;
-
-	    for (var _len = arguments.length, handlers = Array(_len), _key = 0; _key < _len; _key++) {
-	      handlers[_key] = arguments[_key];
-	    }
-
-	    handlers.forEach(function (handler) {
-	      return _this[handler] = _this[handler].bind(_this);
-	    });
-	  };
+	  /**
+	   * Class method
+	   * @see ReactTooltip.hide() && ReactTooltup.rebuild()
+	   */
 
 	  ReactTooltip.hide = function hide() {
-	    window.dispatchEvent(new window.Event('__react_tooltip_hide_event'));
+	    /**
+	     * Check for ie
+	     * @see http://stackoverflow.com/questions/26596123/internet-explorer-9-10-11-event-constructor-doesnt-work
+	     */
+	    if (typeof window.Event === 'function') {
+	      window.dispatchEvent(new window.Event('__react_tooltip_hide_event'));
+	    } else {
+	      var _event = document.createEvent('Event');
+	      _event.initEvent('__react_tooltip_hide_event', false, true);
+	      window.dispatchEvent(_event);
+	    }
 	  };
 
 	  ReactTooltip.rebuild = function rebuild() {
-	    window.dispatchEvent(new window.Event('__react_tooltip_rebuild_event'));
+	    if (typeof window.Event === 'function') {
+	      window.dispatchEvent(new window.Event('__react_tooltip_rebuild_event'));
+	    } else {
+	      var _event2 = document.createEvent('Event');
+	      _event2.initEvent('__react_tooltip_rebuild_event', false, true);
+	      window.dispatchEvent(_event2);
+	    }
+	  };
+
+	  ReactTooltip.prototype.globalHide = function globalHide() {
+	    if (this.mount) {
+	      this.hideTooltip();
+	    }
+	  };
+
+	  ReactTooltip.prototype.globalRebuild = function globalRebuild() {
+	    if (this.mount) {
+	      this.unbindListener();
+	      this.bindListener();
+	    }
 	  };
 
 	  _createClass(ReactTooltip, null, [{
@@ -23769,10 +21351,11 @@ var autotagform =
 	    _classCallCheck(this, ReactTooltip);
 
 	    _Component.call(this, props);
-	    this._bind('showTooltip', 'updateTooltip', 'hideTooltip');
+	    this._bind('showTooltip', 'updateTooltip', 'hideTooltip', 'checkStatus', 'onWindowResize', 'bindClickListener');
 	    this.mount = true;
 	    this.state = {
 	      show: false,
+	      border: false,
 	      multilineCount: 0,
 	      placeholder: '',
 	      x: 'NONE',
@@ -23784,48 +21367,39 @@ var autotagform =
 	      offset: {},
 	      extraClass: '',
 	      html: false,
-	      delayHide: 0
+	      delayHide: 0,
+	      delayShow: 0,
+	      event: props.event || null
 	    };
+	    this.delayShowLoop = null;
 	  }
+
+	  /* Bind this with method */
+
+	  ReactTooltip.prototype._bind = function _bind() {
+	    var _this = this;
+
+	    for (var _len = arguments.length, handlers = Array(_len), _key = 0; _key < _len; _key++) {
+	      handlers[_key] = arguments[_key];
+	    }
+
+	    handlers.forEach(function (handler) {
+	      return _this[handler] = _this[handler].bind(_this);
+	    });
+	  };
 
 	  ReactTooltip.prototype.componentDidMount = function componentDidMount() {
 	    this.bindListener();
+	    this.setStyleHeader();
 	    /* Add window event listener for hide and rebuild */
 	    window.removeEventListener('__react_tooltip_hide_event', this.globalHide);
 	    window.addEventListener('__react_tooltip_hide_event', this.globalHide.bind(this), false);
 
 	    window.removeEventListener('__react_tooltip_rebuild_event', this.globalRebuild);
 	    window.addEventListener('__react_tooltip_rebuild_event', this.globalRebuild.bind(this), false);
-	  };
-
-	  /** Method for window.addEventListener
-	   *
-	   **/
-
-	  ReactTooltip.prototype.globalHide = function globalHide() {
-	    if (this.mount) {
-	      this.hideTooltip();
-	    }
-	  };
-
-	  ReactTooltip.prototype.globalRebuild = function globalRebuild() {
-	    if (this.mount) {
-	      this.unbindListener();
-	      this.bindListener();
-	    }
-	  };
-
-	  ReactTooltip.prototype.componentWillUnmount = function componentWillUnmount() {
-	    this.unbindListener();
-	    this.mount = false;
-	    var tag = document.querySelector('style[id="react-tooltip"]');
-
-	    if (tag !== null) {
-	      document.getElementsByTagName('head')[0].removeChild(tag);
-	    }
-
-	    window.removeEventListener('__react_tooltip_hide_event', this.globalHide);
-	    window.removeEventListener('__react_tooltip_rebuild_event', this.globalRebuild);
+	    /* Add listener on window resize  */
+	    window.removeEventListener('resize', this.onWindowResize);
+	    window.addEventListener('resize', this.onWindowResize.bind(this), false);
 	  };
 
 	  ReactTooltip.prototype.componentWillUpdate = function componentWillUpdate() {
@@ -23833,11 +21407,70 @@ var autotagform =
 	  };
 
 	  ReactTooltip.prototype.componentDidUpdate = function componentDidUpdate() {
-	    this._updatePosition();
+	    this.updatePosition();
 	    this.bindListener();
 	  };
 
+	  ReactTooltip.prototype.componentWillUnmount = function componentWillUnmount() {
+	    clearTimeout(this.delayShowLoop);
+	    this.unbindListener();
+	    this.removeScrollListener();
+	    this.mount = false;
+	    window.removeEventListener('__react_tooltip_hide_event', this.globalHide);
+	    window.removeEventListener('__react_tooltip_rebuild_event', this.globalRebuild);
+	    window.removeEventListener('resize', this.onWindowResize);
+	  };
+
+	  /* TODO: optimize, bind has been trigger too maany times */
+
 	  ReactTooltip.prototype.bindListener = function bindListener() {
+	    var targetArray = this.getTargetArray();
+
+	    var dataEvent = undefined;
+	    for (var i = 0; i < targetArray.length; i++) {
+	      if (targetArray[i].getAttribute('currentItem') === null) {
+	        targetArray[i].setAttribute('currentItem', 'false');
+	      }
+	      dataEvent = this.state.event || targetArray[i].getAttribute('data-event');
+	      if (dataEvent) {
+	        targetArray[i].removeEventListener(dataEvent, this.checkStatus);
+	        targetArray[i].addEventListener(dataEvent, this.checkStatus, false);
+	      } else {
+	        targetArray[i].removeEventListener('mouseenter', this.showTooltip);
+	        targetArray[i].addEventListener('mouseenter', this.showTooltip, false);
+
+	        if (this.state.effect === 'float') {
+	          targetArray[i].removeEventListener('mousemove', this.updateTooltip);
+	          targetArray[i].addEventListener('mousemove', this.updateTooltip, false);
+	        }
+
+	        targetArray[i].removeEventListener('mouseleave', this.hideTooltip);
+	        targetArray[i].addEventListener('mouseleave', this.hideTooltip, false);
+	      }
+	    }
+	  };
+
+	  ReactTooltip.prototype.unbindListener = function unbindListener() {
+	    var targetArray = document.querySelectorAll('[data-tip]');
+	    var dataEvent = undefined;
+
+	    for (var i = 0; i < targetArray.length; i++) {
+	      dataEvent = this.state.event || targetArray[i].getAttribute('data-event');
+	      if (dataEvent) {
+	        targetArray[i].removeEventListener(dataEvent, this.checkStatus);
+	      } else {
+	        targetArray[i].removeEventListener('mouseenter', this.showTooltip);
+	        targetArray[i].removeEventListener('mousemove', this.updateTooltip);
+	        targetArray[i].removeEventListener('mouseleave', this.hideTooltip);
+	      }
+	    }
+	  };
+
+	  /**
+	   * Get all tooltip targets
+	   */
+
+	  ReactTooltip.prototype.getTargetArray = function getTargetArray() {
 	    var id = this.props.id;
 
 	    var targetArray = undefined;
@@ -23848,109 +21481,80 @@ var autotagform =
 	      targetArray = document.querySelectorAll('[data-tip][data-for="' + id + '"]');
 	    }
 
+	    return targetArray;
+	  };
+
+	  /**
+	   * listener on window resize
+	   */
+
+	  ReactTooltip.prototype.onWindowResize = function onWindowResize() {
+	    if (!this.mount) return;
+	    var targetArray = this.getTargetArray();
+
 	    for (var i = 0; i < targetArray.length; i++) {
-	      targetArray[i].removeEventListener('mouseenter', this.showTooltip);
-	      targetArray[i].addEventListener('mouseenter', this.showTooltip, false);
+	      if (targetArray[i].getAttribute('currentItem') === 'true') {
+	        // todo: timer for performance
 
-	      targetArray[i].removeEventListener('mousemove', this.updateTooltip);
-	      targetArray[i].addEventListener('mousemove', this.updateTooltip, false);
+	        var _getPosition = this.getPosition(targetArray[i]);
 
-	      targetArray[i].removeEventListener('mouseleave', this.hideTooltip);
-	      targetArray[i].addEventListener('mouseleave', this.hideTooltip, false);
+	        var x = _getPosition.x;
+	        var y = _getPosition.y;
+
+	        _reactDom.findDOMNode(this).style.left = x + 'px';
+	        _reactDom.findDOMNode(this).style.top = y + 'px';
+	        /* this.setState({
+	         x,
+	         y
+	         }) */
+	      }
 	    }
 	  };
 
-	  ReactTooltip.prototype.unbindListener = function unbindListener() {
-	    var targetArray = document.querySelectorAll('[data-tip]');
+	  /**
+	   * Used in customer event
+	   */
+
+	  ReactTooltip.prototype.checkStatus = function checkStatus(e) {
+	    e.stopPropagation();
+	    if (this.state.show && e.currentTarget.getAttribute('currentItem') === 'true') {
+	      this.hideTooltip(e);
+	    } else {
+	      e.currentTarget.setAttribute('currentItem', 'true');
+	      /* when click other place, the tooltip should be removed */
+	      window.removeEventListener('click', this.bindClickListener);
+	      window.addEventListener('click', this.bindClickListener, false);
+
+	      this.showTooltip(e);
+	      this.setUntargetItems(e.currentTarget);
+	    }
+	  };
+
+	  ReactTooltip.prototype.setUntargetItems = function setUntargetItems(currentTarget) {
+	    var targetArray = this.getTargetArray();
 	    for (var i = 0; i < targetArray.length; i++) {
-	      targetArray[i].removeEventListener('mouseenter', this.showTooltip);
-	      targetArray[i].removeEventListener('mousemove', this.updateTooltip);
-	      targetArray[i].removeEventListener('mouseleave', this.hideTooltip);
+	      if (currentTarget !== targetArray[i]) {
+	        targetArray[i].setAttribute('currentItem', 'false');
+	      } else {
+	        targetArray[i].setAttribute('currentItem', 'true');
+	      }
 	    }
 	  };
 
-	  ReactTooltip.prototype._updatePosition = function _updatePosition() {
-	    var node = _reactDom.findDOMNode(this);
-
-	    var tipWidth = node.clientWidth;
-	    var tipHeight = node.clientHeight;
-	    var offsetFormEffect = { x: 0, y: 0 };
-	    var effect = this.state.effect;
-
-	    if (effect === 'float') {
-	      if (this.state.place === 'top') {
-	        offsetFormEffect.x = -(tipWidth / 2);
-	        offsetFormEffect.y = -tipHeight;
-	      } else if (this.state.place === 'bottom') {
-	        offsetFormEffect.x = -(tipWidth / 2);
-	        offsetFormEffect.y = 15;
-	      } else if (this.state.place === 'left') {
-	        offsetFormEffect.x = -(tipWidth + 15);
-	        offsetFormEffect.y = -(tipHeight / 2);
-	      } else if (this.state.place === 'right') {
-	        offsetFormEffect.x = 10;
-	        offsetFormEffect.y = -(tipHeight / 2);
-	      }
-	    }
-	    var xPosition = 0;
-	    var yPosition = 0;
-	    var offset = this.state.offset;
-
-	    if (Object.prototype.toString.apply(offset) === '[object String]') {
-	      offset = JSON.parse(offset.toString().replace(/\'/g, '\"'));
-	    }
-	    for (var key in offset) {
-	      if (key === 'top') {
-	        yPosition -= parseInt(offset[key], 10);
-	      } else if (key === 'bottom') {
-	        yPosition += parseInt(offset[key], 10);
-	      } else if (key === 'left') {
-	        xPosition -= parseInt(offset[key], 10);
-	      } else if (key === 'right') {
-	        xPosition += parseInt(offset[key], 10);
-	      }
-	    }
-	    /* When tooltip over the screen */
-	    var styleLeft = this.state.x + offsetFormEffect.x + xPosition;
-	    var styleTop = this.state.y + offsetFormEffect.y + yPosition;
-	    var windoWidth = window.innerWidth;
-	    var windowHeight = window.innerHeight;
-
-	    /* Solid use this method will get Uncaught RangeError: Maximum call stack size exceeded */
-	    if (effect === 'float') {
-	      if (styleLeft < 0) {
-	        this.setState({
-	          place: 'right'
-	        });
-	        return;
-	      } else if (styleLeft + tipWidth > windoWidth) {
-	        this.setState({
-	          place: 'left'
-	        });
-	        return;
-	      } else if (styleTop < 0) {
-	        this.setState({
-	          place: 'bottom'
-	        });
-	        return;
-	      } else if (styleTop + tipHeight > windowHeight) {
-	        this.setState({
-	          place: 'top'
-	        });
-	        return;
-	      }
-	    }
-
-	    node.style.left = styleLeft + 'px';
-	    node.style.top = styleTop + 'px';
+	  ReactTooltip.prototype.bindClickListener = function bindClickListener() {
+	    this.globalHide();
+	    window.removeEventListener('click', this.bindClickListener);
 	  };
+
+	  /**
+	   * When mouse enter, show update
+	   */
 
 	  ReactTooltip.prototype.showTooltip = function showTooltip(e) {
-	    e.stopPropagation();
-	    var originTooltip = e.target.getAttribute('data-tip');
+	    var originTooltip = e.currentTarget.getAttribute('data-tip');
 	    /* Detect multiline */
 	    var regexp = /<br\s*\/?>/;
-	    var multiline = e.target.getAttribute('data-multiline') ? e.target.getAttribute('data-multiline') : this.props.multiline ? this.props.multiline : false;
+	    var multiline = e.currentTarget.getAttribute('data-multiline') ? e.currentTarget.getAttribute('data-multiline') : this.props.multiline ? this.props.multiline : false;
 	    var tooltipText = undefined;
 	    var multilineCount = 0;
 	    if (!multiline || multiline === 'false' || !regexp.test(originTooltip)) {
@@ -23966,103 +21570,295 @@ var autotagform =
 	      });
 	    }
 	    /* Define extra class */
-	    var extraClass = e.target.getAttribute('data-class') ? e.target.getAttribute('data-class') : '';
+	    var extraClass = e.currentTarget.getAttribute('data-class') ? e.currentTarget.getAttribute('data-class') : '';
 	    extraClass = this.props['class'] ? this.props['class'] + ' ' + extraClass : extraClass;
 	    this.setState({
 	      placeholder: tooltipText,
 	      multilineCount: multilineCount,
-	      place: e.target.getAttribute('data-place') ? e.target.getAttribute('data-place') : this.props.place ? this.props.place : 'top',
-	      type: e.target.getAttribute('data-type') ? e.target.getAttribute('data-type') : this.props.type ? this.props.type : 'dark',
-	      effect: e.target.getAttribute('data-effect') ? e.target.getAttribute('data-effect') : this.props.effect ? this.props.effect : 'float',
-	      offset: e.target.getAttribute('data-offset') ? e.target.getAttribute('data-offset') : this.props.offset ? this.props.offset : {},
+	      place: e.currentTarget.getAttribute('data-place') ? e.currentTarget.getAttribute('data-place') : this.props.place ? this.props.place : 'top',
+	      type: e.currentTarget.getAttribute('data-type') ? e.currentTarget.getAttribute('data-type') : this.props.type ? this.props.type : 'dark',
+	      effect: e.currentTarget.getAttribute('data-effect') ? e.currentTarget.getAttribute('data-effect') : this.props.effect ? this.props.effect : 'float',
+	      offset: e.currentTarget.getAttribute('data-offset') ? e.currentTarget.getAttribute('data-offset') : this.props.offset ? this.props.offset : {},
+	      html: e.currentTarget.getAttribute('data-html') ? e.currentTarget.getAttribute('data-html') : this.props.html ? this.props.html : false,
+	      delayShow: e.currentTarget.getAttribute('data-delay-show') ? e.currentTarget.getAttribute('data-delay-show') : this.props.delayShow ? this.props.delayShow : 0,
+	      delayHide: e.currentTarget.getAttribute('data-delay-hide') ? e.currentTarget.getAttribute('data-delay-hide') : this.props.delayHide ? this.props.delayHide : 0,
+	      border: e.currentTarget.getAttribute('data-border') ? e.currentTarget.getAttribute('data-border') === 'true' : this.props.border ? this.props.border : false,
 	      extraClass: extraClass,
-	      multiline: multiline,
-	      html: e.target.getAttribute('data-html') ? e.target.getAttribute('data-html') : this.props.html ? this.props.html : false,
-	      delayHide: e.target.getAttribute('data-delay-hide') ? e.target.getAttribute('data-delay-hide') : this.props.delayHide ? this.props.delayHide : 0
+	      multiline: multiline
 	    });
+
+	    this.addScrollListener();
 	    this.updateTooltip(e);
 	  };
 
-	  ReactTooltip.prototype.updateTooltip = function updateTooltip(e) {
-	    e.stopPropagation();
-	    if (this.trim(this.state.placeholder).length > 0) {
-	      var place = this.state.place;
+	  /**
+	   * When mouse hover, updatetooltip
+	   */
 
-	      var node = _reactDom.findDOMNode(this);
-	      if (this.state.effect === 'float') {
-	        // const offsetY = e.clientY
-	        this.setState({
-	          show: true,
-	          x: e.clientX,
-	          y: e.clientY
-	        });
-	      } else if (this.state.effect === 'solid') {
-	        var boundingClientRect = e.target.getBoundingClientRect();
-	        var targetTop = boundingClientRect.top;
-	        var targetLeft = boundingClientRect.left;
-	        var tipWidth = node.clientWidth;
-	        var tipHeight = node.clientHeight;
-	        var targetWidth = e.target.clientWidth;
-	        var targetHeight = e.target.clientHeight;
-	        var x = undefined;
-	        var y = undefined;
-	        if (place === 'top') {
-	          x = targetLeft - tipWidth / 2 + targetWidth / 2;
-	          y = targetTop - tipHeight - 8;
-	        } else if (place === 'bottom') {
-	          x = targetLeft - tipWidth / 2 + targetWidth / 2;
-	          y = targetTop + targetHeight + 8;
-	        } else if (place === 'left') {
-	          x = targetLeft - tipWidth - 6;
-	          y = targetTop + targetHeight / 2 - tipHeight / 2;
-	        } else if (place === 'right') {
-	          x = targetLeft + targetWidth + 6;
-	          y = targetTop + targetHeight / 2 - tipHeight / 2;
+	  ReactTooltip.prototype.updateTooltip = function updateTooltip(e) {
+	    var _this2 = this;
+
+	    var _state = this.state;
+	    var delayShow = _state.delayShow;
+	    var show = _state.show;
+
+	    var delayTime = show ? 0 : parseInt(delayShow, 10);
+	    var eventTarget = e.currentTarget;
+
+	    clearTimeout(this.delayShowLoop);
+	    this.delayShowLoop = setTimeout(function () {
+	      if (_this2.trim(_this2.state.placeholder).length > 0) {
+	        if (_this2.state.effect === 'float') {
+	          _this2.setState({
+	            show: true,
+	            x: e.clientX,
+	            y: e.clientY
+	          });
+	        } else if (_this2.state.effect === 'solid') {
+	          var _getPosition2 = _this2.getPosition(eventTarget);
+
+	          var x = _getPosition2.x;
+	          var y = _getPosition2.y;
+
+	          _this2.setState({
+	            show: true,
+	            x: x,
+	            y: y
+	          });
 	        }
-	        this.setState({
-	          show: true,
-	          x: this.state.x === 'NONE' ? x : this.state.x,
-	          y: this.state.y === 'NONE' ? y : this.state.y
-	        });
 	      }
-	    }
+	    }, delayTime);
 	  };
 
+	  /**
+	   * When mouse leave, hide tooltip
+	   */
+
 	  ReactTooltip.prototype.hideTooltip = function hideTooltip() {
-	    var _this2 = this;
+	    var _this3 = this;
 
 	    var delayHide = this.state.delayHide;
 
+	    clearTimeout(this.delayShowLoop);
 	    setTimeout(function () {
-	      _this2.setState({
-	        show: false,
-	        x: 'NONE',
-	        y: 'NONE'
+	      _this3.setState({
+	        show: false
 	      });
+	      _this3.removeScrollListener();
 	    }, parseInt(delayHide, 10));
 	  };
 
-	  ReactTooltip.prototype.render = function render() {
-	    var _state = this.state;
-	    var placeholder = _state.placeholder;
-	    var extraClass = _state.extraClass;
-	    var html = _state.html;
+	  /**
+	   * Add scroll eventlistener when tooltip show
+	   * or tooltip will always existed
+	   */
 
-	    var tooltipClass = _classnames2['default']('__react_component_tooltip', { 'show': this.state.show }, { 'place-top': this.state.place === 'top' }, { 'place-bottom': this.state.place === 'bottom' }, { 'place-left': this.state.place === 'left' }, { 'place-right': this.state.place === 'right' }, { 'type-dark': this.state.type === 'dark' }, { 'type-success': this.state.type === 'success' }, { 'type-warning': this.state.type === 'warning' }, { 'type-error': this.state.type === 'error' }, { 'type-info': this.state.type === 'info' }, { 'type-light': this.state.type === 'light' });
+	  ReactTooltip.prototype.addScrollListener = function addScrollListener() {
+	    window.addEventListener('scroll', this.hideTooltip);
+	  };
 
+	  ReactTooltip.prototype.removeScrollListener = function removeScrollListener() {
+	    window.removeEventListener('scroll', this.hideTooltip);
+	  };
+
+	  /**
+	   * Get tooltip poisition by current target
+	   */
+
+	  ReactTooltip.prototype.getPosition = function getPosition(currentTarget) {
+	    var place = this.state.place;
+
+	    var node = _reactDom.findDOMNode(this);
+	    var boundingClientRect = currentTarget.getBoundingClientRect();
+	    var targetTop = boundingClientRect.top;
+	    var targetLeft = boundingClientRect.left;
+	    var tipWidth = node.clientWidth;
+	    var tipHeight = node.clientHeight;
+	    var targetWidth = currentTarget.clientWidth;
+	    var targetHeight = currentTarget.clientHeight;
+	    var x = undefined;
+	    var y = undefined;
+	    if (place === 'top') {
+	      x = targetLeft - tipWidth / 2 + targetWidth / 2;
+	      y = targetTop - tipHeight - 8;
+	    } else if (place === 'bottom') {
+	      x = targetLeft - tipWidth / 2 + targetWidth / 2;
+	      y = targetTop + targetHeight + 8;
+	    } else if (place === 'left') {
+	      x = targetLeft - tipWidth - 6;
+	      y = targetTop + targetHeight / 2 - tipHeight / 2;
+	    } else if (place === 'right') {
+	      x = targetLeft + targetWidth + 6;
+	      y = targetTop + targetHeight / 2 - tipHeight / 2;
+	    }
+
+	    return { x: x, y: y };
+	  };
+
+	  /**
+	   * Execute in componentDidUpdate, can't put this into render() to support server rendering
+	   */
+
+	  ReactTooltip.prototype.updatePosition = function updatePosition() {
+	    var node = _reactDom.findDOMNode(this);
+
+	    var tipWidth = node.clientWidth;
+	    var tipHeight = node.clientHeight;
+	    var _state2 = this.state;
+	    var effect = _state2.effect;
+	    var place = _state2.place;
+	    var offset = _state2.offset;
+
+	    var offsetFromEffect = {};
+
+	    /**
+	     * List all situations for different placement,
+	     * then tooltip can judge switch to which side if window space is not enough
+	     * @note only support for float at the moment
+	     */
+	    var placements = ['top', 'bottom', 'left', 'right'];
+	    placements.forEach(function (key) {
+	      offsetFromEffect[key] = { x: 0, y: 0 };
+	    });
+
+	    if (effect === 'float') {
+	      offsetFromEffect.top = {
+	        x: -(tipWidth / 2),
+	        y: -tipHeight
+	      };
+	      offsetFromEffect.bottom = {
+	        x: -(tipWidth / 2),
+	        y: 15
+	      };
+	      offsetFromEffect.left = {
+	        x: -(tipWidth + 15),
+	        y: -(tipHeight / 2)
+	      };
+	      offsetFromEffect.right = {
+	        x: 10,
+	        y: -(tipHeight / 2)
+	      };
+	    }
+
+	    var xPosition = 0;
+	    var yPosition = 0;
+
+	    /* If user set offset attribute, we have to consider it into out position calculating */
+	    if (Object.prototype.toString.apply(offset) === '[object String]') {
+	      offset = JSON.parse(offset.toString().replace(/\'/g, '\"'));
+	    }
+	    for (var key in offset) {
+	      if (key === 'top') {
+	        yPosition -= parseInt(offset[key], 10);
+	      } else if (key === 'bottom') {
+	        yPosition += parseInt(offset[key], 10);
+	      } else if (key === 'left') {
+	        xPosition -= parseInt(offset[key], 10);
+	      } else if (key === 'right') {
+	        xPosition += parseInt(offset[key], 10);
+	      }
+	    }
+
+	    /* If our tooltip goes outside the window we want to try and change its place to be inside the window */
+	    var x = this.state.x;
+	    var y = this.state.y;
+	    var windoWidth = window.innerWidth;
+	    var windowHeight = window.innerHeight;
+
+	    var getStyleLeft = function getStyleLeft(place) {
+	      var offsetEffectX = effect === 'solid' ? 0 : place ? offsetFromEffect[place].x : 0;
+	      return x + offsetEffectX + xPosition;
+	    };
+	    var getStyleTop = function getStyleTop(place) {
+	      var offsetEffectY = effect === 'solid' ? 0 : place ? offsetFromEffect[place].y : 0;
+	      return y + offsetEffectY + yPosition;
+	    };
+
+	    var outsideLeft = function outsideLeft(place) {
+	      var styleLeft = getStyleLeft(place);
+	      return styleLeft < 0 && x + offsetFromEffect['right'].x + xPosition <= windoWidth;
+	    };
+	    var outsideRight = function outsideRight(place) {
+	      var styleLeft = getStyleLeft(place);
+	      return styleLeft + tipWidth > windoWidth && x + offsetFromEffect['left'].x + xPosition >= 0;
+	    };
+	    var outsideTop = function outsideTop(place) {
+	      var styleTop = getStyleTop(place);
+	      return styleTop < 0 && y + offsetFromEffect['bottom'].y + yPosition + tipHeight < windowHeight;
+	    };
+	    var outsideBottom = function outsideBottom(place) {
+	      var styleTop = getStyleTop(place);
+	      return styleTop + tipHeight >= windowHeight && y + offsetFromEffect['top'].y + yPosition >= 0;
+	    };
+
+	    /* We want to make sure the place we switch to will not go outside either */
+	    var outside = function outside(place) {
+	      return outsideTop(place) || outsideRight(place) || outsideBottom(place) || outsideLeft(place);
+	    };
+
+	    /* We check each side and switch if the new place will be in bounds */
+	    if (outsideLeft(place)) {
+	      if (!outside('right')) {
+	        this.setState({
+	          place: 'right'
+	        });
+	        return;
+	      }
+	    } else if (outsideRight(place)) {
+	      if (!outside('left')) {
+	        this.setState({
+	          place: 'left'
+	        });
+	        return;
+	      }
+	    } else if (outsideTop(place)) {
+	      if (!outside('bottom')) {
+	        this.setState({
+	          place: 'bottom'
+	        });
+	        return;
+	      }
+	    } else if (outsideBottom(place)) {
+	      if (!outside('top')) {
+	        this.setState({
+	          place: 'top'
+	        });
+	        return;
+	      }
+	    }
+
+	    node.style.left = getStyleLeft(place) + 'px';
+	    node.style.top = getStyleTop(place) + 'px';
+	  };
+
+	  /**
+	   * Set style tag in header
+	   * Insert style by this way
+	   */
+
+	  ReactTooltip.prototype.setStyleHeader = function setStyleHeader() {
 	    if (!document.getElementsByTagName('head')[0].querySelector('style[id="react-tooltip"]')) {
 	      var tag = document.createElement('style');
 	      tag.id = 'react-tooltip';
 	      tag.innerHTML = _style2['default'];
 	      document.getElementsByTagName('head')[0].appendChild(tag);
 	    }
+	  };
+
+	  ReactTooltip.prototype.render = function render() {
+	    var _state3 = this.state;
+	    var placeholder = _state3.placeholder;
+	    var extraClass = _state3.extraClass;
+	    var html = _state3.html;
+
+	    var tooltipClass = _classnames2['default']('__react_component_tooltip', { 'show': this.state.show }, { 'border': this.state.border }, { 'place-top': this.state.place === 'top' }, { 'place-bottom': this.state.place === 'bottom' }, { 'place-left': this.state.place === 'left' }, { 'place-right': this.state.place === 'right' }, { 'type-dark': this.state.type === 'dark' }, { 'type-success': this.state.type === 'success' }, { 'type-warning': this.state.type === 'warning' }, { 'type-error': this.state.type === 'error' }, { 'type-info': this.state.type === 'info' }, { 'type-light': this.state.type === 'light' });
 
 	    if (html) {
-	      return _react2['default'].createElement('span', { className: tooltipClass + ' ' + extraClass, 'data-id': 'tooltip', dangerouslySetInnerHTML: { __html: placeholder } });
+	      return _react2['default'].createElement('div', { className: tooltipClass + ' ' + extraClass, 'data-id': 'tooltip', dangerouslySetInnerHTML: { __html: placeholder } });
 	    } else {
 	      var content = this.props.children ? this.props.children : placeholder;
 	      return _react2['default'].createElement(
-	        'span',
+	        'div',
 	        { className: tooltipClass + ' ' + extraClass, 'data-id': 'tooltip' },
 	        content
 	      );
@@ -24105,16 +21901,20 @@ var autotagform =
 	  effect: _react.PropTypes.string,
 	  offset: _react.PropTypes.object,
 	  multiline: _react.PropTypes.bool,
+	  border: _react.PropTypes.bool,
 	  'class': _react.PropTypes.string,
 	  id: _react.PropTypes.string,
 	  html: _react.PropTypes.bool,
-	  delayHide: _react.PropTypes.number
+	  delayHide: _react.PropTypes.number,
+	  delayShow: _react.PropTypes.number,
+	  event: _react.PropTypes.any,
+	  watchWindow: _react.PropTypes.bool
 	};
 	module.exports = exports['default'];
 
 
 /***/ },
-/* 191 */
+/* 175 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -24163,23 +21963,23 @@ var autotagform =
 
 
 /***/ },
-/* 192 */
+/* 176 */
 /***/ function(module, exports) {
 
 	'use strict';
 
 	exports.__esModule = true;
-	exports['default'] = '.__react_component_tooltip{border-radius:3px;display:inline-block;font-size:13px;left:-999em;opacity:0;padding:8px 21px;position:fixed;transition:opacity 0.3s ease-out,margin-top 0.3s ease-out,margin-left 0.3s ease-out;top:-999em;visibility:hidden;z-index:999}.__react_component_tooltip:after{content:"";width:0;height:0;position:absolute}.__react_component_tooltip.show{opacity:0.9;margin-top:0px;margin-left:0px;visibility:visible}.__react_component_tooltip.type-dark{color:#fff;background-color:#222}.__react_component_tooltip.type-dark.place-top:after{border-top:8px solid #222}.__react_component_tooltip.type-dark.place-bottom:after{border-bottom:8px solid #222}.__react_component_tooltip.type-dark.place-left:after{border-left:6px solid #222}.__react_component_tooltip.type-dark.place-right:after{border-right:6px solid #222}.__react_component_tooltip.type-success{color:#fff;background-color:#8DC572}.__react_component_tooltip.type-success.place-top:after{border-top:8px solid #8DC572}.__react_component_tooltip.type-success.place-bottom:after{border-bottom:8px solid #8DC572}.__react_component_tooltip.type-success.place-left:after{border-left:6px solid #8DC572}.__react_component_tooltip.type-success.place-right:after{border-right:6px solid #8DC572}.__react_component_tooltip.type-warning{color:#fff;background-color:#F0AD4E}.__react_component_tooltip.type-warning.place-top:after{border-top:8px solid #F0AD4E}.__react_component_tooltip.type-warning.place-bottom:after{border-bottom:8px solid #F0AD4E}.__react_component_tooltip.type-warning.place-left:after{border-left:6px solid #F0AD4E}.__react_component_tooltip.type-warning.place-right:after{border-right:6px solid #F0AD4E}.__react_component_tooltip.type-error{color:#fff;background-color:#BE6464}.__react_component_tooltip.type-error.place-top:after{border-top:8px solid #BE6464}.__react_component_tooltip.type-error.place-bottom:after{border-bottom:8px solid #BE6464}.__react_component_tooltip.type-error.place-left:after{border-left:6px solid #BE6464}.__react_component_tooltip.type-error.place-right:after{border-right:6px solid #BE6464}.__react_component_tooltip.type-info{color:#fff;background-color:#337AB7}.__react_component_tooltip.type-info.place-top:after{border-top:8px solid #337AB7}.__react_component_tooltip.type-info.place-bottom:after{border-bottom:8px solid #337AB7}.__react_component_tooltip.type-info.place-left:after{border-left:6px solid #337AB7}.__react_component_tooltip.type-info.place-right:after{border-right:6px solid #337AB7}.__react_component_tooltip.type-light{color:#222;background-color:#fff}.__react_component_tooltip.type-light.place-top:after{border-top:8px solid #fff}.__react_component_tooltip.type-light.place-bottom:after{border-bottom:8px solid #fff}.__react_component_tooltip.type-light.place-left:after{border-left:6px solid #fff}.__react_component_tooltip.type-light.place-right:after{border-right:6px solid #fff}.__react_component_tooltip.place-top{margin-top:-10px}.__react_component_tooltip.place-top:after{border-left:10px solid transparent;border-right:10px solid transparent;bottom:-8px;left:50%;margin-left:-10px}.__react_component_tooltip.place-bottom{margin-top:10px}.__react_component_tooltip.place-bottom:after{border-left:10px solid transparent;border-right:10px solid transparent;top:-8px;left:50%;margin-left:-10px}.__react_component_tooltip.place-left{margin-left:-10px}.__react_component_tooltip.place-left:after{border-top:6px solid transparent;border-bottom:6px solid transparent;right:-6px;top:50%;margin-top:-5px}.__react_component_tooltip.place-right{margin-left:10px}.__react_component_tooltip.place-right:after{border-top:6px solid transparent;border-bottom:6px solid transparent;left:-6px;top:50%;margin-top:-5px}.__react_component_tooltip .multi-line{display:block;padding:2px 0px;text-align:center}';
+	exports['default'] = '.__react_component_tooltip{border-radius:3px;display:inline-block;font-size:13px;left:-999em;opacity:0;padding:8px 21px;position:fixed;pointer-events:none;transition:opacity 0.3s ease-out , margin-top 0.3s ease-out, margin-left 0.3s ease-out;top:-999em;visibility:hidden;z-index:999}.__react_component_tooltip:before,.__react_component_tooltip:after{content:"";width:0;height:0;position:absolute}.__react_component_tooltip.show{opacity:0.9;margin-top:0px;margin-left:0px;visibility:visible}.__react_component_tooltip.type-dark{color:#fff;background-color:#222}.__react_component_tooltip.type-dark.place-top:after{border-top:6px solid #222}.__react_component_tooltip.type-dark.place-bottom:after{border-bottom:6px solid #222}.__react_component_tooltip.type-dark.place-left:after{border-left:6px solid #222}.__react_component_tooltip.type-dark.place-right:after{border-right:6px solid #222}.__react_component_tooltip.type-dark.border{border:1px solid #fff}.__react_component_tooltip.type-dark.border.place-top:before{border-top:8px solid #fff}.__react_component_tooltip.type-dark.border.place-bottom:before{border-bottom:8px solid #fff}.__react_component_tooltip.type-dark.border.place-left:before{border-left:8px solid #fff}.__react_component_tooltip.type-dark.border.place-right:before{border-right:8px solid #fff}.__react_component_tooltip.type-success{color:#fff;background-color:#8DC572}.__react_component_tooltip.type-success.place-top:after{border-top:6px solid #8DC572}.__react_component_tooltip.type-success.place-bottom:after{border-bottom:6px solid #8DC572}.__react_component_tooltip.type-success.place-left:after{border-left:6px solid #8DC572}.__react_component_tooltip.type-success.place-right:after{border-right:6px solid #8DC572}.__react_component_tooltip.type-success.border{border:1px solid #fff}.__react_component_tooltip.type-success.border.place-top:before{border-top:8px solid #fff}.__react_component_tooltip.type-success.border.place-bottom:before{border-bottom:8px solid #fff}.__react_component_tooltip.type-success.border.place-left:before{border-left:8px solid #fff}.__react_component_tooltip.type-success.border.place-right:before{border-right:8px solid #fff}.__react_component_tooltip.type-warning{color:#fff;background-color:#F0AD4E}.__react_component_tooltip.type-warning.place-top:after{border-top:6px solid #F0AD4E}.__react_component_tooltip.type-warning.place-bottom:after{border-bottom:6px solid #F0AD4E}.__react_component_tooltip.type-warning.place-left:after{border-left:6px solid #F0AD4E}.__react_component_tooltip.type-warning.place-right:after{border-right:6px solid #F0AD4E}.__react_component_tooltip.type-warning.border{border:1px solid #fff}.__react_component_tooltip.type-warning.border.place-top:before{border-top:8px solid #fff}.__react_component_tooltip.type-warning.border.place-bottom:before{border-bottom:8px solid #fff}.__react_component_tooltip.type-warning.border.place-left:before{border-left:8px solid #fff}.__react_component_tooltip.type-warning.border.place-right:before{border-right:8px solid #fff}.__react_component_tooltip.type-error{color:#fff;background-color:#BE6464}.__react_component_tooltip.type-error.place-top:after{border-top:6px solid #BE6464}.__react_component_tooltip.type-error.place-bottom:after{border-bottom:6px solid #BE6464}.__react_component_tooltip.type-error.place-left:after{border-left:6px solid #BE6464}.__react_component_tooltip.type-error.place-right:after{border-right:6px solid #BE6464}.__react_component_tooltip.type-error.border{border:1px solid #fff}.__react_component_tooltip.type-error.border.place-top:before{border-top:8px solid #fff}.__react_component_tooltip.type-error.border.place-bottom:before{border-bottom:8px solid #fff}.__react_component_tooltip.type-error.border.place-left:before{border-left:8px solid #fff}.__react_component_tooltip.type-error.border.place-right:before{border-right:8px solid #fff}.__react_component_tooltip.type-info{color:#fff;background-color:#337AB7}.__react_component_tooltip.type-info.place-top:after{border-top:6px solid #337AB7}.__react_component_tooltip.type-info.place-bottom:after{border-bottom:6px solid #337AB7}.__react_component_tooltip.type-info.place-left:after{border-left:6px solid #337AB7}.__react_component_tooltip.type-info.place-right:after{border-right:6px solid #337AB7}.__react_component_tooltip.type-info.border{border:1px solid #fff}.__react_component_tooltip.type-info.border.place-top:before{border-top:8px solid #fff}.__react_component_tooltip.type-info.border.place-bottom:before{border-bottom:8px solid #fff}.__react_component_tooltip.type-info.border.place-left:before{border-left:8px solid #fff}.__react_component_tooltip.type-info.border.place-right:before{border-right:8px solid #fff}.__react_component_tooltip.type-light{color:#222;background-color:#fff}.__react_component_tooltip.type-light.place-top:after{border-top:6px solid #fff}.__react_component_tooltip.type-light.place-bottom:after{border-bottom:6px solid #fff}.__react_component_tooltip.type-light.place-left:after{border-left:6px solid #fff}.__react_component_tooltip.type-light.place-right:after{border-right:6px solid #fff}.__react_component_tooltip.type-light.border{border:1px solid #222}.__react_component_tooltip.type-light.border.place-top:before{border-top:8px solid #222}.__react_component_tooltip.type-light.border.place-bottom:before{border-bottom:8px solid #222}.__react_component_tooltip.type-light.border.place-left:before{border-left:8px solid #222}.__react_component_tooltip.type-light.border.place-right:before{border-right:8px solid #222}.__react_component_tooltip.place-top{margin-top:-10px}.__react_component_tooltip.place-top:before{border-left:10px solid transparent;border-right:10px solid transparent;bottom:-8px;left:50%;margin-left:-10px}.__react_component_tooltip.place-top:after{border-left:8px solid transparent;border-right:8px solid transparent;bottom:-6px;left:50%;margin-left:-8px}.__react_component_tooltip.place-bottom{margin-top:10px}.__react_component_tooltip.place-bottom:before{border-left:10px solid transparent;border-right:10px solid transparent;top:-8px;left:50%;margin-left:-10px}.__react_component_tooltip.place-bottom:after{border-left:8px solid transparent;border-right:8px solid transparent;top:-6px;left:50%;margin-left:-8px}.__react_component_tooltip.place-left{margin-left:-10px}.__react_component_tooltip.place-left:before{border-top:6px solid transparent;border-bottom:6px solid transparent;right:-8px;top:50%;margin-top:-5px}.__react_component_tooltip.place-left:after{border-top:5px solid transparent;border-bottom:5px solid transparent;right:-6px;top:50%;margin-top:-4px}.__react_component_tooltip.place-right{margin-left:10px}.__react_component_tooltip.place-right:before{border-top:6px solid transparent;border-bottom:6px solid transparent;left:-8px;top:50%;margin-top:-5px}.__react_component_tooltip.place-right:after{border-top:5px solid transparent;border-bottom:5px solid transparent;left:-6px;top:50%;margin-top:-4px}.__react_component_tooltip .multi-line{display:block;padding:2px 0px;text-align:center}';
 	module.exports = exports['default'];
 
 
 /***/ },
-/* 193 */
+/* 177 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -24193,15 +21993,17 @@ var autotagform =
 
 	var _reactDom2 = _interopRequireDefault(_reactDom);
 
-	var _AutoTagHeaderRow = __webpack_require__(194);
+	var _AutoTagHeaderRow = __webpack_require__(178);
 
 	var _AutoTagHeaderRow2 = _interopRequireDefault(_AutoTagHeaderRow);
 
-	var _AutoTagImageRow = __webpack_require__(198);
+	var _AutoTagImageRow = __webpack_require__(188);
 
 	var _AutoTagImageRow2 = _interopRequireDefault(_AutoTagImageRow);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -24209,9 +22011,7 @@ var autotagform =
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
-
-	var AutoTagForm = (function (_React$Component) {
+	var AutoTagForm = function (_React$Component) {
 	  _inherits(AutoTagForm, _React$Component);
 
 	  function AutoTagForm() {
@@ -24235,7 +22035,7 @@ var autotagform =
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      var _this = this;
+	      var _this2 = this;
 
 	      // Sort the rows by name, then ID
 	      var rowNodes = [].concat(_toConsumableArray(this.props.images)).sort(function (a, b) {
@@ -24258,10 +22058,10 @@ var autotagform =
 	      }).map(function (image) {
 	        return _react2.default.createElement(_AutoTagImageRow2.default, { key: image.id,
 	          image: image,
-	          tokenMap: _this.props.tokenMap,
-	          unmappedTags: _this.props.unmappedTags,
-	          cellCheckedChange: _this.props.cellCheckedChange,
-	          showUnmapped: _this.props.showUnmapped });
+	          tokenMap: _this2.props.tokenMap,
+	          unmappedTags: _this2.props.unmappedTags,
+	          cellCheckedChange: _this2.props.cellCheckedChange,
+	          showUnmapped: _this2.props.showUnmapped });
 	      });
 
 	      return _react2.default.createElement(
@@ -24295,17 +22095,17 @@ var autotagform =
 	  }]);
 
 	  return AutoTagForm;
-	})(_react2.default.Component);
+	}(_react2.default.Component);
 
 	exports.default = AutoTagForm;
 
 /***/ },
-/* 194 */
+/* 178 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -24315,15 +22115,17 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _AutoTagHeaderRowTokenCell = __webpack_require__(195);
+	var _AutoTagHeaderRowTokenCell = __webpack_require__(179);
 
 	var _AutoTagHeaderRowTokenCell2 = _interopRequireDefault(_AutoTagHeaderRowTokenCell);
 
-	var _AutoTagHeaderRowTagCell = __webpack_require__(197);
+	var _AutoTagHeaderRowTagCell = __webpack_require__(187);
 
 	var _AutoTagHeaderRowTagCell2 = _interopRequireDefault(_AutoTagHeaderRowTagCell);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -24331,43 +22133,41 @@ var autotagform =
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
+	var AutoTagHeaderRow = function (_React$Component) {
+	  _inherits(AutoTagHeaderRow, _React$Component);
 
-	var AutoTagHeadRow = (function (_React$Component) {
-	  _inherits(AutoTagHeadRow, _React$Component);
+	  function AutoTagHeaderRow() {
+	    _classCallCheck(this, AutoTagHeaderRow);
 
-	  function AutoTagHeadRow() {
-	    _classCallCheck(this, AutoTagHeadRow);
-
-	    return _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagHeadRow).apply(this, arguments));
+	    return _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagHeaderRow).apply(this, arguments));
 	  }
 
-	  _createClass(AutoTagHeadRow, [{
+	  _createClass(AutoTagHeaderRow, [{
 	    key: 'render',
 	    value: function render() {
-	      var _this = this;
+	      var _this2 = this;
 
 	      var cellNodesToken = [].concat(_toConsumableArray(this.props.tokenMap)).map(function (kv) {
 	        var token = kv[1];
 	        var tag = token.activeTag;
 
 	        // Hide the unmapped columns if set
-	        if (_this.props.showUnmapped || token.possible.size > 0) {
+	        if (_this2.props.showUnmapped || token.possible.size > 0) {
 	          return _react2.default.createElement(_AutoTagHeaderRowTokenCell2.default, { token: token,
 	            tag: tag,
-	            tokenMap: _this.props.tokenMap,
-	            selectMapping: _this.props.selectMapping,
-	            newMapping: _this.props.newMapping,
-	            images: _this.props.images,
-	            handleCheckedChangeAll: _this.props.handleCheckedChangeAll,
+	            tokenMap: _this2.props.tokenMap,
+	            selectMapping: _this2.props.selectMapping,
+	            newMapping: _this2.props.newMapping,
+	            images: _this2.props.images,
+	            handleCheckedChangeAll: _this2.props.handleCheckedChangeAll,
 	            key: token.value });
 	        }
 	      });
 
 	      var cellNodesTag = [].concat(_toConsumableArray(this.props.unmappedTags)).map(function (tag) {
 	        return _react2.default.createElement(_AutoTagHeaderRowTagCell2.default, { tag: tag,
-	          images: _this.props.images,
-	          handleCheckedChangeAll: _this.props.handleCheckedChangeAll,
+	          images: _this2.props.images,
+	          handleCheckedChangeAll: _this2.props.handleCheckedChangeAll,
 	          key: tag.id });
 	      });
 
@@ -24389,18 +22189,18 @@ var autotagform =
 	    }
 	  }]);
 
-	  return AutoTagHeadRow;
-	})(_react2.default.Component);
+	  return AutoTagHeaderRow;
+	}(_react2.default.Component);
 
-	exports.default = AutoTagHeadRow;
+	exports.default = AutoTagHeaderRow;
 
 /***/ },
-/* 195 */
+/* 179 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -24410,15 +22210,17 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactTooltip = __webpack_require__(190);
+	var _reactTooltip = __webpack_require__(174);
 
 	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
 
-	var _AutoTagHeaderRowMapMenuItem = __webpack_require__(196);
+	var _reactSelect = __webpack_require__(180);
 
-	var _AutoTagHeaderRowMapMenuItem2 = _interopRequireDefault(_AutoTagHeaderRowMapMenuItem);
+	var _reactSelect2 = _interopRequireDefault(_reactSelect);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -24426,9 +22228,7 @@ var autotagform =
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
-
-	var AutoTagHeaderRowTokenCell = (function (_React$Component) {
+	var AutoTagHeaderRowTokenCell = function (_React$Component) {
 	  _inherits(AutoTagHeaderRowTokenCell, _React$Component);
 
 	  function AutoTagHeaderRowTokenCell() {
@@ -24436,10 +22236,13 @@ var autotagform =
 
 	    // Prebind this to callback methods
 
-	    var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagHeaderRowTokenCell).call(this));
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagHeaderRowTokenCell).call(this));
 
-	    _this2.handleCheckedChangeAll = _this2.handleCheckedChangeAll.bind(_this2);
-	    return _this2;
+	    _this.handleCheckedChangeAll = _this.handleCheckedChangeAll.bind(_this);
+	    _this.selectMapping = _this.selectMapping.bind(_this);
+	    _this.formatTagLabel = _this.formatTagLabel.bind(_this);
+	    _this.selectGetOptionLabel = _this.selectGetOptionLabel.bind(_this);
+	    return _this;
 	  }
 
 	  _createClass(AutoTagHeaderRowTokenCell, [{
@@ -24486,43 +22289,116 @@ var autotagform =
 	      this.props.handleCheckedChangeAll(this.props.token, !this.isChecked());
 	    }
 	  }, {
+	    key: 'formatTagLabel',
+	    value: function formatTagLabel(tag) {
+	      if (tag !== undefined) {
+	        return "" + tag.value + ' ' + "(" + tag.id + ")";
+	      }
+	      return '';
+	    }
+	  }, {
+	    key: 'selectMapping',
+	    value: function selectMapping(option) {
+	      if (option === null) {
+	        this.props.selectMapping(this.props.token, null);
+	      } else if (option.value !== undefined) {
+	        this.props.selectMapping(this.props.token, option.value);
+	      } else {
+	        this.props.newMapping(this.props.token);
+	      }
+	    }
+	  }, {
+	    key: 'selectGetOptionLabel',
+	    value: function selectGetOptionLabel(option) {
+	      var label = this.formatTagLabel(option);
+	      var tooltipID = 'tooltip-token-' + this.props.token.value;
+
+	      return _react2.default.createElement(
+	        'span',
+	        { 'data-tip': true, 'data-for': tooltipID },
+	        label,
+	        this.props.tag && _react2.default.createElement(
+	          _reactTooltip2.default,
+	          { id: tooltipID, place: 'top', type: 'dark', effect: 'solid' },
+	          _react2.default.createElement(
+	            'ul',
+	            null,
+	            _react2.default.createElement(
+	              'li',
+	              null,
+	              _react2.default.createElement(
+	                'strong',
+	                null,
+	                'ID:'
+	              ),
+	              ' ',
+	              this.props.tag.id
+	            ),
+	            _react2.default.createElement(
+	              'li',
+	              null,
+	              _react2.default.createElement(
+	                'strong',
+	                null,
+	                'Value:'
+	              ),
+	              ' ',
+	              this.props.tag.value
+	            ),
+	            this.props.tag.description && _react2.default.createElement(
+	              'li',
+	              null,
+	              _react2.default.createElement(
+	                'strong',
+	                null,
+	                'Description:'
+	              ),
+	              ' ',
+	              this.props.tag.description
+	            ),
+	            _react2.default.createElement(
+	              'li',
+	              null,
+	              _react2.default.createElement(
+	                'strong',
+	                null,
+	                'Owner:'
+	              ),
+	              ' ',
+	              this.props.tag.owner.omeName
+	            )
+	          )
+	        )
+	      );
+	    }
+	  }, {
 	    key: 'render',
 	    value: function render() {
-	      var _this = this;
+	      var _this2 = this;
 
 	      var token = this.props.token;
 	      var tag = this.props.tag;
 
-	      // If there are options for mapping this tag, create menu items for them
-	      var menuNodes = [];
-
-	      menuNodes = [].concat(_toConsumableArray(token.possible)).map(function (tag) {
-	        return _react2.default.createElement(_AutoTagHeaderRowMapMenuItem2.default, { key: tag.id,
-	          token: token,
-	          tag: tag,
-	          textValue: tag.value,
-	          selectMapping: _this.props.selectMapping });
+	      var options = [].concat(_toConsumableArray(token.possible)).map(function (possibleTag) {
+	        return {
+	          value: possibleTag,
+	          label: _this2.formatTagLabel(possibleTag)
+	        };
 	      });
 
-	      // Set default (i.e. unmatched) tagValue to non-breaking space
-	      var tagValue = ' ';
-	      var dropDownClassname = "tag_inner dropdown-toggle";
-	      if (tag !== null) {
-	        tagValue = tag.value;
-	      } else {
-	        dropDownClassname += " tagInactive dropdown-toggle";
-	      }
+	      options.push({
+	        value: undefined,
+	        label: 'New/Existing Tag'
+	      });
 
-	      if (token.possible.size > 0) {
-	        tagValue += ' (' + token.possible.size + ')';
+	      var tagClassName = "tag_button";
+	      if (tag === null) {
+	        tagClassName = "tag_button_inactive";
 	      }
-
-	      var className = '' + token.type + 'Tokens';
-	      var tooltipID = 'tooltip-token-' + token.value;
 
 	      return _react2.default.createElement(
 	        'th',
-	        { className: className },
+	        null,
 	        _react2.default.createElement(
 	          'div',
 	          { className: 'token' },
@@ -24535,1253 +22411,212 @@ var autotagform =
 	        _react2.default.createElement(
 	          'div',
 	          { className: 'tag' },
-	          _react2.default.createElement(
-	            'span',
-	            { style: { position: 'relative' } },
-	            _react2.default.createElement(
-	              'a',
-	              { className: dropDownClassname,
-	                'data-tip': true,
-	                'data-for': tooltipID,
-	                'data-toggle': 'dropdown',
-	                style: { cursor: 'pointer' } },
-	              tagValue
-	            ),
-	            _react2.default.createElement(
-	              'ul',
-	              { className: 'dropdown-menu', role: 'menu' },
-	              menuNodes,
-	              _react2.default.createElement(_AutoTagHeaderRowMapMenuItem2.default, { tag: null,
-	                token: token,
-	                textValue: '(Select None)',
-	                selectMapping: this.props.selectMapping }),
-	              _react2.default.createElement('li', { className: 'divider' }),
-	              _react2.default.createElement(
-	                'li',
-	                null,
-	                _react2.default.createElement(
-	                  'a',
-	                  { className: 'token-map', onClick: this.props.newMapping.bind(null, token) },
-	                  'New/Existing Tag'
-	                )
-	              )
-	            ),
-	            tag && _react2.default.createElement(
-	              _reactTooltip2.default,
-	              { id: tooltipID, place: 'bottom', type: 'dark', effect: 'solid' },
-	              _react2.default.createElement(
-	                'ul',
-	                null,
-	                _react2.default.createElement(
-	                  'li',
-	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'ID:'
-	                  ),
-	                  ' ',
-	                  tag.id
-	                ),
-	                _react2.default.createElement(
-	                  'li',
-	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'Value:'
-	                  ),
-	                  ' ',
-	                  tag.value
-	                ),
-	                tag.description && _react2.default.createElement(
-	                  'li',
-	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'Description:'
-	                  ),
-	                  ' ',
-	                  tag.description
-	                ),
-	                _react2.default.createElement(
-	                  'li',
-	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'Owner:'
-	                  ),
-	                  ' ',
-	                  tag.owner.omeName
-	                )
-	              )
-	            ),
-	            _react2.default.createElement(
-	              'span',
-	              { className: 'showTag',
-	                style: { display: 'none' } },
-	              'X'
-	            )
-	          )
+	          _react2.default.createElement(_reactSelect2.default, {
+	            name: 'tokenmapselect',
+	            onChange: this.selectMapping,
+	            options: options,
+	            value: tag,
+	            valueRenderer: this.selectGetOptionLabel,
+	            searchable: false,
+	            className: tagClassName,
+	            placeholder: '  '
+	          })
 	        )
 	      );
 	    }
 	  }]);
 
 	  return AutoTagHeaderRowTokenCell;
-	})(_react2.default.Component);
+	}(_react2.default.Component);
 
 	exports.default = AutoTagHeaderRowTokenCell;
 
 /***/ },
-/* 196 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var AutoTagHeaderRowMapMenuItem = (function (_React$Component) {
-	  _inherits(AutoTagHeaderRowMapMenuItem, _React$Component);
-
-	  function AutoTagHeaderRowMapMenuItem() {
-	    _classCallCheck(this, AutoTagHeaderRowMapMenuItem);
-
-	    // Prebind this to callback methods
-
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagHeaderRowMapMenuItem).call(this));
-
-	    _this.selectMapping = _this.selectMapping.bind(_this);
-	    return _this;
-	  }
-
-	  _createClass(AutoTagHeaderRowMapMenuItem, [{
-	    key: "selectMapping",
-	    value: function selectMapping() {
-	      this.props.selectMapping(this.props.token, this.props.tag);
-	    }
-	  }, {
-	    key: "render",
-	    value: function render() {
-
-	      var content = this.props.textValue;
-	      if (this.props.tag !== null) {
-	        content += " (" + this.props.tag.id + ")";
-	      }
-	      return _react2.default.createElement(
-	        "li",
-	        { onClick: this.selectMapping },
-	        _react2.default.createElement(
-	          "a",
-	          { className: 'tag-select' },
-	          content
-	        )
-	      );
-	    }
-	  }]);
-
-	  return AutoTagHeaderRowMapMenuItem;
-	})(_react2.default.Component);
-
-	exports.default = AutoTagHeaderRowMapMenuItem;
-
-/***/ },
-/* 197 */
+/* 180 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
+	Object.defineProperty(exports, '__esModule', {
+		value: true
 	});
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _reactTooltip = __webpack_require__(190);
-
-	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var AutoTagHeaderRowTagCell = (function (_React$Component) {
-	  _inherits(AutoTagHeaderRowTagCell, _React$Component);
-
-	  function AutoTagHeaderRowTagCell() {
-	    _classCallCheck(this, AutoTagHeaderRowTagCell);
-
-	    // Prebind this to callback methods
-
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagHeaderRowTagCell).call(this));
-
-	    _this.handleCheckedChangeAll = _this.handleCheckedChangeAll.bind(_this);
-	    return _this;
-	  }
-
-	  _createClass(AutoTagHeaderRowTagCell, [{
-	    key: 'isChecked',
-	    value: function isChecked() {
-	      var _iteratorNormalCompletion = true;
-	      var _didIteratorError = false;
-	      var _iteratorError = undefined;
-
-	      try {
-
-	        for (var _iterator = this.props.images[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-	          var image = _step.value;
-
-	          if (!image.checkedTags.has(this.props.tag)) {
-	            return false;
-	          }
-	        }
-	      } catch (err) {
-	        _didIteratorError = true;
-	        _iteratorError = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion && _iterator.return) {
-	            _iterator.return();
-	          }
-	        } finally {
-	          if (_didIteratorError) {
-	            throw _iteratorError;
-	          }
-	        }
-	      }
-
-	      return true;
-	    }
-	  }, {
-	    key: 'handleCheckedChangeAll',
-	    value: function handleCheckedChangeAll() {
-	      this.props.handleCheckedChangeAll(this.props.tag, !this.isChecked());
-	    }
-	  }, {
-	    key: 'render',
-	    value: function render() {
-	      var token = this.props.token;
-	      var tag = this.props.tag;
-
-	      var tooltipID = 'tooltip-tag-' + tag.id;
-
-	      return _react2.default.createElement(
-	        'th',
-	        { className: "unmatchedTag" },
-	        _react2.default.createElement(
-	          'div',
-	          { className: 'token' },
-	          _react2.default.createElement('input', { type: 'checkbox',
-	            checked: this.isChecked(),
-	            onChange: this.handleCheckedChangeAll })
-	        ),
-	        _react2.default.createElement(
-	          'div',
-	          { className: 'tag' },
-	          _react2.default.createElement(
-	            'span',
-	            { style: { position: 'relative' } },
-	            _react2.default.createElement(
-	              'a',
-	              { className: "tag_inner tag_unmatched",
-	                'data-tip': true,
-	                'data-for': tooltipID },
-	              tag.value
-	            ),
-	            _react2.default.createElement(
-	              _reactTooltip2.default,
-	              { id: tooltipID, place: 'bottom', type: 'dark', effect: 'solid' },
-	              _react2.default.createElement(
-	                'ul',
-	                null,
-	                _react2.default.createElement(
-	                  'li',
-	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'ID:'
-	                  ),
-	                  ' ',
-	                  tag.id
-	                ),
-	                _react2.default.createElement(
-	                  'li',
-	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'Value:'
-	                  ),
-	                  ' ',
-	                  tag.value
-	                ),
-	                tag.description && _react2.default.createElement(
-	                  'li',
-	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'Description:'
-	                  ),
-	                  ' ',
-	                  tag.description
-	                ),
-	                _react2.default.createElement(
-	                  'li',
-	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'Owner:'
-	                  ),
-	                  ' ',
-	                  tag.owner.omeName
-	                )
-	              )
-	            )
-	          )
-	        )
-	      );
-	    }
-	  }]);
-
-	  return AutoTagHeaderRowTagCell;
-	})(_react2.default.Component);
-
-	exports.default = AutoTagHeaderRowTagCell;
-
-/***/ },
-/* 198 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _AutoTagImageRowTokenCell = __webpack_require__(199);
-
-	var _AutoTagImageRowTokenCell2 = _interopRequireDefault(_AutoTagImageRowTokenCell);
-
-	var _AutoTagImageRowTagCell = __webpack_require__(200);
-
-	var _AutoTagImageRowTagCell2 = _interopRequireDefault(_AutoTagImageRowTagCell);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
-
-	var AutoTagImageRow = (function (_React$Component) {
-	  _inherits(AutoTagImageRow, _React$Component);
-
-	  function AutoTagImageRow() {
-	    _classCallCheck(this, AutoTagImageRow);
-
-	    return _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagImageRow).apply(this, arguments));
-	  }
-
-	  _createClass(AutoTagImageRow, [{
-	    key: 'shouldComponentUpdate',
-
-	    // Only update an image row that has had a modified state
-	    value: function shouldComponentUpdate(nextProps, nextState) {
-	      return nextProps.showUnmapped !== this.props.showUnmapped || nextProps.image !== this.props.image || nextProps.tokenMap !== this.props.tokenMap;
-	    }
-	  }, {
-	    key: 'render',
-	    value: function render() {
-	      var _this = this;
-
-	      var image = this.props.image;
-	      var tokenMap = this.props.tokenMap;
-	      var unmappedTags = this.props.unmappedTags;
-	      var showUnmapped = this.props.showUnmapped;
-
-	      var cellNodesToken = [].concat(_toConsumableArray(tokenMap)).map(function (kv) {
-	        var token = kv[1];
-	        var tag = token.activeTag;
-
-	        if (showUnmapped || token.possible.size > 0) {
-	          return _react2.default.createElement(_AutoTagImageRowTokenCell2.default, { key: token.value,
-	            image: image,
-	            token: token,
-	            tag: tag,
-	            cellCheckedChange: _this.props.cellCheckedChange });
-	        }
-	      });
-
-	      var cellNodesTag = [].concat(_toConsumableArray(unmappedTags)).map(function (tag) {
-	        return _react2.default.createElement(_AutoTagImageRowTagCell2.default, { key: tag.id,
-	          image: image,
-	          tag: tag,
-	          cellCheckedChange: _this.props.cellCheckedChange });
-	      });
-
-	      return _react2.default.createElement(
-	        'tr',
-	        null,
-	        cellNodesToken,
-	        cellNodesTag,
-	        _react2.default.createElement(
-	          'td',
-	          null,
-	          image.clientPath,
-	          ' (',
-	          image.id,
-	          ')'
-	        )
-	      );
-	    }
-	  }]);
-
-	  return AutoTagImageRow;
-	})(_react2.default.Component);
-
-	exports.default = AutoTagImageRow;
-
-/***/ },
-/* 199 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var AutoTagImageRowTokenCell = (function (_React$Component) {
-	  _inherits(AutoTagImageRowTokenCell, _React$Component);
-
-	  function AutoTagImageRowTokenCell() {
-	    _classCallCheck(this, AutoTagImageRowTokenCell);
-
-	    // Prebind this to callback methods
-
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagImageRowTokenCell).call(this));
-
-	    _this.handleCheckedChange = _this.handleCheckedChange.bind(_this);
-	    return _this;
-	  }
-
-	  // Only update an image row cell that has an updated image or new map for
-	  // this column
-
-	  _createClass(AutoTagImageRowTokenCell, [{
-	    key: 'shouldComponentUpdate',
-	    value: function shouldComponentUpdate(nextProps, nextState) {
-	      return(
-	        // The image was updated AND this token is now checked/unchecked
-	        // whereas before it was unchecked/checked
-	        nextProps.image !== this.props.image && nextProps.image.checkedTokens.has(nextProps.token) !== this.props.image.checkedTokens.has(this.props.token) ||
-	        // The mapping of this column changed
-	        nextProps.tag !== this.props.tag ||
-	        // The image was updated AND this tag is now applied/unapplied
-	        // whereas before it was unapplied/applied
-	        nextProps.image !== this.props.image && nextProps.image.tags.has(nextProps.tag) !== this.props.image.tags.has(this.props.tag)
-	      );
-	    }
-	  }, {
-	    key: 'isTagged',
-	    value: function isTagged() {
-	      if (this.props.tag !== null && this.props.image.tags.has(this.props.tag)) {
-	        return true;
-	      }
-	      return false;
-	    }
-	  }, {
-	    key: 'isChecked',
-	    value: function isChecked() {
-	      return this.props.image.checkedTokens.has(this.props.token);
-	    }
-	  }, {
-	    key: 'isDisabled',
-	    value: function isDisabled() {
-	      // No tag mapping active
-	      if (this.props.tag === null) {
-	        return true;
-	      }
-
-	      // No permissions to annotate
-	      return !(this.props.tag.canAnnotate() && this.props.image.canAnnotate());
-	    }
-	  }, {
-	    key: 'handleCheckedChange',
-	    value: function handleCheckedChange() {
-	      this.props.cellCheckedChange(this.props.image, this.props.token);
-	    }
-	  }, {
-	    key: 'render',
-	    value: function render() {
-	      var className = '';
-	      if (this.isTagged()) {
-	        className = 'success';
-	      }
-
-	      return _react2.default.createElement(
-	        'td',
-	        { className: className },
-	        _react2.default.createElement('input', { type: 'checkbox',
-	          checked: this.isChecked(),
-	          disabled: this.isDisabled(),
-	          onChange: this.handleCheckedChange })
-	      );
-	    }
-	  }]);
-
-	  return AutoTagImageRowTokenCell;
-	})(_react2.default.Component);
-
-	exports.default = AutoTagImageRowTokenCell;
-
-/***/ },
-/* 200 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var AutoTagImageRowTagCell = (function (_React$Component) {
-	  _inherits(AutoTagImageRowTagCell, _React$Component);
-
-	  function AutoTagImageRowTagCell() {
-	    _classCallCheck(this, AutoTagImageRowTagCell);
-
-	    // Prebind this to callback methods
-
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagImageRowTagCell).call(this));
-
-	    _this.handleCheckedChange = _this.handleCheckedChange.bind(_this);
-	    return _this;
-	  }
-
-	  _createClass(AutoTagImageRowTagCell, [{
-	    key: 'shouldComponentUpdate',
-	    value: function shouldComponentUpdate(nextProps, nextState) {
-	      return(
-	        // The image was updated AND this tag is now checked/unchecked
-	        // whereas before it was unchecked/checked
-	        nextProps.image !== this.props.image && nextProps.image.checkedTags.has(nextProps.tag) !== this.props.image.checkedTags.has(this.props.tag) ||
-	        // The image was updated AND this tag is now applied/unapplied
-	        // whereas before it was unapplied/applied
-	        nextProps.image !== this.props.image && nextProps.image.tags.has(nextProps.tag) !== this.props.image.tags.has(this.props.tag)
-	      );
-	    }
-	  }, {
-	    key: 'isTagged',
-	    value: function isTagged() {
-	      return this.props.image.tags.has(this.props.tag);
-	    }
-	  }, {
-	    key: 'isChecked',
-	    value: function isChecked() {
-	      return this.props.image.checkedTags.has(this.props.tag);
-	    }
-	  }, {
-	    key: 'isDisabled',
-	    value: function isDisabled() {
-	      // No permissions to annotate
-	      return !(this.props.tag.canAnnotate() && this.props.image.canAnnotate());
-	    }
-	  }, {
-	    key: 'handleCheckedChange',
-	    value: function handleCheckedChange() {
-	      this.props.cellCheckedChange(this.props.image, this.props.tag);
-	    }
-	  }, {
-	    key: 'render',
-	    value: function render() {
-	      var className = '';
-	      if (this.isTagged()) {
-	        className = 'success';
-	      }
-
-	      return _react2.default.createElement(
-	        'td',
-	        { className: className },
-	        _react2.default.createElement('input', { type: 'checkbox',
-	          checked: this.isChecked(),
-	          onChange: this.handleCheckedChange })
-	      );
-	    }
-	  }]);
-
-	  return AutoTagImageRowTagCell;
-	})(_react2.default.Component);
-
-	exports.default = AutoTagImageRowTagCell;
-
-/***/ },
-/* 201 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _reactSelect = __webpack_require__(202);
-
-	var _reactSelect2 = _interopRequireDefault(_reactSelect);
-
-	var _SetUtils = __webpack_require__(188);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
-
-	var TagSelectModal = (function (_React$Component) {
-	  _inherits(TagSelectModal, _React$Component);
-
-	  function TagSelectModal() {
-	    _classCallCheck(this, TagSelectModal);
-
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(TagSelectModal).call(this));
-
-	    _this.state = {
-	      selected: null,
-	      status: ""
-	    };
-
-	    // Prebind this to callback methods
-	    _this.selectTag = _this.selectTag.bind(_this);
-	    _this.onSubmit = _this.onSubmit.bind(_this);
-
-	    return _this;
-	  }
-
-	  _createClass(TagSelectModal, [{
-	    key: 'selectTag',
-	    value: function selectTag(val) {
-
-	      if (val.length === 0) {
-	        this.setState({
-	          selected: null
-	        });
-	      } else {
-	        this.setState({
-	          selected: val
-	        });
-	      }
-	    }
-	  }, {
-	    key: 'onSubmit',
-	    value: function onSubmit(e) {
-	      e.preventDefault();
-
-	      var addMapping = this.props.addMapping;
-	      var closeDialog = this.props.closeDialog;
-
-	      // If there is a selection, use that
-	      if (this.state.selected !== null) {
-	        // Resolve the selected tag ID to a tag and add the mapping
-	        addMapping(this.props.token, this.props.tags.get(this.state.selected));
-	        closeDialog(e);
-
-	        // Otherwise, create a new tag with the input unless there is a problem
-	        // with the input (e.g. existing tag value)
-	      } else if (this.refs.tagValue.value && this.refs.tagValue.value.trim().length > 0) {
-
-	          var tagValue = this.refs.tagValue.value.trim();
-	          var tagDescription = this.refs.tagDescription.value.trim();
-
-	          // Check and see if there is (at least one) tag with this existing value
-	          var exists = false;
-	          var _iteratorNormalCompletion = true;
-	          var _didIteratorError = false;
-	          var _iteratorError = undefined;
-
-	          try {
-	            for (var _iterator = this.props.tags[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-	              var kv = _step.value;
-
-	              var tag = kv[1];
-	              if (tag.value === tagValue) {
-	                exists = true;
-	                break;
-	              }
-	            }
-	          } catch (err) {
-	            _didIteratorError = true;
-	            _iteratorError = err;
-	          } finally {
-	            try {
-	              if (!_iteratorNormalCompletion && _iterator.return) {
-	                _iterator.return();
-	              }
-	            } finally {
-	              if (_didIteratorError) {
-	                throw _iteratorError;
-	              }
-	            }
-	          }
-
-	          if (exists) {
-	            this.setState({
-	              status: "It is inadvisable (and impossible in this interface) to create a tag with a value that already exists!"
-	            });
-
-	            // It's ok to add it
-	          } else {
-	              addMapping(this.props.token, null, tagValue, tagDescription);
-	              closeDialog(e);
-	            }
-
-	          // Unless there is no input in which case do nothing except maybe inform
-	          // the user that one or the other (or cancel) must be entered
-	        } else {
-	            this.setState({
-	              status: "Select either an existing tag, or enter a value for the new tag"
-	            });
-
-	            // Reset this in case it was all whitespace
-	            this.refs.tagValue.value = '';
-	          }
-	    }
-	  }, {
-	    key: 'render',
-	    value: function render() {
-
-	      // Get the tags that are already in use
-	      var usedTags = new Set();
-	      this.props.tokenMap.forEach(function (token) {
-	        usedTags = (0, _SetUtils.union)(usedTags, token.possible);
-	      });
-
-	      var options = [].concat(_toConsumableArray(this.props.tags)).filter(function (kv) {
-	        return !usedTags.has(kv[1]);
-	      }).map(function (kv) {
-	        var tag = kv[1];
-	        return {
-	          value: tag.id,
-	          label: "" + tag.value + ' ' + "(" + tag.id + ")"
-	        };
-	      });
-
-	      // We use a 'button' instead of a 'submit' input to avoid the CSS styling
-	      // of submit which is overreaching from elsewhere.
-	      var formStyle = {
-	        width: "auto",
-	        minHeight: "0px",
-	        height: "258px"
-	      };
-
-	      return _react2.default.createElement(
-	        'form',
-	        { className: "ui-dialog-content ui-widget-content",
-	          scrolltop: '0',
-	          scrollleft: '0',
-	          style: formStyle },
-	        _react2.default.createElement(
-	          'div',
-	          { className: "standard_form" },
-	          _react2.default.createElement(
-	            'h1',
-	            null,
-	            'Available Tags:'
-	          ),
-	          _react2.default.createElement(_reactSelect2.default, {
-	            name: 'tagselect',
-	            placeholder: 'Select Tag',
-	            value: this.state.selected,
-	            options: options,
-	            onChange: this.selectTag
-	          }),
-	          _react2.default.createElement(
-	            'h1',
-	            null,
-	            'OR Create a new tag:'
-	          ),
-	          _react2.default.createElement(
-	            'label',
-	            null,
-	            'Tag Name:'
-	          ),
-	          _react2.default.createElement('input', { type: 'text', ref: 'tagValue', size: '36', defaultValue: this.props.token.value }),
-	          _react2.default.createElement(
-	            'label',
-	            null,
-	            'Description:'
-	          ),
-	          _react2.default.createElement('textarea', { rows: '3', cols: '31', ref: 'tagDescription' })
-	        ),
-	        _react2.default.createElement('input', { type: 'button',
-	          value: 'OK',
-	          onClick: this.onSubmit }),
-	        _react2.default.createElement('input', { type: 'button',
-	          value: 'Cancel',
-	          onClick: this.props.closeDialog }),
-	        _react2.default.createElement(
-	          'div',
-	          { className: "error" },
-	          this.state.status
-	        )
-	      );
-	    }
-	  }]);
-
-	  return TagSelectModal;
-	})(_react2.default.Component);
-
-	exports.default = TagSelectModal;
-
-/***/ },
-/* 202 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* disable some rules until we refactor more completely; fixing them now would
-	   cause conflicts with some open PRs unnecessarily. */
-	/* eslint react/jsx-sort-prop-types: 0, react/sort-comp: 0, react/prop-types: 0 */
-
-	'use strict';
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-	var React = __webpack_require__(1);
-	var ReactDOM = __webpack_require__(158);
-	var Input = __webpack_require__(203);
-	var classes = __webpack_require__(204);
-	var Value = __webpack_require__(205);
-	var SingleValue = __webpack_require__(206);
-	var Option = __webpack_require__(207);
+	var _react = __webpack_require__(1);
 
-	var requestId = 0;
+	var _react2 = _interopRequireDefault(_react);
 
-	var Select = React.createClass({
+	var _reactDom = __webpack_require__(158);
+
+	var _reactDom2 = _interopRequireDefault(_reactDom);
+
+	var _reactInputAutosize = __webpack_require__(181);
+
+	var _reactInputAutosize2 = _interopRequireDefault(_reactInputAutosize);
+
+	var _classnames = __webpack_require__(182);
+
+	var _classnames2 = _interopRequireDefault(_classnames);
+
+	var _utilsStripDiacritics = __webpack_require__(183);
+
+	var _utilsStripDiacritics2 = _interopRequireDefault(_utilsStripDiacritics);
+
+	var _Async = __webpack_require__(184);
+
+	var _Async2 = _interopRequireDefault(_Async);
+
+	var _Option = __webpack_require__(185);
+
+	var _Option2 = _interopRequireDefault(_Option);
+
+	var _Value = __webpack_require__(186);
+
+	var _Value2 = _interopRequireDefault(_Value);
+
+	function stringifyValue(value) {
+		if (typeof value === 'object') {
+			return JSON.stringify(value);
+		} else {
+			return value;
+		}
+	}
+
+	var Select = _react2['default'].createClass({
+
+		statics: { Async: _Async2['default'] },
 
 		displayName: 'Select',
 
 		propTypes: {
-			addLabelText: React.PropTypes.string, // placeholder displayed when you want to add a label on a multi-value input
-			allowCreate: React.PropTypes.bool, // whether to allow creation of new entries
-			asyncOptions: React.PropTypes.func, // function to call to get options
-			autoload: React.PropTypes.bool, // whether to auto-load the default async options set
-			backspaceRemoves: React.PropTypes.bool, // whether backspace removes an item if there is no text input
-			cacheAsyncResults: React.PropTypes.bool, // whether to allow cache
-			className: React.PropTypes.string, // className for the outer element
-			clearAllText: React.PropTypes.string, // title for the "clear" control when multi: true
-			clearValueText: React.PropTypes.string, // title for the "clear" control
-			clearable: React.PropTypes.bool, // should it be possible to reset value
-			delimiter: React.PropTypes.string, // delimiter to use to join multiple values
-			disabled: React.PropTypes.bool, // whether the Select is disabled or not
-			filterOption: React.PropTypes.func, // method to filter a single option  (option, filterString)
-			filterOptions: React.PropTypes.func, // method to filter the options array: function ([options], filterString, [values])
-			ignoreCase: React.PropTypes.bool, // whether to perform case-insensitive filtering
-			inputProps: React.PropTypes.object, // custom attributes for the Input (in the Select-control) e.g: {'data-foo': 'bar'}
-			isLoading: React.PropTypes.bool, // whether the Select is loading externally or not (such as options being loaded)
-			labelKey: React.PropTypes.string, // path of the label value in option objects
-			matchPos: React.PropTypes.string, // (any|start) match the start or entire string when filtering
-			matchProp: React.PropTypes.string, // (any|label|value) which option property to filter on
-			multi: React.PropTypes.bool, // multi-value input
-			name: React.PropTypes.string, // field name, for hidden <input /> tag
-			newOptionCreator: React.PropTypes.func, // factory to create new options when allowCreate set
-			noResultsText: React.PropTypes.string, // placeholder displayed when there are no matching search results
-			onBlur: React.PropTypes.func, // onBlur handler: function (event) {}
-			onChange: React.PropTypes.func, // onChange handler: function (newValue) {}
-			onFocus: React.PropTypes.func, // onFocus handler: function (event) {}
-			onInputChange: React.PropTypes.func, // onInputChange handler: function (inputValue) {}
-			onOptionLabelClick: React.PropTypes.func, // onCLick handler for value labels: function (value, event) {}
-			optionComponent: React.PropTypes.func, // option component to render in dropdown
-			optionRenderer: React.PropTypes.func, // optionRenderer: function (option) {}
-			options: React.PropTypes.array, // array of options
-			placeholder: React.PropTypes.string, // field placeholder, displayed when there's no value
-			searchable: React.PropTypes.bool, // whether to enable searching feature or not
-			searchingText: React.PropTypes.string, // message to display whilst options are loading via asyncOptions
-			searchPromptText: React.PropTypes.string, // label to prompt for search input
-			singleValueComponent: React.PropTypes.func, // single value component when multiple is set to false
-			value: React.PropTypes.any, // initial field value
-			valueComponent: React.PropTypes.func, // value component to render in multiple mode
-			valueKey: React.PropTypes.string, // path of the label value in option objects
-			valueRenderer: React.PropTypes.func // valueRenderer: function (option) {}
-		},
+			addLabelText: _react2['default'].PropTypes.string, // placeholder displayed when you want to add a label on a multi-value input
+			allowCreate: _react2['default'].PropTypes.bool, // whether to allow creation of new entries
+			autofocus: _react2['default'].PropTypes.bool, // autofocus the component on mount
+			backspaceRemoves: _react2['default'].PropTypes.bool, // whether backspace removes an item if there is no text input
+			className: _react2['default'].PropTypes.string, // className for the outer element
+			clearAllText: _react2['default'].PropTypes.oneOfType([_react2['default'].PropTypes.string, _react2['default'].PropTypes.node]), // title for the "clear" control when multi: true
+			clearValueText: _react2['default'].PropTypes.oneOfType([_react2['default'].PropTypes.string, _react2['default'].PropTypes.node]), // title for the "clear" control
+			clearable: _react2['default'].PropTypes.bool, // should it be possible to reset value
+			delimiter: _react2['default'].PropTypes.string, // delimiter to use to join multiple values for the hidden field value
+			disabled: _react2['default'].PropTypes.bool, // whether the Select is disabled or not
+			escapeClearsValue: _react2['default'].PropTypes.bool, // whether escape clears the value when the menu is closed
+			filterOption: _react2['default'].PropTypes.func, // method to filter a single option (option, filterString)
+			filterOptions: _react2['default'].PropTypes.any, // boolean to enable default filtering or function to filter the options array ([options], filterString, [values])
+			ignoreAccents: _react2['default'].PropTypes.bool, // whether to strip diacritics when filtering
+			ignoreCase: _react2['default'].PropTypes.bool, // whether to perform case-insensitive filtering
+			inputProps: _react2['default'].PropTypes.object, // custom attributes for the Input
+			isLoading: _react2['default'].PropTypes.bool, // whether the Select is loading externally or not (such as options being loaded)
+			labelKey: _react2['default'].PropTypes.string, // path of the label value in option objects
+			matchPos: _react2['default'].PropTypes.string, // (any|start) match the start or entire string when filtering
+			matchProp: _react2['default'].PropTypes.string, // (any|label|value) which option property to filter on
+			scrollMenuIntoView: _react2['default'].PropTypes.bool, // boolean to enable the viewport to shift so that the full menu fully visible when engaged
+			menuBuffer: _react2['default'].PropTypes.number, // optional buffer (in px) between the bottom of the viewport and the bottom of the menu
+			menuStyle: _react2['default'].PropTypes.object, // optional style to apply to the menu
+			menuContainerStyle: _react2['default'].PropTypes.object, // optional style to apply to the menu container
+			multi: _react2['default'].PropTypes.bool, // multi-value input
+			name: _react2['default'].PropTypes.string, // generates a hidden <input /> tag with this field name for html forms
+			newOptionCreator: _react2['default'].PropTypes.func, // factory to create new options when allowCreate set
+			noResultsText: _react2['default'].PropTypes.oneOfType([_react2['default'].PropTypes.string, _react2['default'].PropTypes.node]), // placeholder displayed when there are no matching search results
+			onBlur: _react2['default'].PropTypes.func, // onBlur handler: function (event) {}
+			onChange: _react2['default'].PropTypes.func, // onChange handler: function (newValue) {}
+			onFocus: _react2['default'].PropTypes.func, // onFocus handler: function (event) {}
+			onInputChange: _react2['default'].PropTypes.func, // onInputChange handler: function (inputValue) {}
+			onValueClick: _react2['default'].PropTypes.func, // onClick handler for value labels: function (value, event) {}
+			onMenuScrollToBottom: _react2['default'].PropTypes.func, // fires when the menu is scrolled to the bottom; can be used to paginate options
+			optionComponent: _react2['default'].PropTypes.func, // option component to render in dropdown
+			optionRenderer: _react2['default'].PropTypes.func, // optionRenderer: function (option) {}
+			options: _react2['default'].PropTypes.array, // array of options
+			placeholder: _react2['default'].PropTypes.oneOfType([_react2['default'].PropTypes.string, _react2['default'].PropTypes.node]), // field placeholder, displayed when there's no value
+			searchable: _react2['default'].PropTypes.bool, // whether to enable searching feature or not
+			simpleValue: _react2['default'].PropTypes.bool, // pass the value to onChange as a simple value (legacy pre 1.0 mode), defaults to false
+			style: _react2['default'].PropTypes.object, // optional style to apply to the control
+			tabIndex: _react2['default'].PropTypes.string, // optional tab index of the control
+			value: _react2['default'].PropTypes.any, // initial field value
+			valueComponent: _react2['default'].PropTypes.func, // value component to render
+			valueKey: _react2['default'].PropTypes.string, // path of the label value in option objects
+			valueRenderer: _react2['default'].PropTypes.func, // valueRenderer: function (option) {}
+			wrapperStyle: _react2['default'].PropTypes.object },
 
+		// optional style to apply to the component wrapper
 		getDefaultProps: function getDefaultProps() {
 			return {
 				addLabelText: 'Add "{label}"?',
 				allowCreate: false,
-				asyncOptions: undefined,
-				autoload: true,
 				backspaceRemoves: true,
-				cacheAsyncResults: true,
-				className: undefined,
 				clearAllText: 'Clear all',
 				clearValueText: 'Clear value',
 				clearable: true,
 				delimiter: ',',
 				disabled: false,
+				escapeClearsValue: true,
+				filterOptions: true,
+				ignoreAccents: true,
 				ignoreCase: true,
 				inputProps: {},
 				isLoading: false,
 				labelKey: 'label',
 				matchPos: 'any',
 				matchProp: 'any',
-				name: undefined,
-				newOptionCreator: undefined,
+				scrollMenuIntoView: true,
+				menuBuffer: 0,
+				multi: false,
 				noResultsText: 'No results found',
-				onChange: undefined,
-				onInputChange: undefined,
-				onOptionLabelClick: undefined,
-				optionComponent: Option,
-				options: undefined,
+				optionComponent: _Option2['default'],
 				placeholder: 'Select...',
 				searchable: true,
-				searchingText: 'Searching...',
-				searchPromptText: 'Type to search',
-				singleValueComponent: SingleValue,
-				value: undefined,
-				valueComponent: Value,
+				simpleValue: false,
+				valueComponent: _Value2['default'],
 				valueKey: 'value'
 			};
 		},
 
 		getInitialState: function getInitialState() {
 			return {
-				/*
-	    * set by getStateFromValue on componentWillMount:
-	    * - value
-	    * - values
-	    * - filteredOptions
-	    * - inputValue
-	    * - placeholder
-	    * - focusedOption
-	   */
+				inputValue: '',
 				isFocused: false,
 				isLoading: false,
 				isOpen: false,
-				options: this.props.options
+				isPseudoFocused: false
 			};
-		},
-
-		componentWillMount: function componentWillMount() {
-			var _this = this;
-
-			this._optionsCache = {};
-			this._optionsFilterString = '';
-			this._closeMenuIfClickedOutside = function (event) {
-				if (!_this.state.isOpen) {
-					return;
-				}
-				var menuElem = ReactDOM.findDOMNode(_this.refs.selectMenuContainer);
-				var controlElem = ReactDOM.findDOMNode(_this.refs.control);
-
-				var eventOccuredOutsideMenu = _this.clickedOutsideElement(menuElem, event);
-				var eventOccuredOutsideControl = _this.clickedOutsideElement(controlElem, event);
-
-				// Hide dropdown menu if click occurred outside of menu
-				if (eventOccuredOutsideMenu && eventOccuredOutsideControl) {
-					_this.setState({
-						isOpen: false
-					}, _this._unbindCloseMenuIfClickedOutside);
-				}
-			};
-			this._bindCloseMenuIfClickedOutside = function () {
-				if (!document.addEventListener && document.attachEvent) {
-					document.attachEvent('onclick', _this._closeMenuIfClickedOutside);
-				} else {
-					document.addEventListener('click', _this._closeMenuIfClickedOutside);
-				}
-			};
-			this._unbindCloseMenuIfClickedOutside = function () {
-				if (!document.removeEventListener && document.detachEvent) {
-					document.detachEvent('onclick', _this._closeMenuIfClickedOutside);
-				} else {
-					document.removeEventListener('click', _this._closeMenuIfClickedOutside);
-				}
-			};
-			this.setState(this.getStateFromValue(this.props.value));
 		},
 
 		componentDidMount: function componentDidMount() {
-			if (this.props.asyncOptions && this.props.autoload) {
-				this.autoloadAsyncOptions();
+			if (this.props.autofocus) {
+				this.focus();
 			}
 		},
 
-		componentWillUnmount: function componentWillUnmount() {
-			clearTimeout(this._blurTimeout);
-			clearTimeout(this._focusTimeout);
-			if (this.state.isOpen) {
-				this._unbindCloseMenuIfClickedOutside();
+		componentDidUpdate: function componentDidUpdate(prevProps, prevState) {
+			if (prevState.inputValue !== this.state.inputValue && this.props.onInputChange) {
+				this.props.onInputChange(this.state.inputValue);
 			}
-		},
-
-		componentWillReceiveProps: function componentWillReceiveProps(newProps) {
-			var _this2 = this;
-
-			var optionsChanged = false;
-			if (JSON.stringify(newProps.options) !== JSON.stringify(this.props.options)) {
-				optionsChanged = true;
-				this.setState({
-					options: newProps.options,
-					filteredOptions: this.filterOptions(newProps.options)
-				});
-			}
-			if (newProps.value !== this.state.value || newProps.placeholder !== this.props.placeholder || optionsChanged) {
-				var setState = function setState(newState) {
-					_this2.setState(_this2.getStateFromValue(newProps.value, newState && newState.options || newProps.options, newProps.placeholder));
-				};
-				if (this.props.asyncOptions) {
-					this.loadAsyncOptions(newProps.value, {}, setState);
-				} else {
-					setState();
+			if (this._scrollToFocusedOptionOnUpdate && this.refs.focused && this.refs.menu) {
+				this._scrollToFocusedOptionOnUpdate = false;
+				var focusedDOM = _reactDom2['default'].findDOMNode(this.refs.focused);
+				var menuDOM = _reactDom2['default'].findDOMNode(this.refs.menu);
+				var focusedRect = focusedDOM.getBoundingClientRect();
+				var menuRect = menuDOM.getBoundingClientRect();
+				if (focusedRect.bottom > menuRect.bottom || focusedRect.top < menuRect.top) {
+					menuDOM.scrollTop = focusedDOM.offsetTop + focusedDOM.clientHeight - menuDOM.offsetHeight;
 				}
 			}
-		},
-
-		componentDidUpdate: function componentDidUpdate() {
-			var _this3 = this;
-
-			if (!this.props.disabled && this._focusAfterUpdate) {
-				clearTimeout(this._blurTimeout);
-				clearTimeout(this._focusTimeout);
-				this._focusTimeout = setTimeout(function () {
-					if (!_this3.isMounted()) return;
-					_this3.getInputNode().focus();
-					_this3._focusAfterUpdate = false;
-				}, 50);
-			}
-			if (this._focusedOptionReveal) {
-				if (this.refs.focused && this.refs.menu) {
-					var focusedDOM = ReactDOM.findDOMNode(this.refs.focused);
-					var menuDOM = ReactDOM.findDOMNode(this.refs.menu);
-					var focusedRect = focusedDOM.getBoundingClientRect();
-					var menuRect = menuDOM.getBoundingClientRect();
-
-					if (focusedRect.bottom > menuRect.bottom || focusedRect.top < menuRect.top) {
-						menuDOM.scrollTop = focusedDOM.offsetTop + focusedDOM.clientHeight - menuDOM.offsetHeight;
-					}
+			if (this.props.scrollMenuIntoView && this.refs.menuContainer) {
+				var menuContainerRect = this.refs.menuContainer.getBoundingClientRect();
+				if (window.innerHeight < menuContainerRect.bottom + this.props.menuBuffer) {
+					window.scrollTo(0, window.scrollY + menuContainerRect.bottom + this.props.menuBuffer - window.innerHeight);
 				}
-				this._focusedOptionReveal = false;
+			}
+			if (prevProps.disabled !== this.props.disabled) {
+				this.setState({ isFocused: false });
 			}
 		},
 
 		focus: function focus() {
-			this.getInputNode().focus();
-		},
-
-		clickedOutsideElement: function clickedOutsideElement(element, event) {
-			var eventTarget = event.target ? event.target : event.srcElement;
-			while (eventTarget != null) {
-				if (eventTarget === element) return false;
-				eventTarget = eventTarget.offsetParent;
-			}
-			return true;
-		},
-
-		getStateFromValue: function getStateFromValue(value, options, placeholder) {
-			var _this4 = this;
-
-			if (!options) {
-				options = this.state.options;
-			}
-			if (!placeholder) {
-				placeholder = this.props.placeholder;
-			}
-
-			// reset internal filter string
-			this._optionsFilterString = '';
-
-			var values = this.initValuesArray(value, options);
-			var filteredOptions = this.filterOptions(options, values);
-
-			var focusedOption;
-			var valueForState = null;
-			if (!this.props.multi && values.length) {
-				focusedOption = values[0];
-				valueForState = values[0][this.props.valueKey];
-			} else {
-				focusedOption = this.getFirstFocusableOption(filteredOptions);
-				valueForState = values.map(function (v) {
-					return v[_this4.props.valueKey];
-				}).join(this.props.delimiter);
-			}
-
-			return {
-				value: valueForState,
-				values: values,
-				inputValue: '',
-				filteredOptions: filteredOptions,
-				placeholder: !this.props.multi && values.length ? values[0][this.props.labelKey] : placeholder,
-				focusedOption: focusedOption
-			};
-		},
-
-		getFirstFocusableOption: function getFirstFocusableOption(options) {
-			for (var optionIndex = 0; optionIndex < options.length; ++optionIndex) {
-				if (!options[optionIndex].disabled) {
-					return options[optionIndex];
-				}
-			}
-		},
-
-		initValuesArray: function initValuesArray(values, options) {
-			var _this5 = this;
-
-			if (!Array.isArray(values)) {
-				if (typeof values === 'string') {
-					values = values === '' ? [] : this.props.multi ? values.split(this.props.delimiter) : [values];
-				} else {
-					values = values !== undefined && values !== null ? [values] : [];
-				}
-			}
-			return values.map(function (val) {
-				if (typeof val === 'string' || typeof val === 'number') {
-					var _ref;
-
-					for (var key in options) {
-						if (options.hasOwnProperty(key) && options[key] && (options[key][_this5.props.valueKey] === val || typeof options[key][_this5.props.valueKey] === 'number' && options[key][_this5.props.valueKey].toString() === val)) {
-							return options[key];
-						}
-					}
-					return _ref = {}, _defineProperty(_ref, _this5.props.valueKey, val), _defineProperty(_ref, _this5.props.labelKey, val), _ref;
-				} else {
-					return val;
-				}
-			});
-		},
-
-		setValue: function setValue(value, focusAfterUpdate) {
-			if (focusAfterUpdate || focusAfterUpdate === undefined) {
-				this._focusAfterUpdate = true;
-			}
-			var newState = this.getStateFromValue(value);
-			newState.isOpen = false;
-			this.fireChangeEvent(newState);
-			this.setState(newState);
-		},
-
-		selectValue: function selectValue(value) {
-			if (!this.props.multi) {
-				this.setValue(value);
-			} else if (value) {
-				this.addValue(value);
-			}
-			this._unbindCloseMenuIfClickedOutside();
-		},
-
-		addValue: function addValue(value) {
-			this.setValue(this.state.values.concat(value));
-		},
-
-		popValue: function popValue() {
-			this.setValue(this.state.values.slice(0, this.state.values.length - 1));
-		},
-
-		removeValue: function removeValue(valueToRemove) {
-			this.setValue(this.state.values.filter(function (value) {
-				return value !== valueToRemove;
-			}));
-		},
-
-		clearValue: function clearValue(event) {
-			// if the event was triggered by a mousedown and not the primary
-			// button, ignore it.
-			if (event && event.type === 'mousedown' && event.button !== 0) {
-				return;
-			}
-			event.stopPropagation();
-			event.preventDefault();
-			this.setValue(null);
-		},
-
-		resetValue: function resetValue() {
-			this.setValue(this.state.value === '' ? null : this.state.value);
-		},
-
-		getInputNode: function getInputNode() {
-			var input = this.refs.input;
-			return this.props.searchable ? input : ReactDOM.findDOMNode(input);
-		},
-
-		fireChangeEvent: function fireChangeEvent(newState) {
-			if (newState.value !== this.state.value && this.props.onChange) {
-				this.props.onChange(newState.value, newState.values);
-			}
+			if (!this.refs.input) return;
+			this.refs.input.focus();
 		},
 
 		handleMouseDown: function handleMouseDown(event) {
@@ -25790,35 +22625,30 @@ var autotagform =
 			if (this.props.disabled || event.type === 'mousedown' && event.button !== 0) {
 				return;
 			}
+
+			// prevent default event handlers
 			event.stopPropagation();
 			event.preventDefault();
 
-			// for the non-searchable select, close the dropdown when button is clicked
-			if (this.state.isOpen && !this.props.searchable) {
-				this.setState({
-					isOpen: false
-				}, this._unbindCloseMenuIfClickedOutside);
-				return;
+			// for the non-searchable select, toggle the menu
+			if (!this.props.searchable) {
+				this.focus();
+				return this.setState({
+					isOpen: !this.state.isOpen
+				});
 			}
 
 			if (this.state.isFocused) {
+				// if the input is focused, ensure the menu is open
 				this.setState({
-					isOpen: true
-				}, this._bindCloseMenuIfClickedOutside);
+					isOpen: true,
+					isPseudoFocused: false
+				});
 			} else {
+				// otherwise, focus the input and open the menu
 				this._openAfterFocus = true;
-				this.getInputNode().focus();
+				this.focus();
 			}
-		},
-
-		handleMouseDownOnMenu: function handleMouseDownOnMenu(event) {
-			// if the event was triggered by a mousedown and not the primary
-			// button, or if the component is disabled, ignore it.
-			if (this.props.disabled || event.type === 'mousedown' && event.button !== 0) {
-				return;
-			}
-			event.stopPropagation();
-			event.preventDefault();
 		},
 
 		handleMouseDownOnArrow: function handleMouseDownOnArrow(event) {
@@ -25827,55 +22657,59 @@ var autotagform =
 			if (this.props.disabled || event.type === 'mousedown' && event.button !== 0) {
 				return;
 			}
-			// If not focused, handleMouseDown will handle it
+			// If the menu isn't open, let the event bubble to the main handleMouseDown
 			if (!this.state.isOpen) {
 				return;
 			}
+			// prevent default event handlers
 			event.stopPropagation();
 			event.preventDefault();
+			// close the menu
+			this.closeMenu();
+		},
+
+		closeMenu: function closeMenu() {
 			this.setState({
-				isOpen: false
-			}, this._unbindCloseMenuIfClickedOutside);
+				isOpen: false,
+				isPseudoFocused: this.state.isFocused && !this.props.multi,
+				inputValue: ''
+			});
 		},
 
 		handleInputFocus: function handleInputFocus(event) {
-			var _this6 = this;
-
-			var newIsOpen = this.state.isOpen || this._openAfterFocus;
-			this.setState({
-				isFocused: true,
-				isOpen: newIsOpen
-			}, function () {
-				if (newIsOpen) {
-					_this6._bindCloseMenuIfClickedOutside();
-				} else {
-					_this6._unbindCloseMenuIfClickedOutside();
-				}
-			});
-			this._openAfterFocus = false;
+			var isOpen = this.state.isOpen || this._openAfterFocus;
 			if (this.props.onFocus) {
 				this.props.onFocus(event);
 			}
+			this.setState({
+				isFocused: true,
+				isOpen: isOpen
+			});
+			this._openAfterFocus = false;
 		},
 
 		handleInputBlur: function handleInputBlur(event) {
-			var _this7 = this;
-
-			var menuDOM = ReactDOM.findDOMNode(this.refs.menu);
-			if (document.activeElement.isEqualNode(menuDOM)) {
+			if (this.refs.menu && document.activeElement.isEqualNode(this.refs.menu)) {
 				return;
 			}
-			this._blurTimeout = setTimeout(function () {
-				if (_this7._focusAfterUpdate || !_this7.isMounted()) return;
-				_this7.setState({
-					inputValue: '',
-					isFocused: false,
-					isOpen: false
-				});
-			}, 50);
+
 			if (this.props.onBlur) {
 				this.props.onBlur(event);
 			}
+			this.setState({
+				inputValue: '',
+				isFocused: false,
+				isOpen: false,
+				isPseudoFocused: false
+			});
+		},
+
+		handleInputChange: function handleInputChange(event) {
+			this.setState({
+				isOpen: true,
+				isPseudoFocused: false,
+				inputValue: event.target.value
+			});
 		},
 
 		handleKeyDown: function handleKeyDown(event) {
@@ -25890,7 +22724,7 @@ var autotagform =
 					return;
 				case 9:
 					// tab
-					if (event.shiftKey || !this.state.isOpen || !this.state.focusedOption) {
+					if (event.shiftKey || !this.state.isOpen) {
 						return;
 					}
 					this.selectFocusedOption();
@@ -25903,8 +22737,8 @@ var autotagform =
 				case 27:
 					// escape
 					if (this.state.isOpen) {
-						this.resetValue();
-					} else if (this.props.clearable) {
+						this.closeMenu();
+					} else if (this.props.clearable && this.props.escapeClearsValue) {
 						this.clearValue(event);
 					}
 					break;
@@ -25916,174 +22750,133 @@ var autotagform =
 					// down
 					this.focusNextOption();
 					break;
-				case 188:
-					// ,
-					if (this.props.allowCreate && this.props.multi) {
-						event.preventDefault();
-						event.stopPropagation();
-						this.selectFocusedOption();
-					} else {
-						return;
-					}
-					break;
+				// case 188: // ,
+				// 	if (this.props.allowCreate && this.props.multi) {
+				// 		event.preventDefault();
+				// 		event.stopPropagation();
+				// 		this.selectFocusedOption();
+				// 	} else {
+				// 		return;
+				// 	}
+				// break;
 				default:
 					return;
 			}
 			event.preventDefault();
 		},
 
-		// Ensures that the currently focused option is available in filteredOptions.
-		// If not, returns the first available option.
-		_getNewFocusedOption: function _getNewFocusedOption(filteredOptions) {
-			for (var key in filteredOptions) {
-				if (filteredOptions.hasOwnProperty(key) && filteredOptions[key] === this.state.focusedOption) {
-					return filteredOptions[key];
-				}
-			}
-			return this.getFirstFocusableOption(filteredOptions);
+		handleValueClick: function handleValueClick(option, event) {
+			if (!this.props.onValueClick) return;
+			this.props.onValueClick(option, event);
 		},
 
-		handleInputChange: function handleInputChange(event) {
-			// assign an internal variable because we need to use
-			// the latest value before setState() has completed.
-			this._optionsFilterString = event.target.value;
-			if (this.props.onInputChange) {
-				this.props.onInputChange(event.target.value);
+		handleMenuScroll: function handleMenuScroll(event) {
+			if (!this.props.onMenuScrollToBottom) return;
+			var target = event.target;
+
+			if (target.scrollHeight > target.offsetHeight && !(target.scrollHeight - target.offsetHeight - target.scrollTop)) {
+				this.props.onMenuScrollToBottom();
 			}
-			if (this.props.asyncOptions) {
-				this.setState({
-					isLoading: true,
-					inputValue: event.target.value
+		},
+
+		getOptionLabel: function getOptionLabel(op) {
+			return op[this.props.labelKey];
+		},
+
+		getValueArray: function getValueArray() {
+			var value = this.props.value;
+			if (this.props.multi) {
+				if (typeof value === 'string') value = value.split(this.props.delimiter);
+				if (!Array.isArray(value)) {
+					if (value === null || value === undefined) return [];
+					value = [value];
+				}
+				return value.map(this.expandValue).filter(function (i) {
+					return i;
 				});
-				this.loadAsyncOptions(event.target.value, {
-					isLoading: false,
-					isOpen: true
-				}, this._bindCloseMenuIfClickedOutside);
-			} else {
-				var filteredOptions = this.filterOptions(this.state.options);
+			}
+			var expandedValue = this.expandValue(value);
+			return expandedValue ? [expandedValue] : [];
+		},
+
+		expandValue: function expandValue(value) {
+			if (typeof value !== 'string' && typeof value !== 'number') return value;
+			var _props = this.props;
+			var options = _props.options;
+			var valueKey = _props.valueKey;
+
+			if (!options) return;
+			for (var i = 0; i < options.length; i++) {
+				if (options[i][valueKey] === value) return options[i];
+			}
+		},
+
+		setValue: function setValue(value) {
+			var _this = this;
+
+			if (!this.props.onChange) return;
+			if (this.props.simpleValue && value) {
+				value = this.props.multi ? value.map(function (i) {
+					return i[_this.props.valueKey];
+				}).join(this.props.delimiter) : value[this.props.valueKey];
+			}
+			this.props.onChange(value);
+		},
+
+		selectValue: function selectValue(value) {
+			if (this.props.multi) {
+				this.addValue(value);
 				this.setState({
-					isOpen: true,
-					inputValue: event.target.value,
-					filteredOptions: filteredOptions,
-					focusedOption: this._getNewFocusedOption(filteredOptions)
-				}, this._bindCloseMenuIfClickedOutside);
-			}
-		},
-
-		autoloadAsyncOptions: function autoloadAsyncOptions() {
-			var _this8 = this;
-
-			this.setState({
-				isLoading: true
-			});
-			this.loadAsyncOptions('', { isLoading: false }, function () {
-				// update with new options but don't focus
-				_this8.setValue(_this8.props.value, false);
-			});
-		},
-
-		loadAsyncOptions: function loadAsyncOptions(input, state, callback) {
-			if (input === undefined) input = '';
-
-			var _this9 = this;
-
-			var thisRequestId = this._currentRequestId = requestId++;
-			if (this.props.cacheAsyncResults) {
-				for (var i = 0; i <= input.length; i++) {
-					var cacheKey = input.slice(0, i);
-					if (this._optionsCache[cacheKey] && (input === cacheKey || this._optionsCache[cacheKey].complete)) {
-						var options = this._optionsCache[cacheKey].options;
-						var filteredOptions = this.filterOptions(options);
-						var newState = {
-							options: options,
-							filteredOptions: filteredOptions,
-							focusedOption: this._getNewFocusedOption(filteredOptions)
-						};
-						for (var key in state) {
-							if (state.hasOwnProperty(key)) {
-								newState[key] = state[key];
-							}
-						}
-						this.setState(newState);
-						if (callback) callback.call(this, newState);
-						return;
-					}
-				}
-			}
-
-			var optionsResponseHandler = function optionsResponseHandler(err, data) {
-				if (err) throw err;
-				if (_this9.props.cacheAsyncResults) {
-					_this9._optionsCache[input] = data;
-				}
-				if (thisRequestId !== _this9._currentRequestId) {
-					return;
-				}
-				var filteredOptions = _this9.filterOptions(data.options);
-				var newState = {
-					options: data.options,
-					filteredOptions: filteredOptions,
-					focusedOption: _this9._getNewFocusedOption(filteredOptions)
-				};
-				for (var key in state) {
-					if (state.hasOwnProperty(key)) {
-						newState[key] = state[key];
-					}
-				}
-				_this9.setState(newState);
-				if (callback) callback.call(_this9, newState);
-			};
-
-			var asyncOpts = this.props.asyncOptions(input, optionsResponseHandler);
-
-			if (asyncOpts && typeof asyncOpts.then === 'function') {
-				asyncOpts.then(function (data) {
-					optionsResponseHandler(null, data);
-				}, function (err) {
-					optionsResponseHandler(err);
+					inputValue: ''
+				});
+			} else {
+				this.setValue(value);
+				this.setState({
+					isOpen: false,
+					inputValue: '',
+					isPseudoFocused: this.state.isFocused
 				});
 			}
 		},
 
-		filterOptions: function filterOptions(options, values) {
-			var _this10 = this;
-
-			var filterValue = this._optionsFilterString;
-			var exclude = (values || this.state.values).map(function (i) {
-				return i[_this10.props.valueKey];
-			});
-			if (this.props.filterOptions) {
-				return this.props.filterOptions.call(this, options, filterValue, exclude);
-			} else {
-				var filterOption = function filterOption(op) {
-					if (this.props.multi && exclude.indexOf(op[this.props.valueKey]) > -1) return false;
-					if (this.props.filterOption) return this.props.filterOption.call(this, op, filterValue);
-					var valueTest = String(op[this.props.valueKey]);
-					var labelTest = String(op[this.props.labelKey]);
-					if (this.props.ignoreCase) {
-						valueTest = valueTest.toLowerCase();
-						labelTest = labelTest.toLowerCase();
-						filterValue = filterValue.toLowerCase();
-					}
-					return !filterValue || this.props.matchPos === 'start' ? this.props.matchProp !== 'label' && valueTest.substr(0, filterValue.length) === filterValue || this.props.matchProp !== 'value' && labelTest.substr(0, filterValue.length) === filterValue : this.props.matchProp !== 'label' && valueTest.indexOf(filterValue) >= 0 || this.props.matchProp !== 'value' && labelTest.indexOf(filterValue) >= 0;
-				};
-				return (options || []).filter(filterOption, this);
-			}
+		addValue: function addValue(value) {
+			var valueArray = this.getValueArray();
+			this.setValue(valueArray.concat(value));
 		},
 
-		selectFocusedOption: function selectFocusedOption() {
-			if (this.props.allowCreate && !this.state.focusedOption) {
-				return this.selectValue(this.state.inputValue);
-			}
-
-			if (this.state.focusedOption) {
-				return this.selectValue(this.state.focusedOption);
-			}
+		popValue: function popValue() {
+			var valueArray = this.getValueArray();
+			if (!valueArray.length) return;
+			if (valueArray[valueArray.length - 1].clearableValue === false) return;
+			this.setValue(valueArray.slice(0, valueArray.length - 1));
 		},
 
-		focusOption: function focusOption(op) {
+		removeValue: function removeValue(value) {
+			var valueArray = this.getValueArray();
+			this.setValue(valueArray.filter(function (i) {
+				return i !== value;
+			}));
+			this.focus();
+		},
+
+		clearValue: function clearValue(event) {
+			// if the event was triggered by a mousedown and not the primary
+			// button, ignore it.
+			if (event && event.type === 'mousedown' && event.button !== 0) {
+				return;
+			}
+			event.stopPropagation();
+			event.preventDefault();
+			this.setValue(null);
 			this.setState({
-				focusedOption: op
+				isOpen: false,
+				inputValue: ''
+			}, this.focus);
+		},
+
+		focusOption: function focusOption(option) {
+			this.setState({
+				focusedOption: option
 			});
 		},
 
@@ -26096,36 +22889,34 @@ var autotagform =
 		},
 
 		focusAdjacentOption: function focusAdjacentOption(dir) {
-			this._focusedOptionReveal = true;
-			var ops = this.state.filteredOptions.filter(function (op) {
-				return !op.disabled;
+			var options = this._visibleOptions.filter(function (i) {
+				return !i.disabled;
 			});
+			this._scrollToFocusedOptionOnUpdate = true;
 			if (!this.state.isOpen) {
 				this.setState({
 					isOpen: true,
 					inputValue: '',
-					focusedOption: this.state.focusedOption || ops[dir === 'next' ? 0 : ops.length - 1]
-				}, this._bindCloseMenuIfClickedOutside);
+					focusedOption: this._focusedOption || options[dir === 'next' ? 0 : options.length - 1]
+				});
 				return;
 			}
-			if (!ops.length) {
-				return;
-			}
+			if (!options.length) return;
 			var focusedIndex = -1;
-			for (var i = 0; i < ops.length; i++) {
-				if (this.state.focusedOption === ops[i]) {
+			for (var i = 0; i < options.length; i++) {
+				if (this._focusedOption === options[i]) {
 					focusedIndex = i;
 					break;
 				}
 			}
-			var focusedOption = ops[0];
-			if (dir === 'next' && focusedIndex > -1 && focusedIndex < ops.length - 1) {
-				focusedOption = ops[focusedIndex + 1];
+			var focusedOption = options[0];
+			if (dir === 'next' && focusedIndex > -1 && focusedIndex < options.length - 1) {
+				focusedOption = options[focusedIndex + 1];
 			} else if (dir === 'previous') {
 				if (focusedIndex > 0) {
-					focusedOption = ops[focusedIndex - 1];
+					focusedOption = options[focusedIndex - 1];
 				} else {
-					focusedOption = ops[ops.length - 1];
+					focusedOption = options[options.length - 1];
 				}
 			}
 			this.setState({
@@ -26133,235 +22924,258 @@ var autotagform =
 			});
 		},
 
-		unfocusOption: function unfocusOption(op) {
-			if (this.state.focusedOption === op) {
-				this.setState({
-					focusedOption: null
-				});
+		selectFocusedOption: function selectFocusedOption() {
+			// if (this.props.allowCreate && !this.state.focusedOption) {
+			// 	return this.selectValue(this.state.inputValue);
+			// }
+			if (this._focusedOption) {
+				return this.selectValue(this._focusedOption);
 			}
 		},
 
-		renderOptionLabel: function renderOptionLabel(op) {
-			return op[this.props.labelKey];
+		renderLoading: function renderLoading() {
+			if (!this.props.isLoading) return;
+			return _react2['default'].createElement(
+				'span',
+				{ className: 'Select-loading-zone', 'aria-hidden': 'true' },
+				_react2['default'].createElement('span', { className: 'Select-loading' })
+			);
 		},
 
-		buildMenu: function buildMenu() {
-			var focusedValue = this.state.focusedOption ? this.state.focusedOption[this.props.valueKey] : null;
-			var renderLabel = this.props.optionRenderer || this.renderOptionLabel;
-			if (this.state.filteredOptions.length > 0) {
-				focusedValue = focusedValue == null ? this.state.filteredOptions[0] : focusedValue;
-			}
-			// Add the current value to the filtered options in last resort
-			var options = this.state.filteredOptions;
-			if (this.props.allowCreate && this.state.inputValue.trim()) {
-				var inputValue = this.state.inputValue;
-				options = options.slice();
-				var newOption = this.props.newOptionCreator ? this.props.newOptionCreator(inputValue) : {
-					value: inputValue,
-					label: inputValue,
-					create: true
-				};
-				options.unshift(newOption);
-			}
-			var ops = Object.keys(options).map(function (key) {
-				var op = options[key];
-				var isSelected = this.state.value === op[this.props.valueKey];
-				var isFocused = focusedValue === op[this.props.valueKey];
-				var optionClass = classes({
-					'Select-option': true,
-					'is-selected': isSelected,
-					'is-focused': isFocused,
-					'is-disabled': op.disabled
-				});
-				var ref = isFocused ? 'focused' : null;
-				var optionResult = React.createElement(this.props.optionComponent, {
-					key: 'option-' + op[this.props.valueKey],
-					className: optionClass,
-					renderFunc: renderLabel,
-					mouseDown: this.selectValue,
-					mouseEnter: this.focusOption,
-					mouseLeave: this.unfocusOption,
-					addLabelText: this.props.addLabelText,
-					option: op,
-					ref: ref
-				});
-				return optionResult;
-			}, this);
+		renderValue: function renderValue(valueArray, isOpen) {
+			var _this2 = this;
 
-			if (ops.length) {
-				return ops;
-			} else {
-				var noResultsText, promptClass;
-				if (this.isLoading()) {
-					promptClass = 'Select-searching';
-					noResultsText = this.props.searchingText;
-				} else if (this.state.inputValue || !this.props.asyncOptions) {
-					promptClass = 'Select-noresults';
-					noResultsText = this.props.noResultsText;
-				} else {
-					promptClass = 'Select-search-prompt';
-					noResultsText = this.props.searchPromptText;
-				}
-
-				return React.createElement(
+			var renderLabel = this.props.valueRenderer || this.getOptionLabel;
+			var ValueComponent = this.props.valueComponent;
+			if (!valueArray.length) {
+				return !this.state.inputValue ? _react2['default'].createElement(
 					'div',
-					{ className: promptClass },
-					noResultsText
+					{ className: 'Select-placeholder' },
+					this.props.placeholder
+				) : null;
+			}
+			var onClick = this.props.onValueClick ? this.handleValueClick : null;
+			if (this.props.multi) {
+				return valueArray.map(function (value, i) {
+					return _react2['default'].createElement(
+						ValueComponent,
+						{
+							disabled: _this2.props.disabled || value.clearableValue === false,
+							key: 'value-' + i + '-' + value[_this2.props.valueKey],
+							onClick: onClick,
+							onRemove: _this2.removeValue,
+							value: value
+						},
+						renderLabel(value)
+					);
+				});
+			} else if (!this.state.inputValue) {
+				if (isOpen) onClick = null;
+				return _react2['default'].createElement(
+					ValueComponent,
+					{
+						disabled: this.props.disabled,
+						onClick: onClick,
+						value: valueArray[0]
+					},
+					renderLabel(valueArray[0])
 				);
 			}
 		},
 
-		handleOptionLabelClick: function handleOptionLabelClick(value, event) {
-			if (this.props.onOptionLabelClick) {
-				this.props.onOptionLabelClick(value, event);
+		renderInput: function renderInput(valueArray) {
+			var className = (0, _classnames2['default'])('Select-input', this.props.inputProps.className);
+			if (this.props.disabled || !this.props.searchable) {
+				return _react2['default'].createElement('div', _extends({}, this.props.inputProps, {
+					className: className,
+					tabIndex: this.props.tabIndex || 0,
+					onBlur: this.handleInputBlur,
+					onFocus: this.handleInputFocus,
+					ref: 'input',
+					style: { border: 0, width: 1, display: 'inline-block' } }));
+			}
+			return _react2['default'].createElement(_reactInputAutosize2['default'], _extends({}, this.props.inputProps, {
+				className: className,
+				tabIndex: this.props.tabIndex,
+				onBlur: this.handleInputBlur,
+				onChange: this.handleInputChange,
+				onFocus: this.handleInputFocus,
+				minWidth: '5',
+				ref: 'input',
+				value: this.state.inputValue
+			}));
+		},
+
+		renderClear: function renderClear() {
+			if (!this.props.clearable || !this.props.value || this.props.multi && !this.props.value.length || this.props.disabled || this.props.isLoading) return;
+			return _react2['default'].createElement(
+				'span',
+				{ className: 'Select-clear-zone', title: this.props.multi ? this.props.clearAllText : this.props.clearValueText, 'aria-label': this.props.multi ? this.props.clearAllText : this.props.clearValueText, onMouseDown: this.clearValue, onTouchEnd: this.clearValue },
+				_react2['default'].createElement('span', { className: 'Select-clear', dangerouslySetInnerHTML: { __html: '&times;' } })
+			);
+		},
+
+		renderArrow: function renderArrow() {
+			return _react2['default'].createElement(
+				'span',
+				{ className: 'Select-arrow-zone', onMouseDown: this.handleMouseDownOnArrow },
+				_react2['default'].createElement('span', { className: 'Select-arrow', onMouseDown: this.handleMouseDownOnArrow })
+			);
+		},
+
+		filterOptions: function filterOptions(excludeOptions) {
+			var _this3 = this;
+
+			var filterValue = this.state.inputValue;
+			var options = this.props.options || [];
+			if (typeof this.props.filterOptions === 'function') {
+				return this.props.filterOptions.call(this, options, filterValue, excludeOptions);
+			} else if (this.props.filterOptions) {
+				if (this.props.ignoreAccents) {
+					filterValue = (0, _utilsStripDiacritics2['default'])(filterValue);
+				}
+				if (this.props.ignoreCase) {
+					filterValue = filterValue.toLowerCase();
+				}
+				if (excludeOptions) excludeOptions = excludeOptions.map(function (i) {
+					return i[_this3.props.valueKey];
+				});
+				return options.filter(function (option) {
+					if (excludeOptions && excludeOptions.indexOf(option[_this3.props.valueKey]) > -1) return false;
+					if (_this3.props.filterOption) return _this3.props.filterOption.call(_this3, option, filterValue);
+					if (!filterValue) return true;
+					var valueTest = String(option[_this3.props.valueKey]);
+					var labelTest = String(option[_this3.props.labelKey]);
+					if (_this3.props.ignoreAccents) {
+						if (_this3.props.matchProp !== 'label') valueTest = (0, _utilsStripDiacritics2['default'])(valueTest);
+						if (_this3.props.matchProp !== 'value') labelTest = (0, _utilsStripDiacritics2['default'])(labelTest);
+					}
+					if (_this3.props.ignoreCase) {
+						if (_this3.props.matchProp !== 'label') valueTest = valueTest.toLowerCase();
+						if (_this3.props.matchProp !== 'value') labelTest = labelTest.toLowerCase();
+					}
+					return _this3.props.matchPos === 'start' ? _this3.props.matchProp !== 'label' && valueTest.substr(0, filterValue.length) === filterValue || _this3.props.matchProp !== 'value' && labelTest.substr(0, filterValue.length) === filterValue : _this3.props.matchProp !== 'label' && valueTest.indexOf(filterValue) >= 0 || _this3.props.matchProp !== 'value' && labelTest.indexOf(filterValue) >= 0;
+				});
+			} else {
+				return options;
 			}
 		},
 
-		isLoading: function isLoading() {
-			return this.props.isLoading || this.state.isLoading;
+		renderMenu: function renderMenu(options, valueArray, focusedOption) {
+			var _this4 = this;
+
+			if (options && options.length) {
+				var _ret = (function () {
+					var Option = _this4.props.optionComponent;
+					var renderLabel = _this4.props.optionRenderer || _this4.getOptionLabel;
+					return {
+						v: options.map(function (option, i) {
+							var isSelected = valueArray && valueArray.indexOf(option) > -1;
+							var isFocused = option === focusedOption;
+							var optionRef = isFocused ? 'focused' : null;
+							var optionClass = (0, _classnames2['default'])({
+								'Select-option': true,
+								'is-selected': isSelected,
+								'is-focused': isFocused,
+								'is-disabled': option.disabled
+							});
+							return _react2['default'].createElement(
+								Option,
+								{
+									className: optionClass,
+									isDisabled: option.disabled,
+									isFocused: isFocused,
+									key: 'option-' + i + '-' + option[_this4.props.valueKey],
+									onSelect: _this4.selectValue,
+									onFocus: _this4.focusOption,
+									option: option,
+									isSelected: isSelected,
+									ref: optionRef
+								},
+								renderLabel(option)
+							);
+						})
+					};
+				})();
+
+				if (typeof _ret === 'object') return _ret.v;
+			} else {
+				return _react2['default'].createElement(
+					'div',
+					{ className: 'Select-noresults' },
+					this.props.noResultsText
+				);
+			}
+		},
+
+		renderHiddenField: function renderHiddenField(valueArray) {
+			var _this5 = this;
+
+			if (!this.props.name) return;
+			var value = valueArray.map(function (i) {
+				return stringifyValue(i[_this5.props.valueKey]);
+			}).join(this.props.delimiter);
+			return _react2['default'].createElement('input', { type: 'hidden', ref: 'value', name: this.props.name, value: value, disabled: this.props.disabled });
+		},
+
+		getFocusableOption: function getFocusableOption(selectedOption) {
+			var options = this._visibleOptions;
+			if (!options.length) return;
+			var focusedOption = this.state.focusedOption || selectedOption;
+			if (focusedOption && options.indexOf(focusedOption) > -1) return focusedOption;
+			for (var i = 0; i < options.length; i++) {
+				if (!options[i].disabled) return options[i];
+			}
 		},
 
 		render: function render() {
-			var selectClass = classes('Select', this.props.className, {
+			var valueArray = this.getValueArray();
+			var options = this._visibleOptions = this.filterOptions(this.props.multi ? valueArray : null);
+			var isOpen = this.state.isOpen;
+			if (this.props.multi && !options.length && valueArray.length && !this.state.inputValue) isOpen = false;
+			var focusedOption = this._focusedOption = this.getFocusableOption(valueArray[0]);
+			var className = (0, _classnames2['default'])('Select', this.props.className, {
 				'Select--multi': this.props.multi,
-				'is-searchable': this.props.searchable,
-				'is-open': this.state.isOpen,
-				'is-focused': this.state.isFocused,
-				'is-loading': this.isLoading(),
 				'is-disabled': this.props.disabled,
-				'has-value': this.state.value
+				'is-focused': this.state.isFocused,
+				'is-loading': this.props.isLoading,
+				'is-open': isOpen,
+				'is-pseudo-focused': this.state.isPseudoFocused,
+				'is-searchable': this.props.searchable,
+				'has-value': valueArray.length
 			});
-			var value = [];
-			if (this.props.multi) {
-				this.state.values.forEach(function (val) {
-					var renderLabel = this.props.valueRenderer || this.renderOptionLabel;
-					var onOptionLabelClick = this.handleOptionLabelClick.bind(this, val);
-					var onRemove = this.removeValue.bind(this, val);
-					var valueComponent = React.createElement(this.props.valueComponent, {
-						key: val[this.props.valueKey],
-						option: val,
-						renderer: renderLabel,
-						optionLabelClick: !!this.props.onOptionLabelClick,
-						onOptionLabelClick: onOptionLabelClick,
-						onRemove: onRemove,
-						disabled: this.props.disabled
-					});
-					value.push(valueComponent);
-				}, this);
-			}
-
-			if (!this.state.inputValue && (!this.props.multi || !value.length)) {
-				var val = this.state.values[0] || null;
-				if (this.props.valueRenderer && !!this.state.values.length) {
-					value.push(React.createElement(Value, {
-						key: 0,
-						option: val,
-						renderer: this.props.valueRenderer,
-						disabled: this.props.disabled }));
-				} else {
-					var singleValueComponent = React.createElement(this.props.singleValueComponent, {
-						key: 'placeholder',
-						value: val,
-						placeholder: this.state.placeholder
-					});
-					value.push(singleValueComponent);
-				}
-			}
-
-			// loading spinner
-			var loading = this.isLoading() ? React.createElement(
-				'span',
-				{ className: 'Select-loading-zone', 'aria-hidden': 'true' },
-				React.createElement('span', { className: 'Select-loading' })
-			) : null;
-
-			// clear "x" button
-			var clear = this.props.clearable && this.state.value && !this.props.disabled && !this.isLoading() ? React.createElement(
-				'span',
-				{ className: 'Select-clear-zone', title: this.props.multi ? this.props.clearAllText : this.props.clearValueText, 'aria-label': this.props.multi ? this.props.clearAllText : this.props.clearValueText, onMouseDown: this.clearValue, onTouchEnd: this.clearValue, onClick: this.clearValue },
-				React.createElement('span', { className: 'Select-clear', dangerouslySetInnerHTML: { __html: '&times;' } })
-			) : null;
-
-			// indicator arrow
-			var arrow = React.createElement(
-				'span',
-				{ className: 'Select-arrow-zone', onMouseDown: this.handleMouseDownOnArrow },
-				React.createElement('span', { className: 'Select-arrow', onMouseDown: this.handleMouseDownOnArrow })
-			);
-
-			var menu;
-			var menuProps;
-			if (this.state.isOpen) {
-				menuProps = {
-					ref: 'menu',
-					className: 'Select-menu',
-					onMouseDown: this.handleMouseDownOnMenu
-				};
-				menu = React.createElement(
-					'div',
-					{ ref: 'selectMenuContainer', className: 'Select-menu-outer' },
-					React.createElement(
-						'div',
-						menuProps,
-						this.buildMenu()
-					)
-				);
-			}
-
-			var input;
-			var inputProps = {
-				ref: 'input',
-				className: 'Select-input ' + (this.props.inputProps.className || ''),
-				tabIndex: this.props.tabIndex || 0,
-				onFocus: this.handleInputFocus,
-				onBlur: this.handleInputBlur
-			};
-			for (var key in this.props.inputProps) {
-				if (this.props.inputProps.hasOwnProperty(key) && key !== 'className') {
-					inputProps[key] = this.props.inputProps[key];
-				}
-			}
-
-			if (!this.props.disabled) {
-				if (this.props.searchable) {
-					input = React.createElement(Input, _extends({ value: this.state.inputValue, onChange: this.handleInputChange, minWidth: '5' }, inputProps));
-				} else {
-					input = React.createElement(
-						'div',
-						inputProps,
-						' '
-					);
-				}
-			} else if (!this.props.multi || !this.state.values.length) {
-				input = React.createElement(
-					'div',
-					{ className: 'Select-input' },
-					' '
-				);
-			}
-
-			return React.createElement(
+			return _react2['default'].createElement(
 				'div',
-				{ ref: 'wrapper', className: selectClass },
-				React.createElement('input', { type: 'hidden', ref: 'value', name: this.props.name, value: this.state.value, disabled: this.props.disabled }),
-				React.createElement(
+				{ ref: 'wrapper', className: className, style: this.props.wrapperStyle },
+				this.renderHiddenField(valueArray),
+				_react2['default'].createElement(
 					'div',
-					{ className: 'Select-control', ref: 'control', onKeyDown: this.handleKeyDown, onMouseDown: this.handleMouseDown, onTouchEnd: this.handleMouseDown },
-					value,
-					input,
-					loading,
-					clear,
-					arrow
+					{ ref: 'control', className: 'Select-control', style: this.props.style, onKeyDown: this.handleKeyDown, onMouseDown: this.handleMouseDown, onTouchEnd: this.handleMouseDown },
+					this.renderValue(valueArray, isOpen),
+					this.renderInput(valueArray),
+					this.renderLoading(),
+					this.renderClear(),
+					this.renderArrow()
 				),
-				menu
+				isOpen ? _react2['default'].createElement(
+					'div',
+					{ ref: 'menuContainer', className: 'Select-menu-outer', style: this.props.menuContainerStyle },
+					_react2['default'].createElement(
+						'div',
+						{ ref: 'menu', className: 'Select-menu', style: this.props.menuStyle, onScroll: this.handleMenuScroll, onMouseDown: this.handleMouseDownOnMenu },
+						this.renderMenu(options, !this.props.multi ? valueArray : null, focusedOption)
+					)
+				) : null
 			);
 		}
+
 	});
 
-	module.exports = Select;
+	exports['default'] = Select;
+	module.exports = exports['default'];
 
 /***/ },
-/* 203 */
+/* 181 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -26488,7 +23302,7 @@ var autotagform =
 	module.exports = AutosizeInput;
 
 /***/ },
-/* 204 */
+/* 182 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -26542,86 +23356,351 @@ var autotagform =
 
 
 /***/ },
-/* 205 */
+/* 183 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	var map = [{ 'base': 'A', 'letters': /[\u0041\u24B6\uFF21\u00C0\u00C1\u00C2\u1EA6\u1EA4\u1EAA\u1EA8\u00C3\u0100\u0102\u1EB0\u1EAE\u1EB4\u1EB2\u0226\u01E0\u00C4\u01DE\u1EA2\u00C5\u01FA\u01CD\u0200\u0202\u1EA0\u1EAC\u1EB6\u1E00\u0104\u023A\u2C6F]/g }, { 'base': 'AA', 'letters': /[\uA732]/g }, { 'base': 'AE', 'letters': /[\u00C6\u01FC\u01E2]/g }, { 'base': 'AO', 'letters': /[\uA734]/g }, { 'base': 'AU', 'letters': /[\uA736]/g }, { 'base': 'AV', 'letters': /[\uA738\uA73A]/g }, { 'base': 'AY', 'letters': /[\uA73C]/g }, { 'base': 'B', 'letters': /[\u0042\u24B7\uFF22\u1E02\u1E04\u1E06\u0243\u0182\u0181]/g }, { 'base': 'C', 'letters': /[\u0043\u24B8\uFF23\u0106\u0108\u010A\u010C\u00C7\u1E08\u0187\u023B\uA73E]/g }, { 'base': 'D', 'letters': /[\u0044\u24B9\uFF24\u1E0A\u010E\u1E0C\u1E10\u1E12\u1E0E\u0110\u018B\u018A\u0189\uA779]/g }, { 'base': 'DZ', 'letters': /[\u01F1\u01C4]/g }, { 'base': 'Dz', 'letters': /[\u01F2\u01C5]/g }, { 'base': 'E', 'letters': /[\u0045\u24BA\uFF25\u00C8\u00C9\u00CA\u1EC0\u1EBE\u1EC4\u1EC2\u1EBC\u0112\u1E14\u1E16\u0114\u0116\u00CB\u1EBA\u011A\u0204\u0206\u1EB8\u1EC6\u0228\u1E1C\u0118\u1E18\u1E1A\u0190\u018E]/g }, { 'base': 'F', 'letters': /[\u0046\u24BB\uFF26\u1E1E\u0191\uA77B]/g }, { 'base': 'G', 'letters': /[\u0047\u24BC\uFF27\u01F4\u011C\u1E20\u011E\u0120\u01E6\u0122\u01E4\u0193\uA7A0\uA77D\uA77E]/g }, { 'base': 'H', 'letters': /[\u0048\u24BD\uFF28\u0124\u1E22\u1E26\u021E\u1E24\u1E28\u1E2A\u0126\u2C67\u2C75\uA78D]/g }, { 'base': 'I', 'letters': /[\u0049\u24BE\uFF29\u00CC\u00CD\u00CE\u0128\u012A\u012C\u0130\u00CF\u1E2E\u1EC8\u01CF\u0208\u020A\u1ECA\u012E\u1E2C\u0197]/g }, { 'base': 'J', 'letters': /[\u004A\u24BF\uFF2A\u0134\u0248]/g }, { 'base': 'K', 'letters': /[\u004B\u24C0\uFF2B\u1E30\u01E8\u1E32\u0136\u1E34\u0198\u2C69\uA740\uA742\uA744\uA7A2]/g }, { 'base': 'L', 'letters': /[\u004C\u24C1\uFF2C\u013F\u0139\u013D\u1E36\u1E38\u013B\u1E3C\u1E3A\u0141\u023D\u2C62\u2C60\uA748\uA746\uA780]/g }, { 'base': 'LJ', 'letters': /[\u01C7]/g }, { 'base': 'Lj', 'letters': /[\u01C8]/g }, { 'base': 'M', 'letters': /[\u004D\u24C2\uFF2D\u1E3E\u1E40\u1E42\u2C6E\u019C]/g }, { 'base': 'N', 'letters': /[\u004E\u24C3\uFF2E\u01F8\u0143\u00D1\u1E44\u0147\u1E46\u0145\u1E4A\u1E48\u0220\u019D\uA790\uA7A4]/g }, { 'base': 'NJ', 'letters': /[\u01CA]/g }, { 'base': 'Nj', 'letters': /[\u01CB]/g }, { 'base': 'O', 'letters': /[\u004F\u24C4\uFF2F\u00D2\u00D3\u00D4\u1ED2\u1ED0\u1ED6\u1ED4\u00D5\u1E4C\u022C\u1E4E\u014C\u1E50\u1E52\u014E\u022E\u0230\u00D6\u022A\u1ECE\u0150\u01D1\u020C\u020E\u01A0\u1EDC\u1EDA\u1EE0\u1EDE\u1EE2\u1ECC\u1ED8\u01EA\u01EC\u00D8\u01FE\u0186\u019F\uA74A\uA74C]/g }, { 'base': 'OI', 'letters': /[\u01A2]/g }, { 'base': 'OO', 'letters': /[\uA74E]/g }, { 'base': 'OU', 'letters': /[\u0222]/g }, { 'base': 'P', 'letters': /[\u0050\u24C5\uFF30\u1E54\u1E56\u01A4\u2C63\uA750\uA752\uA754]/g }, { 'base': 'Q', 'letters': /[\u0051\u24C6\uFF31\uA756\uA758\u024A]/g }, { 'base': 'R', 'letters': /[\u0052\u24C7\uFF32\u0154\u1E58\u0158\u0210\u0212\u1E5A\u1E5C\u0156\u1E5E\u024C\u2C64\uA75A\uA7A6\uA782]/g }, { 'base': 'S', 'letters': /[\u0053\u24C8\uFF33\u1E9E\u015A\u1E64\u015C\u1E60\u0160\u1E66\u1E62\u1E68\u0218\u015E\u2C7E\uA7A8\uA784]/g }, { 'base': 'T', 'letters': /[\u0054\u24C9\uFF34\u1E6A\u0164\u1E6C\u021A\u0162\u1E70\u1E6E\u0166\u01AC\u01AE\u023E\uA786]/g }, { 'base': 'TZ', 'letters': /[\uA728]/g }, { 'base': 'U', 'letters': /[\u0055\u24CA\uFF35\u00D9\u00DA\u00DB\u0168\u1E78\u016A\u1E7A\u016C\u00DC\u01DB\u01D7\u01D5\u01D9\u1EE6\u016E\u0170\u01D3\u0214\u0216\u01AF\u1EEA\u1EE8\u1EEE\u1EEC\u1EF0\u1EE4\u1E72\u0172\u1E76\u1E74\u0244]/g }, { 'base': 'V', 'letters': /[\u0056\u24CB\uFF36\u1E7C\u1E7E\u01B2\uA75E\u0245]/g }, { 'base': 'VY', 'letters': /[\uA760]/g }, { 'base': 'W', 'letters': /[\u0057\u24CC\uFF37\u1E80\u1E82\u0174\u1E86\u1E84\u1E88\u2C72]/g }, { 'base': 'X', 'letters': /[\u0058\u24CD\uFF38\u1E8A\u1E8C]/g }, { 'base': 'Y', 'letters': /[\u0059\u24CE\uFF39\u1EF2\u00DD\u0176\u1EF8\u0232\u1E8E\u0178\u1EF6\u1EF4\u01B3\u024E\u1EFE]/g }, { 'base': 'Z', 'letters': /[\u005A\u24CF\uFF3A\u0179\u1E90\u017B\u017D\u1E92\u1E94\u01B5\u0224\u2C7F\u2C6B\uA762]/g }, { 'base': 'a', 'letters': /[\u0061\u24D0\uFF41\u1E9A\u00E0\u00E1\u00E2\u1EA7\u1EA5\u1EAB\u1EA9\u00E3\u0101\u0103\u1EB1\u1EAF\u1EB5\u1EB3\u0227\u01E1\u00E4\u01DF\u1EA3\u00E5\u01FB\u01CE\u0201\u0203\u1EA1\u1EAD\u1EB7\u1E01\u0105\u2C65\u0250]/g }, { 'base': 'aa', 'letters': /[\uA733]/g }, { 'base': 'ae', 'letters': /[\u00E6\u01FD\u01E3]/g }, { 'base': 'ao', 'letters': /[\uA735]/g }, { 'base': 'au', 'letters': /[\uA737]/g }, { 'base': 'av', 'letters': /[\uA739\uA73B]/g }, { 'base': 'ay', 'letters': /[\uA73D]/g }, { 'base': 'b', 'letters': /[\u0062\u24D1\uFF42\u1E03\u1E05\u1E07\u0180\u0183\u0253]/g }, { 'base': 'c', 'letters': /[\u0063\u24D2\uFF43\u0107\u0109\u010B\u010D\u00E7\u1E09\u0188\u023C\uA73F\u2184]/g }, { 'base': 'd', 'letters': /[\u0064\u24D3\uFF44\u1E0B\u010F\u1E0D\u1E11\u1E13\u1E0F\u0111\u018C\u0256\u0257\uA77A]/g }, { 'base': 'dz', 'letters': /[\u01F3\u01C6]/g }, { 'base': 'e', 'letters': /[\u0065\u24D4\uFF45\u00E8\u00E9\u00EA\u1EC1\u1EBF\u1EC5\u1EC3\u1EBD\u0113\u1E15\u1E17\u0115\u0117\u00EB\u1EBB\u011B\u0205\u0207\u1EB9\u1EC7\u0229\u1E1D\u0119\u1E19\u1E1B\u0247\u025B\u01DD]/g }, { 'base': 'f', 'letters': /[\u0066\u24D5\uFF46\u1E1F\u0192\uA77C]/g }, { 'base': 'g', 'letters': /[\u0067\u24D6\uFF47\u01F5\u011D\u1E21\u011F\u0121\u01E7\u0123\u01E5\u0260\uA7A1\u1D79\uA77F]/g }, { 'base': 'h', 'letters': /[\u0068\u24D7\uFF48\u0125\u1E23\u1E27\u021F\u1E25\u1E29\u1E2B\u1E96\u0127\u2C68\u2C76\u0265]/g }, { 'base': 'hv', 'letters': /[\u0195]/g }, { 'base': 'i', 'letters': /[\u0069\u24D8\uFF49\u00EC\u00ED\u00EE\u0129\u012B\u012D\u00EF\u1E2F\u1EC9\u01D0\u0209\u020B\u1ECB\u012F\u1E2D\u0268\u0131]/g }, { 'base': 'j', 'letters': /[\u006A\u24D9\uFF4A\u0135\u01F0\u0249]/g }, { 'base': 'k', 'letters': /[\u006B\u24DA\uFF4B\u1E31\u01E9\u1E33\u0137\u1E35\u0199\u2C6A\uA741\uA743\uA745\uA7A3]/g }, { 'base': 'l', 'letters': /[\u006C\u24DB\uFF4C\u0140\u013A\u013E\u1E37\u1E39\u013C\u1E3D\u1E3B\u017F\u0142\u019A\u026B\u2C61\uA749\uA781\uA747]/g }, { 'base': 'lj', 'letters': /[\u01C9]/g }, { 'base': 'm', 'letters': /[\u006D\u24DC\uFF4D\u1E3F\u1E41\u1E43\u0271\u026F]/g }, { 'base': 'n', 'letters': /[\u006E\u24DD\uFF4E\u01F9\u0144\u00F1\u1E45\u0148\u1E47\u0146\u1E4B\u1E49\u019E\u0272\u0149\uA791\uA7A5]/g }, { 'base': 'nj', 'letters': /[\u01CC]/g }, { 'base': 'o', 'letters': /[\u006F\u24DE\uFF4F\u00F2\u00F3\u00F4\u1ED3\u1ED1\u1ED7\u1ED5\u00F5\u1E4D\u022D\u1E4F\u014D\u1E51\u1E53\u014F\u022F\u0231\u00F6\u022B\u1ECF\u0151\u01D2\u020D\u020F\u01A1\u1EDD\u1EDB\u1EE1\u1EDF\u1EE3\u1ECD\u1ED9\u01EB\u01ED\u00F8\u01FF\u0254\uA74B\uA74D\u0275]/g }, { 'base': 'oi', 'letters': /[\u01A3]/g }, { 'base': 'ou', 'letters': /[\u0223]/g }, { 'base': 'oo', 'letters': /[\uA74F]/g }, { 'base': 'p', 'letters': /[\u0070\u24DF\uFF50\u1E55\u1E57\u01A5\u1D7D\uA751\uA753\uA755]/g }, { 'base': 'q', 'letters': /[\u0071\u24E0\uFF51\u024B\uA757\uA759]/g }, { 'base': 'r', 'letters': /[\u0072\u24E1\uFF52\u0155\u1E59\u0159\u0211\u0213\u1E5B\u1E5D\u0157\u1E5F\u024D\u027D\uA75B\uA7A7\uA783]/g }, { 'base': 's', 'letters': /[\u0073\u24E2\uFF53\u00DF\u015B\u1E65\u015D\u1E61\u0161\u1E67\u1E63\u1E69\u0219\u015F\u023F\uA7A9\uA785\u1E9B]/g }, { 'base': 't', 'letters': /[\u0074\u24E3\uFF54\u1E6B\u1E97\u0165\u1E6D\u021B\u0163\u1E71\u1E6F\u0167\u01AD\u0288\u2C66\uA787]/g }, { 'base': 'tz', 'letters': /[\uA729]/g }, { 'base': 'u', 'letters': /[\u0075\u24E4\uFF55\u00F9\u00FA\u00FB\u0169\u1E79\u016B\u1E7B\u016D\u00FC\u01DC\u01D8\u01D6\u01DA\u1EE7\u016F\u0171\u01D4\u0215\u0217\u01B0\u1EEB\u1EE9\u1EEF\u1EED\u1EF1\u1EE5\u1E73\u0173\u1E77\u1E75\u0289]/g }, { 'base': 'v', 'letters': /[\u0076\u24E5\uFF56\u1E7D\u1E7F\u028B\uA75F\u028C]/g }, { 'base': 'vy', 'letters': /[\uA761]/g }, { 'base': 'w', 'letters': /[\u0077\u24E6\uFF57\u1E81\u1E83\u0175\u1E87\u1E85\u1E98\u1E89\u2C73]/g }, { 'base': 'x', 'letters': /[\u0078\u24E7\uFF58\u1E8B\u1E8D]/g }, { 'base': 'y', 'letters': /[\u0079\u24E8\uFF59\u1EF3\u00FD\u0177\u1EF9\u0233\u1E8F\u00FF\u1EF7\u1E99\u1EF5\u01B4\u024F\u1EFF]/g }, { 'base': 'z', 'letters': /[\u007A\u24E9\uFF5A\u017A\u1E91\u017C\u017E\u1E93\u1E95\u01B6\u0225\u0240\u2C6C\uA763]/g }];
+
+	module.exports = function stripDiacritics(str) {
+		for (var i = 0; i < map.length; i++) {
+			str = str.replace(map[i].letters, map[i].base);
+		}
+		return str;
+	};
+
+/***/ },
+/* 184 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var React = __webpack_require__(1);
-	var classes = __webpack_require__(204);
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	var Value = React.createClass({
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _Select = __webpack_require__(180);
+
+	var _Select2 = _interopRequireDefault(_Select);
+
+	var _utilsStripDiacritics = __webpack_require__(183);
+
+	var _utilsStripDiacritics2 = _interopRequireDefault(_utilsStripDiacritics);
+
+	var requestId = 0;
+
+	function initCache(cache) {
+		if (cache && typeof cache !== 'object') {
+			cache = {};
+		}
+		return cache ? cache : null;
+	}
+
+	function updateCache(cache, input, data) {
+		if (!cache) return;
+		cache[input] = data;
+	}
+
+	function getFromCache(cache, input) {
+		if (!cache) return;
+		for (var i = input.length; i >= 0; --i) {
+			var cacheKey = input.slice(0, i);
+			if (cache[cacheKey] && (input === cacheKey || cache[cacheKey].complete)) {
+				return cache[cacheKey];
+			}
+		}
+	}
+
+	function thenPromise(promise, callback) {
+		if (!promise || typeof promise.then !== 'function') return;
+		return promise.then(function (data) {
+			callback(null, data);
+		}, function (err) {
+			callback(err);
+		});
+	}
+
+	var Async = _react2['default'].createClass({
+		displayName: 'Async',
+
+		propTypes: {
+			cache: _react2['default'].PropTypes.any, // object to use to cache results, can be null to disable cache
+			loadOptions: _react2['default'].PropTypes.func.isRequired, // function to call to load options asynchronously
+			ignoreAccents: _react2['default'].PropTypes.bool, // whether to strip diacritics when filtering (shared with Select)
+			ignoreCase: _react2['default'].PropTypes.bool, // whether to perform case-insensitive filtering (shared with Select)
+			isLoading: _react2['default'].PropTypes.bool, // overrides the isLoading state when set to true
+			loadingPlaceholder: _react2['default'].PropTypes.string, // replaces the placeholder while options are loading
+			minimumInput: _react2['default'].PropTypes.number, // the minimum number of characters that trigger loadOptions
+			noResultsText: _react2['default'].PropTypes.string, // placeholder displayed when there are no matching search results (shared with Select)
+			placeholder: _react2['default'].PropTypes.oneOfType([// field placeholder, displayed when there's no value (shared with Select)
+			_react2['default'].PropTypes.string, _react2['default'].PropTypes.node]),
+			searchingText: _react2['default'].PropTypes.string, // message to display while options are loading
+			searchPromptText: _react2['default'].PropTypes.string },
+		// label to prompt for search input
+		getDefaultProps: function getDefaultProps() {
+			return {
+				cache: true,
+				ignoreAccents: true,
+				ignoreCase: true,
+				loadingPlaceholder: 'Loading...',
+				minimumInput: 0,
+				searchingText: 'Searching...',
+				searchPromptText: 'Type to search'
+			};
+		},
+		getInitialState: function getInitialState() {
+			return {
+				cache: initCache(this.props.cache),
+				isLoading: false,
+				options: []
+			};
+		},
+		componentWillMount: function componentWillMount() {
+			this._lastInput = '';
+		},
+		componentDidMount: function componentDidMount() {
+			this.loadOptions('');
+		},
+		componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
+			if (nextProps.cache !== this.props.cache) {
+				this.setState({
+					cache: initCache(nextProps.cache)
+				});
+			}
+		},
+		focus: function focus() {
+			this.refs.select.focus();
+		},
+		resetState: function resetState() {
+			this._currentRequestId = -1;
+			this.setState({
+				isLoading: false,
+				options: []
+			});
+		},
+		getResponseHandler: function getResponseHandler(input) {
+			var _this = this;
+
+			var _requestId = this._currentRequestId = requestId++;
+			return function (err, data) {
+				if (err) throw err;
+				if (!_this.isMounted()) return;
+				updateCache(_this.state.cache, input, data);
+				if (_requestId !== _this._currentRequestId) return;
+				_this.setState({
+					isLoading: false,
+					options: data && data.options || []
+				});
+			};
+		},
+		loadOptions: function loadOptions(input) {
+			if (this.props.ignoreAccents) input = (0, _utilsStripDiacritics2['default'])(input);
+			if (this.props.ignoreCase) input = input.toLowerCase();
+			this._lastInput = input;
+			if (input.length < this.props.minimumInput) {
+				return this.resetState();
+			}
+			var cacheResult = getFromCache(this.state.cache, input);
+			if (cacheResult) {
+				return this.setState({
+					options: cacheResult.options
+				});
+			}
+			this.setState({
+				isLoading: true
+			});
+			var responseHandler = this.getResponseHandler(input);
+			return thenPromise(this.props.loadOptions(input, responseHandler), responseHandler);
+		},
+		render: function render() {
+			var noResultsText = this.props.noResultsText;
+			var _state = this.state;
+			var isLoading = _state.isLoading;
+			var options = _state.options;
+
+			if (this.props.isLoading) isLoading = true;
+			var placeholder = isLoading ? this.props.loadingPlaceholder : this.props.placeholder;
+			if (!options.length) {
+				if (this._lastInput.length < this.props.minimumInput) noResultsText = this.props.searchPromptText;
+				if (isLoading) noResultsText = this.props.searchingText;
+			}
+			return _react2['default'].createElement(_Select2['default'], _extends({}, this.props, {
+				ref: 'select',
+				isLoading: isLoading,
+				noResultsText: noResultsText,
+				onInputChange: this.loadOptions,
+				options: options,
+				placeholder: placeholder
+			}));
+		}
+	});
+
+	module.exports = Async;
+
+/***/ },
+/* 185 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _classnames = __webpack_require__(182);
+
+	var _classnames2 = _interopRequireDefault(_classnames);
+
+	var Option = _react2['default'].createClass({
+		displayName: 'Option',
+
+		propTypes: {
+			className: _react2['default'].PropTypes.string, // className (based on mouse position)
+			isDisabled: _react2['default'].PropTypes.bool, // the option is disabled
+			isFocused: _react2['default'].PropTypes.bool, // the option is focused
+			isSelected: _react2['default'].PropTypes.bool, // the option is selected
+			onSelect: _react2['default'].PropTypes.func, // method to handle click on option element
+			onFocus: _react2['default'].PropTypes.func, // method to handle mouseEnter on option element
+			onUnfocus: _react2['default'].PropTypes.func, // method to handle mouseLeave on option element
+			option: _react2['default'].PropTypes.object.isRequired },
+		// object that is base for that option
+		blockEvent: function blockEvent(event) {
+			event.preventDefault();
+			event.stopPropagation();
+			if (event.target.tagName !== 'A' || !('href' in event.target)) {
+				return;
+			}
+			if (event.target.target) {
+				window.open(event.target.href, event.target.target);
+			} else {
+				window.location.href = event.target.href;
+			}
+		},
+		handleMouseDown: function handleMouseDown(event) {
+			event.preventDefault();
+			event.stopPropagation();
+			this.props.onSelect(this.props.option, event);
+		},
+		handleMouseEnter: function handleMouseEnter(event) {
+			this.props.onFocus(this.props.option, event);
+		},
+		handleMouseMove: function handleMouseMove(event) {
+			if (this.props.focused) return;
+			this.props.onFocus(this.props.option, event);
+		},
+		render: function render() {
+			var option = this.props.option;
+
+			var className = (0, _classnames2['default'])(this.props.className, option.className);
+
+			return option.disabled ? _react2['default'].createElement(
+				'div',
+				{ className: className,
+					onMouseDown: this.blockEvent,
+					onClick: this.blockEvent },
+				this.props.children
+			) : _react2['default'].createElement(
+				'div',
+				{ className: className,
+					style: option.style,
+					onMouseDown: this.handleMouseDown,
+					onMouseEnter: this.handleMouseEnter,
+					onMouseMove: this.handleMouseMove,
+					title: option.title },
+				this.props.children
+			);
+		}
+	});
+
+	module.exports = Option;
+
+/***/ },
+/* 186 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _classnames = __webpack_require__(182);
+
+	var _classnames2 = _interopRequireDefault(_classnames);
+
+	var Value = _react2['default'].createClass({
 
 		displayName: 'Value',
 
 		propTypes: {
-			disabled: React.PropTypes.bool, // disabled prop passed to ReactSelect
-			onOptionLabelClick: React.PropTypes.func, // method to handle click on value label
-			onRemove: React.PropTypes.func, // method to handle remove of that value
-			option: React.PropTypes.object.isRequired, // option passed to component
-			optionLabelClick: React.PropTypes.bool, // indicates if onOptionLabelClick should be handled
-			renderer: React.PropTypes.func // method to render option label passed to ReactSelect
-		},
+			disabled: _react2['default'].PropTypes.bool, // disabled prop passed to ReactSelect
+			onClick: _react2['default'].PropTypes.func, // method to handle click on value label
+			onRemove: _react2['default'].PropTypes.func, // method to handle removal of the value
+			value: _react2['default'].PropTypes.object.isRequired },
 
-		blockEvent: function blockEvent(event) {
-			event.stopPropagation();
-		},
-
-		handleOnRemove: function handleOnRemove(event) {
-			if (!this.props.disabled) {
-				this.props.onRemove(event);
+		// the option object for this value
+		handleMouseDown: function handleMouseDown(event) {
+			if (event.type === 'mousedown' && event.button !== 0) {
+				return;
 			}
+			if (this.props.onClick) {
+				event.stopPropagation();
+				this.props.onClick(this.props.value, event);
+				return;
+			}
+			if (this.props.value.href) {
+				event.stopPropagation();
+			}
+		},
+
+		onRemove: function onRemove(event) {
+			event.preventDefault();
+			event.stopPropagation();
+			this.props.onRemove(this.props.value);
+		},
+
+		renderRemoveIcon: function renderRemoveIcon() {
+			if (this.props.disabled || !this.props.onRemove) return;
+			return _react2['default'].createElement(
+				'span',
+				{ className: 'Select-value-icon',
+					onMouseDown: this.onRemove,
+					onTouchEnd: this.onRemove },
+				'×'
+			);
+		},
+
+		renderLabel: function renderLabel() {
+			var className = 'Select-value-label';
+			return this.props.onClick || this.props.value.href ? _react2['default'].createElement(
+				'a',
+				{ className: className, href: this.props.value.href, target: this.props.value.target, onMouseDown: this.handleMouseDown, onTouchEnd: this.handleMouseDown },
+				this.props.children
+			) : _react2['default'].createElement(
+				'span',
+				{ className: className },
+				this.props.children
+			);
 		},
 
 		render: function render() {
-			var label = this.props.option.label;
-			if (this.props.renderer) {
-				label = this.props.renderer(this.props.option);
-			}
-
-			if (!this.props.onRemove && !this.props.optionLabelClick) {
-				return React.createElement(
-					'div',
-					{
-						className: classes('Select-value', this.props.option.className),
-						style: this.props.option.style,
-						title: this.props.option.title
-					},
-					label
-				);
-			}
-
-			if (this.props.optionLabelClick) {
-				label = React.createElement(
-					'a',
-					{ className: classes('Select-item-label__a', this.props.option.className),
-						onMouseDown: this.blockEvent,
-						onTouchEnd: this.props.onOptionLabelClick,
-						onClick: this.props.onOptionLabelClick,
-						style: this.props.option.style,
-						title: this.props.option.title },
-					label
-				);
-			}
-
-			return React.createElement(
+			return _react2['default'].createElement(
 				'div',
-				{ className: classes('Select-item', this.props.option.className),
-					style: this.props.option.style,
-					title: this.props.option.title },
-				React.createElement(
-					'span',
-					{ className: 'Select-item-icon',
-						onMouseDown: this.blockEvent,
-						onClick: this.handleOnRemove,
-						onTouchEnd: this.handleOnRemove },
-					'×'
-				),
-				React.createElement(
-					'span',
-					{ className: 'Select-item-label' },
-					label
-				)
+				{ className: (0, _classnames2['default'])('Select-value', this.props.value.className),
+					style: this.props.value.style,
+					title: this.props.value.title
+				},
+				this.renderRemoveIcon(),
+				this.renderLabel()
 			);
 		}
 
@@ -26630,105 +23709,716 @@ var autotagform =
 	module.exports = Value;
 
 /***/ },
-/* 206 */
+/* 187 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var React = __webpack_require__(1);
-	var classes = __webpack_require__(204);
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var SingleValue = React.createClass({
-		displayName: 'SingleValue',
-
-		propTypes: {
-			placeholder: React.PropTypes.string, // this is default value provided by React-Select based component
-			value: React.PropTypes.object // selected option
-		},
-		render: function render() {
-			var classNames = classes('Select-placeholder', this.props.value && this.props.value.className);
-			return React.createElement(
-				'div',
-				{
-					className: classNames,
-					style: this.props.value && this.props.value.style,
-					title: this.props.value && this.props.value.title
-				},
-				this.props.placeholder
-			);
-		}
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
 	});
 
-	module.exports = SingleValue;
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reactTooltip = __webpack_require__(174);
+
+	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var AutoTagHeaderRowTagCell = function (_React$Component) {
+	  _inherits(AutoTagHeaderRowTagCell, _React$Component);
+
+	  function AutoTagHeaderRowTagCell() {
+	    _classCallCheck(this, AutoTagHeaderRowTagCell);
+
+	    // Prebind this to callback methods
+
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagHeaderRowTagCell).call(this));
+
+	    _this.handleCheckedChangeAll = _this.handleCheckedChangeAll.bind(_this);
+	    return _this;
+	  }
+
+	  _createClass(AutoTagHeaderRowTagCell, [{
+	    key: 'isChecked',
+	    value: function isChecked() {
+	      var _iteratorNormalCompletion = true;
+	      var _didIteratorError = false;
+	      var _iteratorError = undefined;
+
+	      try {
+
+	        for (var _iterator = this.props.images[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	          var image = _step.value;
+
+	          if (!image.checkedTags.has(this.props.tag)) {
+	            return false;
+	          }
+	        }
+	      } catch (err) {
+	        _didIteratorError = true;
+	        _iteratorError = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion && _iterator.return) {
+	            _iterator.return();
+	          }
+	        } finally {
+	          if (_didIteratorError) {
+	            throw _iteratorError;
+	          }
+	        }
+	      }
+
+	      return true;
+	    }
+	  }, {
+	    key: 'handleCheckedChangeAll',
+	    value: function handleCheckedChangeAll() {
+	      this.props.handleCheckedChangeAll(this.props.tag, !this.isChecked());
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+	      var token = this.props.token;
+	      var tag = this.props.tag;
+
+	      var tooltipID = 'tooltip-tag-' + tag.id;
+
+	      return _react2.default.createElement(
+	        'th',
+	        { className: "unmatchedTag" },
+	        _react2.default.createElement(
+	          'div',
+	          { className: 'token' },
+	          _react2.default.createElement('input', { type: 'checkbox',
+	            checked: this.isChecked(),
+	            onChange: this.handleCheckedChangeAll })
+	        ),
+	        _react2.default.createElement(
+	          'div',
+	          { className: 'tag' },
+	          _react2.default.createElement(
+	            'span',
+	            { style: { position: 'relative' } },
+	            _react2.default.createElement(
+	              'a',
+	              { className: "tag_inner tag_button_unmatched",
+	                'data-tip': true,
+	                'data-for': tooltipID },
+	              tag.value
+	            ),
+	            _react2.default.createElement(
+	              _reactTooltip2.default,
+	              { id: tooltipID, place: 'top', type: 'dark', effect: 'solid' },
+	              _react2.default.createElement(
+	                'ul',
+	                null,
+	                _react2.default.createElement(
+	                  'li',
+	                  null,
+	                  _react2.default.createElement(
+	                    'strong',
+	                    null,
+	                    'ID:'
+	                  ),
+	                  ' ',
+	                  tag.id
+	                ),
+	                _react2.default.createElement(
+	                  'li',
+	                  null,
+	                  _react2.default.createElement(
+	                    'strong',
+	                    null,
+	                    'Value:'
+	                  ),
+	                  ' ',
+	                  tag.value
+	                ),
+	                tag.description && _react2.default.createElement(
+	                  'li',
+	                  null,
+	                  _react2.default.createElement(
+	                    'strong',
+	                    null,
+	                    'Description:'
+	                  ),
+	                  ' ',
+	                  tag.description
+	                ),
+	                _react2.default.createElement(
+	                  'li',
+	                  null,
+	                  _react2.default.createElement(
+	                    'strong',
+	                    null,
+	                    'Owner:'
+	                  ),
+	                  ' ',
+	                  tag.owner.omeName
+	                )
+	              )
+	            )
+	          )
+	        )
+	      );
+	    }
+	  }]);
+
+	  return AutoTagHeaderRowTagCell;
+	}(_react2.default.Component);
+
+	exports.default = AutoTagHeaderRowTagCell;
 
 /***/ },
-/* 207 */
+/* 188 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var React = __webpack_require__(1);
-	var classes = __webpack_require__(204);
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var Option = React.createClass({
-		displayName: 'Option',
-
-		propTypes: {
-			addLabelText: React.PropTypes.string, // string rendered in case of allowCreate option passed to ReactSelect
-			className: React.PropTypes.string, // className (based on mouse position)
-			mouseDown: React.PropTypes.func, // method to handle click on option element
-			mouseEnter: React.PropTypes.func, // method to handle mouseEnter on option element
-			mouseLeave: React.PropTypes.func, // method to handle mouseLeave on option element
-			option: React.PropTypes.object.isRequired, // object that is base for that option
-			renderFunc: React.PropTypes.func // method passed to ReactSelect component to render label text
-		},
-		blockEvent: function blockEvent(event) {
-			event.preventDefault();
-			if (event.target.tagName !== 'A' || !('href' in event.target)) {
-				return;
-			}
-
-			if (event.target.target) {
-				window.open(event.target.href);
-			} else {
-				window.location.href = event.target.href;
-			}
-		},
-		handleMouseDown: function handleMouseDown(e) {
-			this.props.mouseDown(this.props.option, e);
-		},
-		handleMouseEnter: function handleMouseEnter(e) {
-			this.props.mouseEnter(this.props.option, e);
-		},
-		handleMouseLeave: function handleMouseLeave(e) {
-			this.props.mouseLeave(this.props.option, e);
-		},
-		render: function render() {
-			var option = this.props.option;
-			var label = option.create ? this.props.addLabelText.replace('{label}', option.label) : this.props.renderFunc(option);
-			var optionClasses = classes(this.props.className, option.className);
-
-			return option.disabled ? React.createElement(
-				'div',
-				{ className: optionClasses,
-					onMouseDown: this.blockEvent,
-					onClick: this.blockEvent },
-				label
-			) : React.createElement(
-				'div',
-				{ className: optionClasses,
-					style: option.style,
-					onMouseDown: this.handleMouseDown,
-					onMouseEnter: this.handleMouseEnter,
-					onMouseLeave: this.handleMouseLeave,
-					onClick: this.handleMouseDown,
-					title: option.title },
-				label
-			);
-		}
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
 	});
 
-	module.exports = Option;
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _AutoTagImageRowTokenCell = __webpack_require__(189);
+
+	var _AutoTagImageRowTokenCell2 = _interopRequireDefault(_AutoTagImageRowTokenCell);
+
+	var _AutoTagImageRowTagCell = __webpack_require__(190);
+
+	var _AutoTagImageRowTagCell2 = _interopRequireDefault(_AutoTagImageRowTagCell);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var AutoTagImageRow = function (_React$Component) {
+	  _inherits(AutoTagImageRow, _React$Component);
+
+	  function AutoTagImageRow() {
+	    _classCallCheck(this, AutoTagImageRow);
+
+	    return _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagImageRow).apply(this, arguments));
+	  }
+
+	  _createClass(AutoTagImageRow, [{
+	    key: 'shouldComponentUpdate',
+
+	    // Only update an image row that has had a modified state
+	    value: function shouldComponentUpdate(nextProps, nextState) {
+	      return nextProps.showUnmapped !== this.props.showUnmapped || nextProps.image !== this.props.image || nextProps.tokenMap !== this.props.tokenMap;
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+	      var _this2 = this;
+
+	      var image = this.props.image;
+	      var tokenMap = this.props.tokenMap;
+	      var unmappedTags = this.props.unmappedTags;
+	      var showUnmapped = this.props.showUnmapped;
+
+	      var cellNodesToken = [].concat(_toConsumableArray(tokenMap)).map(function (kv) {
+	        var token = kv[1];
+	        var tag = token.activeTag;
+
+	        if (showUnmapped || token.possible.size > 0) {
+	          return _react2.default.createElement(_AutoTagImageRowTokenCell2.default, { key: token.value,
+	            image: image,
+	            token: token,
+	            tag: tag,
+	            cellCheckedChange: _this2.props.cellCheckedChange });
+	        }
+	      });
+
+	      var cellNodesTag = [].concat(_toConsumableArray(unmappedTags)).map(function (tag) {
+	        return _react2.default.createElement(_AutoTagImageRowTagCell2.default, { key: tag.id,
+	          image: image,
+	          tag: tag,
+	          cellCheckedChange: _this2.props.cellCheckedChange });
+	      });
+
+	      return _react2.default.createElement(
+	        'tr',
+	        null,
+	        cellNodesToken,
+	        cellNodesTag,
+	        _react2.default.createElement(
+	          'td',
+	          null,
+	          image.clientPath,
+	          ' (',
+	          image.id,
+	          ')'
+	        )
+	      );
+	    }
+	  }]);
+
+	  return AutoTagImageRow;
+	}(_react2.default.Component);
+
+	exports.default = AutoTagImageRow;
+
+/***/ },
+/* 189 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var AutoTagImageRowTokenCell = function (_React$Component) {
+	  _inherits(AutoTagImageRowTokenCell, _React$Component);
+
+	  function AutoTagImageRowTokenCell() {
+	    _classCallCheck(this, AutoTagImageRowTokenCell);
+
+	    // Prebind this to callback methods
+
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagImageRowTokenCell).call(this));
+
+	    _this.handleCheckedChange = _this.handleCheckedChange.bind(_this);
+	    return _this;
+	  }
+
+	  // Only update an image row cell that has an updated image or new map for
+	  // this column
+
+	  _createClass(AutoTagImageRowTokenCell, [{
+	    key: 'shouldComponentUpdate',
+	    value: function shouldComponentUpdate(nextProps, nextState) {
+	      return(
+	        // The image was updated AND this token is now checked/unchecked
+	        // whereas before it was unchecked/checked
+	        nextProps.image !== this.props.image && nextProps.image.checkedTokens.has(nextProps.token) !== this.props.image.checkedTokens.has(this.props.token) ||
+	        // The mapping of this column changed
+	        nextProps.tag !== this.props.tag ||
+	        // The image was updated AND this tag is now applied/unapplied
+	        // whereas before it was unapplied/applied
+	        nextProps.image !== this.props.image && nextProps.image.tags.has(nextProps.tag) !== this.props.image.tags.has(this.props.tag)
+	      );
+	    }
+	  }, {
+	    key: 'isTagged',
+	    value: function isTagged() {
+	      if (this.props.tag !== null && this.props.image.tags.has(this.props.tag)) {
+	        return true;
+	      }
+	      return false;
+	    }
+	  }, {
+	    key: 'isChecked',
+	    value: function isChecked() {
+	      return this.props.image.checkedTokens.has(this.props.token);
+	    }
+	  }, {
+	    key: 'isDisabled',
+	    value: function isDisabled() {
+	      // No tag mapping active
+	      if (this.props.tag === null) {
+	        return true;
+	      }
+
+	      // No permissions to annotate
+	      return !(this.props.tag.canAnnotate() && this.props.image.canAnnotate());
+	    }
+	  }, {
+	    key: 'handleCheckedChange',
+	    value: function handleCheckedChange() {
+	      this.props.cellCheckedChange(this.props.image, this.props.token);
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+	      var className = '';
+	      if (this.isTagged()) {
+	        className = 'success';
+	      }
+
+	      return _react2.default.createElement(
+	        'td',
+	        { className: className },
+	        _react2.default.createElement('input', { type: 'checkbox',
+	          checked: this.isChecked(),
+	          disabled: this.isDisabled(),
+	          onChange: this.handleCheckedChange })
+	      );
+	    }
+	  }]);
+
+	  return AutoTagImageRowTokenCell;
+	}(_react2.default.Component);
+
+	exports.default = AutoTagImageRowTokenCell;
+
+/***/ },
+/* 190 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var AutoTagImageRowTagCell = function (_React$Component) {
+	  _inherits(AutoTagImageRowTagCell, _React$Component);
+
+	  function AutoTagImageRowTagCell() {
+	    _classCallCheck(this, AutoTagImageRowTagCell);
+
+	    // Prebind this to callback methods
+
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(AutoTagImageRowTagCell).call(this));
+
+	    _this.handleCheckedChange = _this.handleCheckedChange.bind(_this);
+	    return _this;
+	  }
+
+	  _createClass(AutoTagImageRowTagCell, [{
+	    key: 'shouldComponentUpdate',
+	    value: function shouldComponentUpdate(nextProps, nextState) {
+	      return(
+	        // The image was updated AND this tag is now checked/unchecked
+	        // whereas before it was unchecked/checked
+	        nextProps.image !== this.props.image && nextProps.image.checkedTags.has(nextProps.tag) !== this.props.image.checkedTags.has(this.props.tag) ||
+	        // The image was updated AND this tag is now applied/unapplied
+	        // whereas before it was unapplied/applied
+	        nextProps.image !== this.props.image && nextProps.image.tags.has(nextProps.tag) !== this.props.image.tags.has(this.props.tag)
+	      );
+	    }
+	  }, {
+	    key: 'isTagged',
+	    value: function isTagged() {
+	      return this.props.image.tags.has(this.props.tag);
+	    }
+	  }, {
+	    key: 'isChecked',
+	    value: function isChecked() {
+	      return this.props.image.checkedTags.has(this.props.tag);
+	    }
+	  }, {
+	    key: 'isDisabled',
+	    value: function isDisabled() {
+	      // No permissions to annotate
+	      return !(this.props.tag.canAnnotate() && this.props.image.canAnnotate());
+	    }
+	  }, {
+	    key: 'handleCheckedChange',
+	    value: function handleCheckedChange() {
+	      this.props.cellCheckedChange(this.props.image, this.props.tag);
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+	      var className = '';
+	      if (this.isTagged()) {
+	        className = 'success';
+	      }
+
+	      return _react2.default.createElement(
+	        'td',
+	        { className: className },
+	        _react2.default.createElement('input', { type: 'checkbox',
+	          checked: this.isChecked(),
+	          onChange: this.handleCheckedChange })
+	      );
+	    }
+	  }]);
+
+	  return AutoTagImageRowTagCell;
+	}(_react2.default.Component);
+
+	exports.default = AutoTagImageRowTagCell;
+
+/***/ },
+/* 191 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reactSelect = __webpack_require__(180);
+
+	var _reactSelect2 = _interopRequireDefault(_reactSelect);
+
+	var _SetUtils = __webpack_require__(172);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var TagSelectModal = function (_React$Component) {
+	  _inherits(TagSelectModal, _React$Component);
+
+	  function TagSelectModal() {
+	    _classCallCheck(this, TagSelectModal);
+
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(TagSelectModal).call(this));
+
+	    _this.state = {
+	      selected: null,
+	      status: ""
+	    };
+
+	    // Prebind this to callback methods
+	    _this.selectTag = _this.selectTag.bind(_this);
+	    _this.onSubmit = _this.onSubmit.bind(_this);
+
+	    return _this;
+	  }
+
+	  _createClass(TagSelectModal, [{
+	    key: 'selectTag',
+	    value: function selectTag(val) {
+
+	      if (val.length === 0) {
+	        this.setState({
+	          selected: null
+	        });
+	      } else {
+	        this.setState({
+	          selected: val
+	        });
+	      }
+	    }
+	  }, {
+	    key: 'onSubmit',
+	    value: function onSubmit(e) {
+	      e.preventDefault();
+
+	      var addMapping = this.props.addMapping;
+	      var closeDialog = this.props.closeDialog;
+
+	      // If there is a selection, use that
+	      if (this.state.selected !== null) {
+	        console.log('There was a selection, using that');
+	        console.log(this.props.token);
+	        console.log(this.state.selected);
+	        console.log('---');
+	        // Resolve the selected tag ID to a tag and add the mapping
+	        addMapping(this.props.token, this.props.tags.get(this.state.selected.value));
+	        closeDialog(e);
+
+	        // Otherwise, create a new tag with the input unless there is a problem
+	        // with the input (e.g. existing tag value)
+	      } else if (this.refs.tagValue.value && this.refs.tagValue.value.trim().length > 0) {
+
+	          var tagValue = this.refs.tagValue.value.trim();
+	          var tagDescription = this.refs.tagDescription.value.trim();
+
+	          // Check and see if there is (at least one) tag with this existing value
+	          var exists = false;
+	          var _iteratorNormalCompletion = true;
+	          var _didIteratorError = false;
+	          var _iteratorError = undefined;
+
+	          try {
+	            for (var _iterator = this.props.tags[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	              var kv = _step.value;
+
+	              var tag = kv[1];
+	              if (tag.value === tagValue) {
+	                exists = true;
+	                break;
+	              }
+	            }
+	          } catch (err) {
+	            _didIteratorError = true;
+	            _iteratorError = err;
+	          } finally {
+	            try {
+	              if (!_iteratorNormalCompletion && _iterator.return) {
+	                _iterator.return();
+	              }
+	            } finally {
+	              if (_didIteratorError) {
+	                throw _iteratorError;
+	              }
+	            }
+	          }
+
+	          if (exists) {
+	            this.setState({
+	              status: "It is inadvisable (and impossible in this interface) to create a tag with a value that already exists!"
+	            });
+
+	            // It's ok to add it
+	          } else {
+	              addMapping(this.props.token, null, tagValue, tagDescription);
+	              closeDialog(e);
+	            }
+
+	          // Unless there is no input in which case do nothing except maybe inform
+	          // the user that one or the other (or cancel) must be entered
+	        } else {
+	            this.setState({
+	              status: "Select either an existing tag, or enter a value for the new tag"
+	            });
+
+	            // Reset this in case it was all whitespace
+	            this.refs.tagValue.value = '';
+	          }
+	    }
+	    // TODO Make the Select options have the tag as the value instead of an ID so
+	    // then don't need to be looked up
+
+	  }, {
+	    key: 'render',
+	    value: function render() {
+
+	      // Get the tags that are already in use
+	      var usedTags = new Set();
+	      this.props.tokenMap.forEach(function (token) {
+	        usedTags = (0, _SetUtils.union)(usedTags, token.possible);
+	      });
+
+	      var options = [].concat(_toConsumableArray(this.props.tags)).filter(function (kv) {
+	        return !usedTags.has(kv[1]);
+	      }).map(function (kv) {
+	        var tag = kv[1];
+	        return {
+	          value: tag.id,
+	          label: "" + tag.value + ' ' + "(" + tag.id + ")"
+	        };
+	      });
+
+	      // We use a 'button' instead of a 'submit' input to avoid the CSS styling
+	      // of submit which is overreaching from elsewhere.
+	      var formStyle = {
+	        width: "auto",
+	        minHeight: "0px",
+	        height: "258px"
+	      };
+
+	      return _react2.default.createElement(
+	        'form',
+	        { className: "ui-dialog-content ui-widget-content",
+	          scrolltop: '0',
+	          scrollleft: '0',
+	          style: formStyle },
+	        _react2.default.createElement(
+	          'div',
+	          { className: "standard_form" },
+	          _react2.default.createElement(
+	            'h1',
+	            null,
+	            'Available Tags:'
+	          ),
+	          _react2.default.createElement(_reactSelect2.default, {
+	            name: 'tagselect',
+	            placeholder: 'Select Tag',
+	            value: this.state.selected,
+	            options: options,
+	            onChange: this.selectTag
+	          }),
+	          _react2.default.createElement(
+	            'h1',
+	            null,
+	            'OR Create a new tag:'
+	          ),
+	          _react2.default.createElement(
+	            'label',
+	            null,
+	            'Tag Name:'
+	          ),
+	          _react2.default.createElement('input', { type: 'text', ref: 'tagValue', size: '36', defaultValue: this.props.token.value }),
+	          _react2.default.createElement(
+	            'label',
+	            null,
+	            'Description:'
+	          ),
+	          _react2.default.createElement('textarea', { rows: '3', cols: '31', ref: 'tagDescription' })
+	        ),
+	        _react2.default.createElement('input', { type: 'button',
+	          value: 'OK',
+	          onClick: this.onSubmit }),
+	        _react2.default.createElement('input', { type: 'button',
+	          value: 'Cancel',
+	          onClick: this.props.closeDialog }),
+	        _react2.default.createElement(
+	          'div',
+	          { className: "error" },
+	          this.state.status
+	        )
+	      );
+	    }
+	  }]);
+
+	  return TagSelectModal;
+	}(_react2.default.Component);
+
+	exports.default = TagSelectModal;
 
 /***/ }
 /******/ ]);

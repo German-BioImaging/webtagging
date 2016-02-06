@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactTooltip from 'react-tooltip';
-
-import AutoTagHeaderRowMapMenuItem from './AutoTagHeaderRowMapMenuItem';
+import Select from 'react-select';
 
 export default class AutoTagHeaderRowTokenCell extends React.Component {
 
@@ -10,6 +9,9 @@ export default class AutoTagHeaderRowTokenCell extends React.Component {
 
     // Prebind this to callback methods
     this.handleCheckedChangeAll = this.handleCheckedChangeAll.bind(this);
+    this.selectMapping = this.selectMapping.bind(this);
+    this.formatTagLabel = this.formatTagLabel.bind(this);
+    this.selectGetOptionLabel = this.selectGetOptionLabel.bind(this);
   }
 
   isChecked() {
@@ -31,85 +33,92 @@ export default class AutoTagHeaderRowTokenCell extends React.Component {
     this.props.handleCheckedChangeAll(this.props.token, !this.isChecked());
   }
 
+  formatTagLabel(tag) {
+    if (tag !== undefined) {
+      return "" + tag.value + "\u00a0" + "(" + tag.id + ")";
+    }
+    return '';
+  }
+
+  selectMapping(option) {
+    if (option === null) {
+      this.props.selectMapping(this.props.token, null);
+    } else if (option.value !== undefined) {
+      this.props.selectMapping(this.props.token, option.value);
+    } else {
+      this.props.newMapping(this.props.token)
+    }
+  }
+
+  selectGetOptionLabel(option) {
+    let label = this.formatTagLabel(option);
+    let tooltipID = 'tooltip-token-' + this.props.token.value;
+
+    return (
+      <span data-tip data-for={tooltipID}>{label}
+        {
+          this.props.tag &&
+          <ReactTooltip id={tooltipID} place="top" type="dark" effect="solid">
+            <ul>
+              <li><strong>ID:</strong> {this.props.tag.id}</li>
+              <li><strong>Value:</strong> {this.props.tag.value}</li>
+              {
+                this.props.tag.description &&
+                <li><strong>Description:</strong> {this.props.tag.description}</li>
+              }
+              <li><strong>Owner:</strong> {this.props.tag.owner.omeName}</li>
+            </ul>
+          </ReactTooltip>
+        }
+      </span>
+
+    )
+	}
+
   render() {
     let token = this.props.token;
     let tag = this.props.tag;
 
-    // If there are options for mapping this tag, create menu items for them
-    let menuNodes = [];
+    let options = [...token.possible].map(possibleTag =>
+      {
+        return (
+          {
+            value: possibleTag,
+            label: this.formatTagLabel(possibleTag)
+          }
+        );
+      }
+    )
 
-    menuNodes = [...token.possible].map(tag =>
-      <AutoTagHeaderRowMapMenuItem key={tag.id}
-                                   token={token}
-                                   tag={tag}
-                                   textValue={tag.value}
-                                   selectMapping={this.props.selectMapping} />
-    );
+    options.push({
+      value: undefined,
+      label: 'New/Existing Tag'
+    });
 
-    // Set default (i.e. unmatched) tagValue to non-breaking space
-    let tagValue = '\u00a0';
-    let dropDownClassname = "tag_inner dropdown-toggle";
-    if (tag !== null) {
-      tagValue = tag.value;
-    } else {
-      dropDownClassname += " tagInactive dropdown-toggle";
+    let tagClassName = "tag_button";
+    if (tag === null) {
+      tagClassName = "tag_button_inactive";
     }
-
-    if (token.possible.size > 0) {
-      tagValue += '\u00a0(' + token.possible.size + ')';
-    }
-
-    let className = '' + token.type + 'Tokens';
-    let tooltipID = 'tooltip-token-' + token.value;
 
     return (
-      <th className={className}>
+      <th>
         <div className={'token'}>{token.value}
           <input type="checkbox"
                  checked={this.isChecked()}
                  disabled={this.isDisabled()}
                  onChange={this.handleCheckedChangeAll} />
         </div>
-        <div className={'tag'}>
-          <span style={{position: 'relative'}}>
-
-            <a className={dropDownClassname}
-               data-tip
-               data-for={tooltipID}
-               data-toggle="dropdown"
-               style={{cursor: 'pointer'}}>{tagValue}
-
-            </a>
-
-            <ul className={'dropdown-menu'} role="menu">
-              {menuNodes}
-              <AutoTagHeaderRowMapMenuItem tag={null}
-                                           token={token}
-                                           textValue="(Select None)"
-                                           selectMapping={this.props.selectMapping} />
-              <li className={'divider'}></li>
-              <li><a className={'token-map'} onClick={this.props.newMapping.bind(null, token)}>New/Existing Tag</a></li>
-            </ul>
-
-            {
-              tag &&
-              <ReactTooltip id={tooltipID} place="bottom" type="dark" effect="solid">
-                <ul>
-                  <li><strong>ID:</strong> {tag.id}</li>
-                  <li><strong>Value:</strong> {tag.value}</li>
-                  {
-                    tag.description &&
-                    <li><strong>Description:</strong> {tag.description}</li>
-                  }
-                  <li><strong>Owner:</strong> {tag.owner.omeName}</li>
-                </ul>
-              </ReactTooltip>
-            }
-
-            <span className={'showTag'}
-                  style={{display: 'none'}}>X</span>
-
-          </span>
+        <div className={'tag'} >
+          <Select
+              name="tokenmapselect"
+              onChange={this.selectMapping}
+              options={options}
+              value={tag}
+              valueRenderer={this.selectGetOptionLabel}
+              searchable={false}
+              className={tagClassName}
+              placeholder="&nbsp; "
+          />
         </div>
       </th>
     );

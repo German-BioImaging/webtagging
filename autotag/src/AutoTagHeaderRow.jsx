@@ -3,9 +3,8 @@ import React from 'react';
 import AutoTagHeaderRowTokenCell from './AutoTagHeaderRowTokenCell';
 import AutoTagHeaderRowTagCell from './AutoTagHeaderRowTagCell';
 
-export default class AutoTagHeadRow extends React.Component {
+export default class AutoTagHeaderRow extends React.Component {
   render() {
-
     let cellNodesToken = [...this.props.tokenMap].map(kv => {
       let token = kv[1];
       let tag = token.activeTag;
