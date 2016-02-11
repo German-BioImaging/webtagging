@@ -1,14 +1,24 @@
 // webpack.config.js
+var webpack = require('webpack');
 
 var path = require('path');
 
 module.exports = {
-  entry: './src/main.jsx',
+  entry: {
+    'bundle.min': './src/main.jsx',
+    'bundle': './src/main.jsx'
+  },
   output: {
     path: './static/autotag/js',
-    filename: 'bundle.js',
+    filename: '[name].js',
     library: 'autotagform'
   },
+  plugins: [
+    new webpack.optimize.UglifyJsPlugin({
+      include: /\.min\.js$/,
+      minimize: true
+    })
+  ],
   module: {
     loaders: [
       {
