@@ -20317,14 +20317,8 @@ var autotagform =
 	  }, {
 	    key: 'addMapping',
 	    value: function addMapping(token, tag, tagValue, tagDescription) {
-	      console.log('blah');
-	      console.log(token);
-	      console.log(tag);
-	      console.log(tagValue);
-	      console.log(tagDescription);
 	      // Undefined tagValue means this is an existing tag
 	      if (tagValue === undefined && tag !== undefined) {
-	        console.log('foo');
 	        // Add the tag to the tokenMap for this token
 	        token.possible.add(tag);
 
@@ -20340,7 +20334,6 @@ var autotagform =
 
 	        // This is a new tag
 	      } else if (tagValue !== undefined) {
-	          console.log('bar');
 	          // Create the tag. In this case we can not update the form until the
 	          // ajax call is successful as the tag ID is not known until it returns
 	          // and that is important imformation
@@ -20543,7 +20536,7 @@ var autotagform =
 
 
 	// module
-	exports.push([module.id, "/**\n * React Select\n * ============\n * Created by Jed Watson and Joss Mackison for KeystoneJS, http://www.keystonejs.com/\n * https://twitter.com/jedwatson https://twitter.com/jossmackison https://twitter.com/keystonejs\n * MIT License: https://github.com/keystonejs/react-select\n*/\n.Select {\n  position: relative;\n}\n.Select,\n.Select div,\n.Select input,\n.Select span {\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n.Select.is-disabled > .Select-control {\n  background-color: #f9f9f9;\n}\n.Select.is-disabled > .Select-control:hover {\n  box-shadow: none;\n}\n.Select.is-disabled .Select-arrow-zone {\n  cursor: default;\n  pointer-events: none;\n}\n.Select-control {\n  background-color: #fff;\n  border-color: #d9d9d9 #ccc #b3b3b3;\n  border-radius: 4px;\n  border: 1px solid #ccc;\n  color: #333;\n  cursor: default;\n  display: table;\n  height: 36px;\n  outline: none;\n  overflow: hidden;\n  position: relative;\n  width: 100%;\n}\n.Select-control:hover {\n  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);\n}\n.is-searchable.is-open > .Select-control {\n  cursor: text;\n}\n.is-open > .Select-control {\n  border-bottom-right-radius: 0;\n  border-bottom-left-radius: 0;\n  background: #fff;\n  border-color: #b3b3b3 #ccc #d9d9d9;\n}\n.is-open > .Select-control > .Select-arrow {\n  border-color: transparent transparent #999;\n  border-width: 0 5px 5px;\n}\n.is-searchable.is-focused:not(.is-open) > .Select-control {\n  cursor: text;\n}\n.is-focused:not(.is-open) > .Select-control {\n  border-color: #007eff;\n  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 0 3px rgba(0, 126, 255, 0.1);\n}\n.Select-placeholder,\n:not(.Select--multi) > .Select-control .Select-value {\n  bottom: 0;\n  color: #aaa;\n  left: 0;\n  line-height: 34px;\n  padding-left: 10px;\n  padding-right: 10px;\n  position: absolute;\n  right: 0;\n  top: 0;\n  max-width: 100%;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.has-value:not(.Select--multi) > .Select-control > .Select-value .Select-value-label,\n.has-value.is-pseudo-focused:not(.Select--multi) > .Select-control > .Select-value .Select-value-label {\n  color: #333;\n}\n.has-value:not(.Select--multi) > .Select-control > .Select-value a.Select-value-label,\n.has-value.is-pseudo-focused:not(.Select--multi) > .Select-control > .Select-value a.Select-value-label {\n  cursor: pointer;\n  text-decoration: none;\n}\n.has-value:not(.Select--multi) > .Select-control > .Select-value a.Select-value-label:hover,\n.has-value.is-pseudo-focused:not(.Select--multi) > .Select-control > .Select-value a.Select-value-label:hover,\n.has-value:not(.Select--multi) > .Select-control > .Select-value a.Select-value-label:focus,\n.has-value.is-pseudo-focused:not(.Select--multi) > .Select-control > .Select-value a.Select-value-label:focus {\n  color: #007eff;\n  outline: none;\n  text-decoration: underline;\n}\n.Select-input {\n  height: 34px;\n  padding-left: 10px;\n  padding-right: 10px;\n  vertical-align: middle;\n}\n.Select-input > input {\n  background: none transparent;\n  border: 0 none;\n  box-shadow: none;\n  cursor: default;\n  display: inline-block;\n  font-family: inherit;\n  font-size: inherit;\n  height: 34px;\n  margin: 0;\n  outline: none;\n  padding: 0;\n  -webkit-appearance: none;\n}\n.is-focused .Select-input > input {\n  cursor: text;\n}\n.has-value.is-pseudo-focused .Select-input {\n  opacity: 0;\n}\n.Select-control:not(.is-searchable) > .Select-input {\n  outline: none;\n}\n.Select-loading-zone {\n  cursor: pointer;\n  display: table-cell;\n  position: relative;\n  text-align: center;\n  vertical-align: middle;\n  width: 16px;\n}\n.Select-loading {\n  -webkit-animation: Select-animation-spin 400ms infinite linear;\n  -o-animation: Select-animation-spin 400ms infinite linear;\n  animation: Select-animation-spin 400ms infinite linear;\n  width: 16px;\n  height: 16px;\n  box-sizing: border-box;\n  border-radius: 50%;\n  border: 2px solid #ccc;\n  border-right-color: #333;\n  display: inline-block;\n  position: relative;\n  vertical-align: middle;\n}\n.Select-clear-zone {\n  -webkit-animation: Select-animation-fadeIn 200ms;\n  -o-animation: Select-animation-fadeIn 200ms;\n  animation: Select-animation-fadeIn 200ms;\n  color: #999;\n  cursor: pointer;\n  display: table-cell;\n  position: relative;\n  text-align: center;\n  vertical-align: middle;\n  width: 17px;\n}\n.Select-clear-zone:hover {\n  color: #D0021B;\n}\n.Select-clear {\n  display: inline-block;\n  font-size: 18px;\n  line-height: 1;\n}\n.Select--multi .Select-clear-zone {\n  width: 17px;\n}\n.Select-arrow-zone {\n  cursor: pointer;\n  display: table-cell;\n  position: relative;\n  text-align: center;\n  vertical-align: middle;\n  width: 25px;\n  padding-right: 5px;\n}\n.Select-arrow {\n  border-color: #999 transparent transparent;\n  border-style: solid;\n  border-width: 5px 5px 2.5px;\n  display: inline-block;\n  height: 0;\n  width: 0;\n}\n.is-open .Select-arrow,\n.Select-arrow-zone:hover > .Select-arrow {\n  border-top-color: #666;\n}\n@-webkit-keyframes Select-animation-fadeIn {\n  from {\n    opacity: 0;\n  }\n  to {\n    opacity: 1;\n  }\n}\n@keyframes Select-animation-fadeIn {\n  from {\n    opacity: 0;\n  }\n  to {\n    opacity: 1;\n  }\n}\n.Select-menu-outer {\n  border-bottom-right-radius: 4px;\n  border-bottom-left-radius: 4px;\n  background-color: #fff;\n  border: 1px solid #ccc;\n  border-top-color: #e6e6e6;\n  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);\n  box-sizing: border-box;\n  margin-top: -1px;\n  max-height: 200px;\n  position: absolute;\n  top: 100%;\n  width: 100%;\n  z-index: 1;\n  -webkit-overflow-scrolling: touch;\n}\n.Select-menu {\n  max-height: 198px;\n  overflow-y: auto;\n}\n.Select-option {\n  box-sizing: border-box;\n  background-color: #fff;\n  color: #666666;\n  cursor: pointer;\n  display: block;\n  padding: 8px 10px;\n}\n.Select-option:last-child {\n  border-bottom-right-radius: 4px;\n  border-bottom-left-radius: 4px;\n}\n.Select-option.is-focused {\n  background-color: rgba(0, 126, 255, 0.08);\n  color: #333;\n}\n.Select-option.is-disabled {\n  color: #cccccc;\n  cursor: default;\n}\n.Select-noresults {\n  box-sizing: border-box;\n  color: #999999;\n  cursor: default;\n  display: block;\n  padding: 8px 10px;\n}\n.Select--multi .Select-input {\n  vertical-align: middle;\n  margin-left: 10px;\n  padding: 0;\n}\n.Select--multi.has-value .Select-input {\n  margin-left: 5px;\n}\n.Select--multi .Select-value {\n  background-color: rgba(0, 126, 255, 0.08);\n  border-radius: 2px;\n  border: 1px solid rgba(0, 126, 255, 0.24);\n  color: #007eff;\n  display: inline-block;\n  font-size: 0.9em;\n  line-height: 1.4;\n  margin-left: 5px;\n  margin-top: 5px;\n  vertical-align: top;\n}\n.Select--multi .Select-value-icon,\n.Select--multi .Select-value-label {\n  display: inline-block;\n  vertical-align: middle;\n}\n.Select--multi .Select-value-label {\n  border-bottom-right-radius: 2px;\n  border-top-right-radius: 2px;\n  cursor: default;\n  padding: 2px 5px;\n}\n.Select--multi a.Select-value-label {\n  color: #007eff;\n  cursor: pointer;\n  text-decoration: none;\n}\n.Select--multi a.Select-value-label:hover {\n  text-decoration: underline;\n}\n.Select--multi .Select-value-icon {\n  cursor: pointer;\n  border-bottom-left-radius: 2px;\n  border-top-left-radius: 2px;\n  border-right: 1px solid rgba(0, 126, 255, 0.24);\n  padding: 1px 5px 3px;\n}\n.Select--multi .Select-value-icon:hover,\n.Select--multi .Select-value-icon:focus {\n  background-color: rgba(0, 113, 230, 0.08);\n  color: #0071e6;\n}\n.Select--multi .Select-value-icon:active {\n  background-color: rgba(0, 126, 255, 0.24);\n}\n.Select--multi.is-disabled .Select-value {\n  background-color: #fcfcfc;\n  border: 1px solid #e3e3e3;\n  color: #333;\n}\n.Select--multi.is-disabled .Select-value-icon {\n  cursor: not-allowed;\n  border-right: 1px solid #e3e3e3;\n}\n.Select--multi.is-disabled .Select-value-icon:hover,\n.Select--multi.is-disabled .Select-value-icon:focus,\n.Select--multi.is-disabled .Select-value-icon:active {\n  background-color: #fcfcfc;\n}\n@keyframes Select-animation-spin {\n  to {\n    transform: rotate(1turn);\n  }\n}\n@-webkit-keyframes Select-animation-spin {\n  to {\n    -webkit-transform: rotate(1turn);\n  }\n}\n", ""]);
+	exports.push([module.id, ".Select{position:relative}.Select,.Select div,.Select input,.Select span{box-sizing:border-box}.Select.is-disabled>.Select-control{background-color:#f9f9f9}.Select.is-disabled>.Select-control:hover{box-shadow:none}.Select.is-disabled .Select-arrow-zone{cursor:default;pointer-events:none}.Select-control{background-color:#fff;border-color:#d9d9d9 #ccc #b3b3b3;border-radius:4px;border:1px solid #ccc;color:#333;cursor:default;display:table;height:36px;outline:none;overflow:hidden;position:relative;width:100%}.Select-control:hover{box-shadow:0 1px 0 rgba(0,0,0,.06)}.is-searchable.is-open>.Select-control{cursor:text}.is-open>.Select-control{border-bottom-right-radius:0;border-bottom-left-radius:0;background:#fff;border-color:#b3b3b3 #ccc #d9d9d9}.is-open>.Select-control>.Select-arrow{border-color:transparent transparent #999;border-width:0 5px 5px}.is-searchable.is-focused:not(.is-open)>.Select-control{cursor:text}.is-focused:not(.is-open)>.Select-control{border-color:#007eff;box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 0 3px rgba(0,126,255,.1)}.Select-placeholder,:not(.Select--multi)>.Select-control .Select-value{bottom:0;color:#aaa;left:0;line-height:34px;padding-left:10px;padding-right:10px;position:absolute;right:0;top:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.has-value.is-pseudo-focused:not(.Select--multi)>.Select-control>.Select-value .Select-value-label,.has-value:not(.Select--multi)>.Select-control>.Select-value .Select-value-label{color:#333}.has-value.is-pseudo-focused:not(.Select--multi)>.Select-control>.Select-value a.Select-value-label,.has-value:not(.Select--multi)>.Select-control>.Select-value a.Select-value-label{cursor:pointer;text-decoration:none}.has-value.is-pseudo-focused:not(.Select--multi)>.Select-control>.Select-value a.Select-value-label:focus,.has-value.is-pseudo-focused:not(.Select--multi)>.Select-control>.Select-value a.Select-value-label:hover,.has-value:not(.Select--multi)>.Select-control>.Select-value a.Select-value-label:focus,.has-value:not(.Select--multi)>.Select-control>.Select-value a.Select-value-label:hover{color:#007eff;outline:none;text-decoration:underline}.Select-input{height:34px;padding-left:10px;padding-right:10px;vertical-align:middle}.Select-input>input{background:none transparent;border:0 none;box-shadow:none;cursor:default;display:inline-block;font-family:inherit;font-size:inherit;height:34px;margin:0;outline:none;padding:0;-webkit-appearance:none}.is-focused .Select-input>input{cursor:text}.has-value.is-pseudo-focused .Select-input{opacity:0}.Select-control:not(.is-searchable)>.Select-input{outline:none}.Select-loading-zone{cursor:pointer;display:table-cell;text-align:center}.Select-loading,.Select-loading-zone{position:relative;vertical-align:middle;width:16px}.Select-loading{-webkit-animation:Select-animation-spin .4s infinite linear;animation:Select-animation-spin .4s infinite linear;height:16px;box-sizing:border-box;border-radius:50%;border:2px solid #ccc;border-right-color:#333;display:inline-block}.Select-clear-zone{-webkit-animation:Select-animation-fadeIn .2s;animation:Select-animation-fadeIn .2s;color:#999;cursor:pointer;display:table-cell;position:relative;text-align:center;vertical-align:middle;width:17px}.Select-clear-zone:hover{color:#d0021b}.Select-clear{display:inline-block;font-size:18px;line-height:1}.Select--multi .Select-clear-zone{width:17px}.Select-arrow-zone{cursor:pointer;display:table-cell;position:relative;text-align:center;vertical-align:middle;width:25px;padding-right:5px}.Select-arrow{border-color:#999 transparent transparent;border-style:solid;border-width:5px 5px 2.5px;display:inline-block;height:0;width:0}.is-open .Select-arrow,.Select-arrow-zone:hover>.Select-arrow{border-top-color:#666}@-webkit-keyframes Select-animation-fadeIn{0%{opacity:0}to{opacity:1}}@keyframes Select-animation-fadeIn{0%{opacity:0}to{opacity:1}}.Select-menu-outer{border-bottom-right-radius:4px;border-bottom-left-radius:4px;background-color:#fff;border:1px solid #ccc;border-top-color:#e6e6e6;box-shadow:0 1px 0 rgba(0,0,0,.06);box-sizing:border-box;margin-top:-1px;max-height:200px;position:absolute;top:100%;width:100%;z-index:1;-webkit-overflow-scrolling:touch}.Select-menu{max-height:198px;overflow-y:auto}.Select-option{box-sizing:border-box;background-color:#fff;color:#666;cursor:pointer;display:block;padding:8px 10px}.Select-option:last-child{border-bottom-right-radius:4px;border-bottom-left-radius:4px}.Select-option.is-focused{background-color:rgba(0,126,255,.08);color:#333}.Select-option.is-disabled{color:#ccc;cursor:default}.Select-noresults{box-sizing:border-box;color:#999;cursor:default;display:block;padding:8px 10px}.Select--multi .Select-input{vertical-align:middle;margin-left:10px;padding:0}.Select--multi.has-value .Select-input{margin-left:5px}.Select--multi .Select-value{background-color:rgba(0,126,255,.08);border-radius:2px;border:1px solid rgba(0,126,255,.24);color:#007eff;display:inline-block;font-size:.9em;line-height:1.4;margin-left:5px;margin-top:5px;vertical-align:top}.Select--multi .Select-value-icon,.Select--multi .Select-value-label{display:inline-block;vertical-align:middle}.Select--multi .Select-value-label{border-bottom-right-radius:2px;border-top-right-radius:2px;cursor:default;padding:2px 5px}.Select--multi a.Select-value-label{color:#007eff;cursor:pointer;text-decoration:none}.Select--multi a.Select-value-label:hover{text-decoration:underline}.Select--multi .Select-value-icon{cursor:pointer;border-bottom-left-radius:2px;border-top-left-radius:2px;border-right:1px solid rgba(0,126,255,.24);padding:1px 5px 3px}.Select--multi .Select-value-icon:focus,.Select--multi .Select-value-icon:hover{background-color:rgba(0,113,230,.08);color:#0071e6}.Select--multi .Select-value-icon:active{background-color:rgba(0,126,255,.24)}.Select--multi.is-disabled .Select-value{background-color:#fcfcfc;border:1px solid #e3e3e3;color:#333}.Select--multi.is-disabled .Select-value-icon{cursor:not-allowed;border-right:1px solid #e3e3e3}.Select--multi.is-disabled .Select-value-icon:active,.Select--multi.is-disabled .Select-value-icon:focus,.Select--multi.is-disabled .Select-value-icon:hover{background-color:#fcfcfc}@keyframes Select-animation-spin{to{transform:rotate(1turn)}}@-webkit-keyframes Select-animation-spin{to{-webkit-transform:rotate(1turn)}}", ""]);
 
 	// exports
 
@@ -20893,7 +20886,7 @@ var autotagform =
 
 
 	// module
-	exports.push([module.id, "\n.toolbar {\n    text-align:right;\n}\n\nth.pathTokens {\n    background-color:#FFFFCC;\n}\n\nth.extensionTokens {\n    background-color:#FFFFCC;\n}\n\n.table td {\n    text-align:center;\n}\n\n.table tbody tr > td.success {\n  background-color: #dff0d8 !important;\n}\n\n.table tbody tr > td.error {\n  background-color: #f2dede !important;\n}\n\n.table tbody tr > td.warning {\n  background-color: #fcf8e3 !important;\n}\n\n.table tbody tr > td.info {\n  background-color: #d9edf7 !important;\n}\n\n.table-hover tbody tr:hover > td.success {\n  background-color: #d0e9c6 !important;\n}\n\n.table-hover tbody tr:hover > td.error {\n  background-color: #ebcccc !important;\n}\n\n.table-hover tbody tr:hover > td.warning {\n  background-color: #faf2cc !important;\n}\n\n.table-hover tbody tr:hover > td.info {\n  background-color: #c4e3f3 !important;\n}\n\n.btn-default {\n  border: 0;\n/*  width: 14px;\n  height: 20px;*/\n  background-color:transparent;\n}\n\n.btn-default:focus {\n  outline: none;\n}\n\n/* Adapted from dusty .removeTag and .removeTag:hover */\n.showTag {\n    color: #000;\n    cursor:pointer;\n    font-weight:bold;\n    text-shadow: 0 1px 0 rgba(255,255,255,.7);\n    display:inline-block;\n    width:12px;\n    height:12px;\n    position:absolute;\n    z-index:90;\n    right:5px;\n    top:1px;\n    -webkit-border-radius:20px;\n    -moz-border-radius:20px;\n    border-radius:20px;\n    text-align:center;\n    margin-left:5px;\n    overflow:hidden;\n    display:block !important;\n    background:url(" + __webpack_require__(167) + ") center center no-repeat;\n    text-indent:-99px;\n    pointer-events: none;\n}\n\n.tagInactive {\n    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(350, 65%, 85%)), to(hsl(350, 60%, 90%))) !important;\n\n    background:blue !important; /* Old browsers */\n    background-image:-moz-linear-gradient(top, hsl(350,65%,80%) 0%, hsl(350,60%,90%) 100%) !important; /* FF3.6+ */\n    background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(350,65%,85%)), color-stop(100%,hsl(350,60%,90%))) !important; /* Chrome,Safari4+ */\n    background-image:-webkit-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100% !important); /* Chrome10+,Safari5.1+ */\n    background-image:-o-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* Opera11.10+ */\n    background-image:-ms-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* IE10+ */\n    filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#4795CC', endColorstr='#3987BF',GradientType=0 ) !important; /* IE6-9 */\n    background:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* W3C */\n\n    text-decoration:none !important;\n    text-shadow: 0 1px 0 rgba(255,255,255,.4) !important;\n    color:hsl(350,30%,30%) !important;\n}\n\n.tagInactive:hover {\n    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(350, 70%, 75%)), to(hsl(350, 65%, 80%))) !important;\n\n\tbackground:blue; /* Old browsers */\n\tbackground-image:-moz-linear-gradient(top, hsl(350,65%,80%) 0%, hsl(350,70%,75%) 100%) !important; /* FF3.6+ */\n\tbackground-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(350,65%,80%)), color-stop(100%,hsl(350,70%,75%))) !important; /* Chrome,Safari4+ */\n\tbackground-image:-webkit-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* Chrome10+,Safari5.1+ */\n\tbackground-image:-o-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* Opera11.10+ */\n\tbackground-image:-ms-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* IE10+ */\n\tfilter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#4795CC', endColorstr='#3987BF',GradientType=0 ) !important; /* IE6-9 */\n\tbackground:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,70%,75%) 100%) !important; /* W3C */\n\n\ttext-decoration:none !important;\n\ttext-shadow: 0 1px 0 rgba(255,255,255,.4) !important;\n\tcolor:hsl(350,30%,30%) !important;\n}\n\n.token {\n    text-align:center;\n}\n\n.tag {\n    white-space:nowrap;\n}\n\n/* Correct some aggressive CSS rules from dusty.css */\n.Select-arrow-zone {\n    display:table-cell !important;\n}\n\n.Select-clear-zone {\n    display:table-cell !important;\n}\n\n.Select-placeholder, .Select-option {\n    font-size:14px;\n}\n\n#auto_tag_panel .table {\n  width: 100%;\n  margin-bottom: 20px;\n}\n#auto_tag_panel .table thead > tr > th,\n#auto_tag_panel .table tbody > tr > th,\n#auto_tag_panel .table tfoot > tr > th,\n#auto_tag_panel .table thead > tr > td,\n#auto_tag_panel .table tbody > tr > td,\n#auto_tag_panel .table tfoot > tr > td {\n  padding: 8px;\n  line-height: 1.428571429;\n  vertical-align: top;\n  border-top: 1px solid #dddddd;\n}\n#auto_tag_panel .table thead > tr > th {\n  vertical-align: bottom;\n  border-bottom: 2px solid #dddddd;\n}\n#auto_tag_panel .table caption + thead tr:first-child th,\n#auto_tag_panel .table colgroup + thead tr:first-child th,\n#auto_tag_panel .table thead:first-child tr:first-child th,\n#auto_tag_panel .table caption + thead tr:first-child td,\n#auto_tag_panel .table colgroup + thead tr:first-child td,\n#auto_tag_panel .table thead:first-child tr:first-child td {\n  border-top: 0;\n}\n#auto_tag_panel .table tbody + tbody {\n  border-top: 2px solid #dddddd;\n}\n#auto_tag_panel .table {\n  background-color: #ffffff;\n}\n#auto_tag_panel .table-condensed thead > tr > th,\n#auto_tag_panel .table-condensed tbody > tr > th,\n#auto_tag_panel .table-condensed tfoot > tr > th,\n#auto_tag_panel .table-condensed thead > tr > td,\n#auto_tag_panel .table-condensed tbody > tr > td,\n#auto_tag_panel .table-condensed tfoot > tr > td {\n  padding: 5px;\n}\n#auto_tag_panel .table-bordered {\n  border: 1px solid #dddddd;\n}\n#auto_tag_panel .table-bordered > thead > tr > th,\n#auto_tag_panel .table-bordered > tbody > tr > th,\n#auto_tag_panel .table-bordered > tfoot > tr > th,\n#auto_tag_panel .table-bordered > thead > tr > td,\n#auto_tag_panel .table-bordered > tbody > tr > td,\n#auto_tag_panel .table-bordered > tfoot > tr > td {\n  border: 1px solid #dddddd;\n}\n#auto_tag_panel .table-bordered > thead > tr > th,\n#auto_tag_panel .table-bordered > thead > tr > td {\n  border-bottom-width: 2px;\n}\n#auto_tag_panel .table-striped > tbody > tr:nth-child(odd) > td,\n#auto_tag_panel .table-striped > tbody > tr:nth-child(odd) > th {\n  background-color: #f9f9f9;\n}\n#auto_tag_panel .table-hover > tbody > tr:hover > td,\n#auto_tag_panel .table-hover > tbody > tr:hover > th {\n  background-color: #f5f5f5;\n}\n#auto_tag_panel table col[class*=\"col-\"] {\n  float: none;\n  display: table-column;\n}\n#auto_tag_panel table td[class*=\"col-\"],\n#auto_tag_panel table th[class*=\"col-\"] {\n  float: none;\n  display: table-cell;\n}\n#auto_tag_panel .table > thead > tr > td.active,\n#auto_tag_panel .table > tbody > tr > td.active,\n#auto_tag_panel .table > tfoot > tr > td.active,\n#auto_tag_panel .table > thead > tr > th.active,\n#auto_tag_panel .table > tbody > tr > th.active,\n#auto_tag_panel .table > tfoot > tr > th.active,\n#auto_tag_panel .table > thead > tr.active > td,\n#auto_tag_panel .table > tbody > tr.active > td,\n#auto_tag_panel .table > tfoot > tr.active > td,\n#auto_tag_panel .table > thead > tr.active > th,\n#auto_tag_panel .table > tbody > tr.active > th,\n#auto_tag_panel .table > tfoot > tr.active > th {\n  background-color: #f5f5f5;\n}\n#auto_tag_panel .table > thead > tr > td.success,\n#auto_tag_panel .table > tbody > tr > td.success,\n#auto_tag_panel .table > tfoot > tr > td.success,\n#auto_tag_panel .table > thead > tr > th.success,\n#auto_tag_panel .table > tbody > tr > th.success,\n#auto_tag_panel .table > tfoot > tr > th.success,\n#auto_tag_panel .table > thead > tr.success > td,\n#auto_tag_panel .table > tbody > tr.success > td,\n#auto_tag_panel .table > tfoot > tr.success > td,\n#auto_tag_panel .table > thead > tr.success > th,\n#auto_tag_panel .table > tbody > tr.success > th,\n#auto_tag_panel .table > tfoot > tr.success > th {\n  background-color: #dff0d8;\n  border-color: #d6e9c6;\n}\n#auto_tag_panel .table-hover > tbody > tr > td.success:hover,\n#auto_tag_panel .table-hover > tbody > tr > th.success:hover,\n#auto_tag_panel .table-hover > tbody > tr.success:hover > td {\n  background-color: #d0e9c6;\n  border-color: #c9e2b3;\n}\n#auto_tag_panel .table > thead > tr > td.danger,\n#auto_tag_panel .table > tbody > tr > td.danger,\n#auto_tag_panel .table > tfoot > tr > td.danger,\n#auto_tag_panel .table > thead > tr > th.danger,\n#auto_tag_panel .table > tbody > tr > th.danger,\n#auto_tag_panel .table > tfoot > tr > th.danger,\n#auto_tag_panel .table > thead > tr.danger > td,\n#auto_tag_panel .table > tbody > tr.danger > td,\n#auto_tag_panel .table > tfoot > tr.danger > td,\n#auto_tag_panel .table > thead > tr.danger > th,\n#auto_tag_panel .table > tbody > tr.danger > th,\n#auto_tag_panel .table > tfoot > tr.danger > th {\n  background-color: #f2dede;\n  border-color: #eed3d7;\n}\n#auto_tag_panel .table-hover > tbody > tr > td.danger:hover,\n#auto_tag_panel .table-hover > tbody > tr > th.danger:hover,\n#auto_tag_panel .table-hover > tbody > tr.danger:hover > td {\n  background-color: #ebcccc;\n  border-color: #e6c1c7;\n}\n#auto_tag_panel .table > thead > tr > td.warning,\n#auto_tag_panel .table > tbody > tr > td.warning,\n#auto_tag_panel .table > tfoot > tr > td.warning,\n#auto_tag_panel .table > thead > tr > th.warning,\n#auto_tag_panel .table > tbody > tr > th.warning,\n#auto_tag_panel .table > tfoot > tr > th.warning,\n#auto_tag_panel .table > thead > tr.warning > td,\n#auto_tag_panel .table > tbody > tr.warning > td,\n#auto_tag_panel .table > tfoot > tr.warning > td,\n#auto_tag_panel .table > thead > tr.warning > th,\n#auto_tag_panel .table > tbody > tr.warning > th,\n#auto_tag_panel .table > tfoot > tr.warning > th {\n  background-color: #fcf8e3;\n  border-color: #fbeed5;\n}\n#auto_tag_panel .table-hover > tbody > tr > td.warning:hover,\n#auto_tag_panel .table-hover > tbody > tr > th.warning:hover,\n#auto_tag_panel .table-hover > tbody > tr.warning:hover > td {\n  background-color: #faf2cc;\n  border-color: #f8e5be;\n}\n@media (max-width: 768px) {\n  #auto_tag_panel .table-responsive {\n    width: 100%;\n    margin-bottom: 15px;\n    overflow-y: hidden;\n    overflow-x: scroll;\n    border: 1px solid #dddddd;\n  }\n  #auto_tag_panel .table-responsive > .table {\n    margin-bottom: 0;\n    background-color: #fff;\n  }\n  #auto_tag_panel .table-responsive > .table > thead > tr > th,\n  #auto_tag_panel .table-responsive > .table > tbody > tr > th,\n  #auto_tag_panel .table-responsive > .table > tfoot > tr > th,\n  #auto_tag_panel .table-responsive > .table > thead > tr > td,\n  #auto_tag_panel .table-responsive > .table > tbody > tr > td,\n  #auto_tag_panel .table-responsive > .table > tfoot > tr > td {\n    white-space: nowrap;\n  }\n  #auto_tag_panel .table-responsive > .table-bordered {\n    border: 0;\n  }\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr > th:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr > th:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr > th:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr > td:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr > td:first-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr > td:first-child {\n    border-left: 0;\n  }\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr > th:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr > th:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr > th:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr > td:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr > td:last-child,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr > td:last-child {\n    border-right: 0;\n  }\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr:last-child > th,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr:last-child > th,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr:last-child > th,\n  #auto_tag_panel .table-responsive > .table-bordered > thead > tr:last-child > td,\n  #auto_tag_panel .table-responsive > .table-bordered > tbody > tr:last-child > td,\n  #auto_tag_panel .table-responsive > .table-bordered > tfoot > tr:last-child > td {\n    border-bottom: 0;\n  }\n}\n\n#auto_tag_panel .Select-placeholder,\n#auto_tag_panel .Select-value {\n  padding-left: 5px;\n  padding-right: 5px;\n  white-space: nowrap;\n  position:inherit;\n  display: table-cell;\n}\n\n#auto_tag_panel .Select-control {\n    line-height:inherit;\n    height: auto;\n}\n\n#auto_tag_panel .Select-placeholder,\n#auto_tag_panel .Select-value,\n#auto_tag_panel .Select-clear-zone,\n#auto_tag_panel .Select-arrow-zone {\n  line-height: inherit;\n  height: auto;\n}\n\n#auto_tag_panel .Select-input {\n    line-height: inherit;\n    height: auto;\n    padding-left: 0;\n    padding-right: 0;\n}\n\n#auto_tag_panel .Select-clear-zone,\n#auto_tag_panel .Select-arrow-zone {\n    padding: 0px 2px 0px 2px;\n}\n\n#auto_tag_panel .Select-arrow-zone {\n    padding-top: 2px;\n}\n\n#auto_tag_panel .Select-control {\n  background: none transparent;\n}\n\n#auto_tag_panel .tag_button{\n\tdisplay:inline-block;\n    -webkit-border-radius: 30px;\n\t-moz-border-radius: 30px;\n\tborder-radius: 30px;\n\tborder:solid 1px hsl(205,40%,60%);\n\tbackground-image: -webkit-gradient(linear, left bottom, left top, from(hsl(205, 65%, 85%)), to(hsl(205, 60%, 90%)));\n\n\tbackground-image:-moz-linear-gradient(top, hsl(205,60%,90%) 0%, hsl(205,35%,85%) 100%); /* FF3.6+ */\n\tbackground-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(205,60%,90%)), color-stop(100%,hsl(205,35%,85%))); /* Chrome,Safari4+ */\n\tbackground-image:-webkit-linear-gradient(top, hsl(205,60%,90%) 0%,hsl(205,35%,85%) 100%); /* Chrome10+,Safari5.1+ */\n\tbackground-image:-o-linear-gradient(top, hsl(205,60%,90%) 0%,hsl(205,35%,85%) 100%); /* Opera11.10+ */\n\tbackground-image:-ms-linear-gradient(top, hsl(205,60%,90%) 0%,hsl(205,35%,85%) 100%); /* IE10+ */\n\tfilter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#5CACE6', endColorstr='#8DB9D9',GradientType=0 ); /* IE6-9 */\n\tbackground:linear-gradient(top, hsl(205,60%,90%) 0%,hsl(205,35%,85%) 100%); /* W3C */\n\n\tcolor:hsl(205,30%,35%) !important;\n\t-webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n\t-moz-box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n\tbox-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n}\n\n#auto_tag_panel .Select-placeholder {\n    font-size: inherit;\n    color: inherit;\n}\n\n#auto_tag_panel .Select-clear {\n    font-size: 10px;\n    color: black;\n}\n\n\n#auto_tag_panel .tag_button_inactive{\n\tdisplay:inline-block;\n    -webkit-border-radius: 30px;\n\t-moz-border-radius: 30px;\n\tborder-radius: 30px;\n\tborder:solid 1px hsl(205,40%,60%);\n\n    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(350, 65%, 85%)), to(hsl(350, 60%, 90%))) !important;\n\n    background:blue !important; /* Old browsers */\n    background-image:-moz-linear-gradient(top, hsl(350,65%,80%) 0%, hsl(350,60%,90%) 100%) !important; /* FF3.6+ */\n    background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(350,65%,85%)), color-stop(100%,hsl(350,60%,90%))) !important; /* Chrome,Safari4+ */\n    background-image:-webkit-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100% !important); /* Chrome10+,Safari5.1+ */\n    background-image:-o-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* Opera11.10+ */\n    background-image:-ms-linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* IE10+ */\n    filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#4795CC', endColorstr='#3987BF',GradientType=0 ) !important; /* IE6-9 */\n    background:linear-gradient(top, hsl(350,65%,80%) 0%,hsl(350,60%,90%) 100%) !important; /* W3C */\n\n    text-decoration:none !important;\n    text-shadow: 0 1px 0 rgba(255,255,255,.4) !important;\n    color:hsl(350,30%,30%) !important;\n    -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n    -moz-box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n    box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n}\n\n#auto_tag_panel .tag_button_unmatched{\n\n    background-image: -webkit-gradient(linear, left bottom, left top, from(hsl(100, 65%, 85%)), to(hsl(205, 60%, 90%))) !important;\n    background-image:-moz-linear-gradient(top, hsl(100,60%,90%) 0%, hsl(100,35%,85%) 100%) !important; /* FF3.6+ */\n    background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%,hsl(100,60%,90%)), color-stop(100%,hsl(100,35%,85%))) !important; /* Chrome,Safari4+ */\n    background-image:-webkit-linear-gradient(top, hsl(100,60%,90%) 0%,hsl(100,35%,85%) 100%) !important; /* Chrome10+,Safari5.1+ */\n    background-image:-o-linear-gradient(top, hsl(100,60%,90%) 0%,hsl(100,35%,85%) 100%) !important; /* Opera11.10+ */\n    background-image:-ms-linear-gradient(top, hsl(100,60%,90%) 0%,hsl(100,35%,85%) 100%) !important; /* IE10+ */\n    filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#5CACE6', endColorstr='#8DB9D9',GradientType=0 ) !important; /* IE6-9 */\n    background:linear-gradient(top, hsl(100,60%,90%) 0%,hsl(100,35%,85%) 100%) !important; /* W3C */\n\n    color:hsl(100,10%,15%) !important;\n    -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n    -moz-box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n    box-shadow: inset 0 1px 0 rgba(255,255,255,.5);\n}\n", ""]);
+	exports.push([module.id, ".toolbar{text-align:right}th.extensionTokens,th.pathTokens{background-color:#ffc}.table td{text-align:center}.table tbody tr>td.success{background-color:#dff0d8!important}.table tbody tr>td.error{background-color:#f2dede!important}.table tbody tr>td.warning{background-color:#fcf8e3!important}.table tbody tr>td.info{background-color:#d9edf7!important}.table-hover tbody tr:hover>td.success{background-color:#d0e9c6!important}.table-hover tbody tr:hover>td.error{background-color:#ebcccc!important}.table-hover tbody tr:hover>td.warning{background-color:#faf2cc!important}.table-hover tbody tr:hover>td.info{background-color:#c4e3f3!important}.btn-default{border:0;background-color:transparent}.btn-default:focus{outline:none}.showTag{color:#000;cursor:pointer;font-weight:700;text-shadow:0 1px 0 hsla(0,0%,100%,.7);display:inline-block;width:12px;height:12px;position:absolute;z-index:90;right:5px;top:1px;border-radius:20px;text-align:center;margin-left:5px;overflow:hidden;display:block!important;background:url(" + __webpack_require__(167) + ") center center no-repeat;text-indent:-99px;pointer-events:none}.tagInactive{background-image:-webkit-gradient(linear,left bottom,left top,from(#f2c0c8),to(#f5d6db))!important;background:blue!important;background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#f2c0c8),color-stop(100%,#f5d6db))!important;background-image:-webkit-linear-gradient(top,#edabb6,#f5d6db !important);background-image:-ms-linear-gradient(top,#edabb6 0,#f5d6db 100%)!important;filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#4795CC',endColorstr='#3987BF',GradientType=0)!important;background:linear-gradient(top,#edabb6,#f5d6db)!important;text-decoration:none!important;text-shadow:0 1px 0 hsla(0,0%,100%,.4)!important;color:#63363d!important}.token{text-align:center}.tag{white-space:nowrap}.Select-arrow-zone,.Select-clear-zone{display:table-cell!important}.Select-option,.Select-placeholder{font-size:14px}#auto_tag_panel .table{width:100%;margin-bottom:20px}#auto_tag_panel .table tbody>tr>td,#auto_tag_panel .table tbody>tr>th,#auto_tag_panel .table tfoot>tr>td,#auto_tag_panel .table tfoot>tr>th,#auto_tag_panel .table thead>tr>td,#auto_tag_panel .table thead>tr>th{padding:8px;line-height:1.428571429;vertical-align:top;border-top:1px solid #ddd}#auto_tag_panel .table thead>tr>th{vertical-align:bottom;border-bottom:2px solid #ddd}#auto_tag_panel .table caption+thead tr:first-child td,#auto_tag_panel .table caption+thead tr:first-child th,#auto_tag_panel .table colgroup+thead tr:first-child td,#auto_tag_panel .table colgroup+thead tr:first-child th,#auto_tag_panel .table thead:first-child tr:first-child td,#auto_tag_panel .table thead:first-child tr:first-child th{border-top:0}#auto_tag_panel .table tbody+tbody{border-top:2px solid #ddd}#auto_tag_panel .table{background-color:#fff}#auto_tag_panel .table-condensed tbody>tr>td,#auto_tag_panel .table-condensed tbody>tr>th,#auto_tag_panel .table-condensed tfoot>tr>td,#auto_tag_panel .table-condensed tfoot>tr>th,#auto_tag_panel .table-condensed thead>tr>td,#auto_tag_panel .table-condensed thead>tr>th{padding:5px}#auto_tag_panel .table-bordered,#auto_tag_panel .table-bordered>tbody>tr>td,#auto_tag_panel .table-bordered>tbody>tr>th,#auto_tag_panel .table-bordered>tfoot>tr>td,#auto_tag_panel .table-bordered>tfoot>tr>th,#auto_tag_panel .table-bordered>thead>tr>td,#auto_tag_panel .table-bordered>thead>tr>th{border:1px solid #ddd}#auto_tag_panel .table-bordered>thead>tr>td,#auto_tag_panel .table-bordered>thead>tr>th{border-bottom-width:2px}#auto_tag_panel .table-striped>tbody>tr:nth-child(odd)>td,#auto_tag_panel .table-striped>tbody>tr:nth-child(odd)>th{background-color:#f9f9f9}#auto_tag_panel .table-hover>tbody>tr:hover>td,#auto_tag_panel .table-hover>tbody>tr:hover>th{background-color:#f5f5f5}#auto_tag_panel table col[class*=col-]{float:none;display:table-column}#auto_tag_panel table td[class*=col-],#auto_tag_panel table th[class*=col-]{float:none;display:table-cell}#auto_tag_panel .table>tbody>tr.active>td,#auto_tag_panel .table>tbody>tr.active>th,#auto_tag_panel .table>tbody>tr>td.active,#auto_tag_panel .table>tbody>tr>th.active,#auto_tag_panel .table>tfoot>tr.active>td,#auto_tag_panel .table>tfoot>tr.active>th,#auto_tag_panel .table>tfoot>tr>td.active,#auto_tag_panel .table>tfoot>tr>th.active,#auto_tag_panel .table>thead>tr.active>td,#auto_tag_panel .table>thead>tr.active>th,#auto_tag_panel .table>thead>tr>td.active,#auto_tag_panel .table>thead>tr>th.active{background-color:#f5f5f5}#auto_tag_panel .table>tbody>tr.success>td,#auto_tag_panel .table>tbody>tr.success>th,#auto_tag_panel .table>tbody>tr>td.success,#auto_tag_panel .table>tbody>tr>th.success,#auto_tag_panel .table>tfoot>tr.success>td,#auto_tag_panel .table>tfoot>tr.success>th,#auto_tag_panel .table>tfoot>tr>td.success,#auto_tag_panel .table>tfoot>tr>th.success,#auto_tag_panel .table>thead>tr.success>td,#auto_tag_panel .table>thead>tr.success>th,#auto_tag_panel .table>thead>tr>td.success,#auto_tag_panel .table>thead>tr>th.success{background-color:#dff0d8;border-color:#d6e9c6}#auto_tag_panel .table-hover>tbody>tr.success:hover>td,#auto_tag_panel .table-hover>tbody>tr>td.success:hover,#auto_tag_panel .table-hover>tbody>tr>th.success:hover{background-color:#d0e9c6;border-color:#c9e2b3}#auto_tag_panel .table>tbody>tr.danger>td,#auto_tag_panel .table>tbody>tr.danger>th,#auto_tag_panel .table>tbody>tr>td.danger,#auto_tag_panel .table>tbody>tr>th.danger,#auto_tag_panel .table>tfoot>tr.danger>td,#auto_tag_panel .table>tfoot>tr.danger>th,#auto_tag_panel .table>tfoot>tr>td.danger,#auto_tag_panel .table>tfoot>tr>th.danger,#auto_tag_panel .table>thead>tr.danger>td,#auto_tag_panel .table>thead>tr.danger>th,#auto_tag_panel .table>thead>tr>td.danger,#auto_tag_panel .table>thead>tr>th.danger{background-color:#f2dede;border-color:#eed3d7}#auto_tag_panel .table-hover>tbody>tr.danger:hover>td,#auto_tag_panel .table-hover>tbody>tr>td.danger:hover,#auto_tag_panel .table-hover>tbody>tr>th.danger:hover{background-color:#ebcccc;border-color:#e6c1c7}#auto_tag_panel .table>tbody>tr.warning>td,#auto_tag_panel .table>tbody>tr.warning>th,#auto_tag_panel .table>tbody>tr>td.warning,#auto_tag_panel .table>tbody>tr>th.warning,#auto_tag_panel .table>tfoot>tr.warning>td,#auto_tag_panel .table>tfoot>tr.warning>th,#auto_tag_panel .table>tfoot>tr>td.warning,#auto_tag_panel .table>tfoot>tr>th.warning,#auto_tag_panel .table>thead>tr.warning>td,#auto_tag_panel .table>thead>tr.warning>th,#auto_tag_panel .table>thead>tr>td.warning,#auto_tag_panel .table>thead>tr>th.warning{background-color:#fcf8e3;border-color:#fbeed5}#auto_tag_panel .table-hover>tbody>tr.warning:hover>td,#auto_tag_panel .table-hover>tbody>tr>td.warning:hover,#auto_tag_panel .table-hover>tbody>tr>th.warning:hover{background-color:#faf2cc;border-color:#f8e5be}@media (max-width:768px){#auto_tag_panel .table-responsive{width:100%;margin-bottom:15px;overflow-y:hidden;overflow-x:scroll;border:1px solid #ddd}#auto_tag_panel .table-responsive>.table{margin-bottom:0;background-color:#fff}#auto_tag_panel .table-responsive>.table>tbody>tr>td,#auto_tag_panel .table-responsive>.table>tbody>tr>th,#auto_tag_panel .table-responsive>.table>tfoot>tr>td,#auto_tag_panel .table-responsive>.table>tfoot>tr>th,#auto_tag_panel .table-responsive>.table>thead>tr>td,#auto_tag_panel .table-responsive>.table>thead>tr>th{white-space:nowrap}#auto_tag_panel .table-responsive>.table-bordered{border:0}#auto_tag_panel .table-responsive>.table-bordered>tbody>tr>td:first-child,#auto_tag_panel .table-responsive>.table-bordered>tbody>tr>th:first-child,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr>td:first-child,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr>th:first-child,#auto_tag_panel .table-responsive>.table-bordered>thead>tr>td:first-child,#auto_tag_panel .table-responsive>.table-bordered>thead>tr>th:first-child{border-left:0}#auto_tag_panel .table-responsive>.table-bordered>tbody>tr>td:last-child,#auto_tag_panel .table-responsive>.table-bordered>tbody>tr>th:last-child,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr>td:last-child,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr>th:last-child,#auto_tag_panel .table-responsive>.table-bordered>thead>tr>td:last-child,#auto_tag_panel .table-responsive>.table-bordered>thead>tr>th:last-child{border-right:0}#auto_tag_panel .table-responsive>.table-bordered>tbody>tr:last-child>td,#auto_tag_panel .table-responsive>.table-bordered>tbody>tr:last-child>th,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr:last-child>td,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr:last-child>th,#auto_tag_panel .table-responsive>.table-bordered>thead>tr:last-child>td,#auto_tag_panel .table-responsive>.table-bordered>thead>tr:last-child>th{border-bottom:0}}#auto_tag_panel .Select-placeholder,#auto_tag_panel .Select-value{padding-left:7px;padding-right:5px;white-space:nowrap;position:inherit;display:table-cell}#auto_tag_panel .Select-control{line-height:inherit;height:auto}#auto_tag_panel .Select-arrow-zone,#auto_tag_panel .Select-clear-zone,#auto_tag_panel .Select-placeholder,#auto_tag_panel .Select-value{line-height:inherit;height:auto;cursor:pointer}#auto_tag_panel .Select-value-label{text-shadow:0 1px 0 hsla(0,0%,100%,.8);color:#3e5e74}#auto_tag_panel .Select-input{line-height:inherit;height:auto;padding-left:0;padding-right:0}#auto_tag_panel .Select-arrow-zone,#auto_tag_panel .Select-clear-zone{padding:0 2px}#auto_tag_panel .Select-arrow-zone{padding-top:2px;padding-right:7px}#auto_tag_panel .Select-clear-zone{font-weight:700;padding-bottom:2px;padding-right:4px}#auto_tag_panel .Select-control{background:none transparent}#auto_tag_panel .Select-placeholder{font-size:inherit;color:inherit}#auto_tag_panel .Select-clear{font-size:10px;color:#000}#auto_tag_panel .Select-menu-outer{width:auto;margin-top:2px}#auto_tag_panel .Select-option{width:auto;font-size:11px;padding-top:3px;padding-bottom:3px}#auto_tag_panel .tag_button{display:inline-block;border-radius:30px;border:1px solid #70a0c2;background-image:-webkit-gradient(linear,left bottom,left top,from(#c0ddf2),to(#d6e8f5));background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#d6e8f5),color-stop(100%,#cbdbe6));background-image:-webkit-linear-gradient(top,#d6e8f5,#cbdbe6);background-image:-ms-linear-gradient(top,#d6e8f5 0,#cbdbe6 100%);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#5CACE6',endColorstr='#8DB9D9',GradientType=0);background:linear-gradient(top,#d6e8f5,#cbdbe6);color:#3e5e74!important;box-shadow:inset 0 1px 0 hsla(0,0%,100%,.5)}#auto_tag_panel .tag_button:hover{background-image:-webkit-gradient(linear,left bottom,left top,from(#93c7ec),to(#abd2ed));background:blue;background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#abd2ed),color-stop(100%,#93c7ec));background-image:-webkit-linear-gradient(top,#abd2ed,#93c7ec);background-image:-ms-linear-gradient(top,#abd2ed 0,#93c7ec 100%);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#4795CC',endColorstr='#3987BF',GradientType=0);background:linear-gradient(top,#abd2ed,#93c7ec);text-decoration:none;text-shadow:0 1px 0 hsla(0,0%,100%,.4);color:#365063}#auto_tag_panel .tag_button_inactive{background-image:-webkit-gradient(linear,left bottom,left top,from(#f2c0c8),to(#f5d6db))!important;background:blue!important;background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#f2c0c8),color-stop(100%,#f5d6db))!important;background-image:-webkit-linear-gradient(top,#edabb6,#f5d6db !important);background-image:-ms-linear-gradient(top,#edabb6 0,#f5d6db 100%)!important;background:linear-gradient(top,#edabb6,#f5d6db)!important;box-shadow:inset 0 1px 0 hsla(0,0%,100%,.5)}#auto_tag_panel .tag_button_inactive,#auto_tag_panel .tag_button_inactive:hover{filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#4795CC',endColorstr='#3987BF',GradientType=0)!important;text-decoration:none!important;text-shadow:0 1px 0 hsla(0,0%,100%,.4)!important;color:#63363d!important}#auto_tag_panel .tag_button_inactive:hover{background-image:-webkit-gradient(linear,left bottom,left top,from(#ec93a2),to(#edabb6))!important;background:blue;background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#edabb6),color-stop(100%,#ec93a2))!important;background-image:-webkit-linear-gradient(top,#edabb6,#ec93a2)!important;background-image:-ms-linear-gradient(top,#edabb6 0,#ec93a2 100%)!important;background:linear-gradient(top,#edabb6,#ec93a2)!important}#auto_tag_panel .tag_button_unmatched{background-image:-webkit-gradient(linear,left bottom,left top,from(#d0f2c0),to(#d6e8f5))!important;background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#e0f5d6),color-stop(100%,#d4e6cb))!important;background-image:-webkit-linear-gradient(top,#e0f5d6,#d4e6cb)!important;background-image:-ms-linear-gradient(top,#e0f5d6 0,#d4e6cb 100%)!important;filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#5CACE6',endColorstr='#8DB9D9',GradientType=0)!important;background:linear-gradient(top,#e0f5d6,#d4e6cb)!important;color:#252a22!important;box-shadow:inset 0 1px 0 hsla(0,0%,100%,.5)}#auto_tag_panel .autotag_tooltip{text-align:left;font-size:11px;padding:8px 30px 8px 6px}", ""]);
 
 	// exports
 
@@ -22308,67 +22301,19 @@ var autotagform =
 	      }
 	    }
 	  }, {
+	    key: 'getTooltipId',
+	    value: function getTooltipId() {
+	      return 'tooltip-token-' + this.props.token.value;
+	    }
+	  }, {
 	    key: 'selectGetOptionLabel',
 	    value: function selectGetOptionLabel(option) {
 	      var label = this.formatTagLabel(option);
-	      var tooltipID = 'tooltip-token-' + this.props.token.value;
 
 	      return _react2.default.createElement(
 	        'span',
-	        { 'data-tip': true, 'data-for': tooltipID },
-	        label,
-	        this.props.tag && _react2.default.createElement(
-	          _reactTooltip2.default,
-	          { id: tooltipID, place: 'top', type: 'dark', effect: 'solid' },
-	          _react2.default.createElement(
-	            'ul',
-	            null,
-	            _react2.default.createElement(
-	              'li',
-	              null,
-	              _react2.default.createElement(
-	                'strong',
-	                null,
-	                'ID:'
-	              ),
-	              ' ',
-	              this.props.tag.id
-	            ),
-	            _react2.default.createElement(
-	              'li',
-	              null,
-	              _react2.default.createElement(
-	                'strong',
-	                null,
-	                'Value:'
-	              ),
-	              ' ',
-	              this.props.tag.value
-	            ),
-	            this.props.tag.description && _react2.default.createElement(
-	              'li',
-	              null,
-	              _react2.default.createElement(
-	                'strong',
-	                null,
-	                'Description:'
-	              ),
-	              ' ',
-	              this.props.tag.description
-	            ),
-	            _react2.default.createElement(
-	              'li',
-	              null,
-	              _react2.default.createElement(
-	                'strong',
-	                null,
-	                'Owner:'
-	              ),
-	              ' ',
-	              this.props.tag.owner.omeName
-	            )
-	          )
-	        )
+	        { 'data-tip': true, 'data-for': this.getTooltipId() },
+	        label
 	      );
 	    }
 	  }, {
@@ -22386,14 +22331,20 @@ var autotagform =
 	        };
 	      });
 
+	      var newExisting = _react2.default.createElement(
+	        'span',
+	        { style: { color: "blue", fontWeight: "bold", borderStyle: "solid" } },
+	        'New/Existing Tag'
+	      );
+
 	      options.push({
 	        value: undefined,
-	        label: 'New/Existing Tag'
+	        label: newExisting
 	      });
 
 	      var tagClassName = "tag_button";
 	      if (tag === null) {
-	        tagClassName = "tag_button_inactive";
+	        tagClassName += " tag_button_inactive";
 	      }
 
 	      return _react2.default.createElement(
@@ -22420,7 +22371,59 @@ var autotagform =
 	            searchable: false,
 	            className: tagClassName,
 	            placeholder: '  '
-	          })
+	          }),
+	          this.props.tag && _react2.default.createElement(
+	            _reactTooltip2.default,
+	            { id: this.getTooltipId(), place: 'top', type: 'dark', effect: 'solid', 'class': "autotag_tooltip" },
+	            _react2.default.createElement(
+	              'ul',
+	              null,
+	              _react2.default.createElement(
+	                'li',
+	                null,
+	                _react2.default.createElement(
+	                  'strong',
+	                  null,
+	                  'ID:'
+	                ),
+	                ' ',
+	                this.props.tag.id
+	              ),
+	              _react2.default.createElement(
+	                'li',
+	                null,
+	                _react2.default.createElement(
+	                  'strong',
+	                  null,
+	                  'Value:'
+	                ),
+	                ' ',
+	                this.props.tag.value
+	              ),
+	              this.props.tag.description && _react2.default.createElement(
+	                'li',
+	                null,
+	                _react2.default.createElement(
+	                  'strong',
+	                  null,
+	                  'Description:'
+	                ),
+	                ' ',
+	                this.props.tag.description
+	              ),
+	              _react2.default.createElement(
+	                'li',
+	                null,
+	                _react2.default.createElement(
+	                  'strong',
+	                  null,
+	                  'Owner:'
+	                ),
+	                ' ',
+	                this.props.tag.owner.omeName
+	              )
+	            )
+	          )
 	        )
 	      );
 	    }
@@ -23811,64 +23814,60 @@ var autotagform =
 	          { className: 'tag' },
 	          _react2.default.createElement(
 	            'span',
-	            { style: { position: 'relative' } },
+	            { className: "tag_inner tag_button_unmatched",
+	              'data-tip': true,
+	              'data-for': tooltipID },
+	            tag.value
+	          ),
+	          _react2.default.createElement(
+	            _reactTooltip2.default,
+	            { id: tooltipID, place: 'top', type: 'dark', effect: 'solid', 'class': "autotag_tooltip" },
 	            _react2.default.createElement(
-	              'a',
-	              { className: "tag_inner tag_button_unmatched",
-	                'data-tip': true,
-	                'data-for': tooltipID },
-	              tag.value
-	            ),
-	            _react2.default.createElement(
-	              _reactTooltip2.default,
-	              { id: tooltipID, place: 'top', type: 'dark', effect: 'solid' },
+	              'ul',
+	              null,
 	              _react2.default.createElement(
-	                'ul',
+	                'li',
 	                null,
 	                _react2.default.createElement(
-	                  'li',
+	                  'strong',
 	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'ID:'
-	                  ),
-	                  ' ',
-	                  tag.id
+	                  'ID:'
 	                ),
+	                ' ',
+	                tag.id
+	              ),
+	              _react2.default.createElement(
+	                'li',
+	                null,
 	                _react2.default.createElement(
-	                  'li',
+	                  'strong',
 	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'Value:'
-	                  ),
-	                  ' ',
-	                  tag.value
+	                  'Value:'
 	                ),
-	                tag.description && _react2.default.createElement(
-	                  'li',
-	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'Description:'
-	                  ),
-	                  ' ',
-	                  tag.description
-	                ),
+	                ' ',
+	                tag.value
+	              ),
+	              tag.description && _react2.default.createElement(
+	                'li',
+	                null,
 	                _react2.default.createElement(
-	                  'li',
+	                  'strong',
 	                  null,
-	                  _react2.default.createElement(
-	                    'strong',
-	                    null,
-	                    'Owner:'
-	                  ),
-	                  ' ',
-	                  tag.owner.omeName
-	                )
+	                  'Description:'
+	                ),
+	                ' ',
+	                tag.description
+	              ),
+	              _react2.default.createElement(
+	                'li',
+	                null,
+	                _react2.default.createElement(
+	                  'strong',
+	                  null,
+	                  'Owner:'
+	                ),
+	                ' ',
+	                tag.owner.omeName
 	              )
 	            )
 	          )

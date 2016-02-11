@@ -588,14 +588,8 @@ export default class AutoTagForm extends React.Component {
   }
 
   addMapping(token, tag, tagValue, tagDescription) {
-    console.log('blah');
-    console.log(token);
-    console.log(tag);
-    console.log(tagValue);
-    console.log(tagDescription);
     // Undefined tagValue means this is an existing tag
     if (tagValue === undefined && tag !== undefined){
-      console.log('foo');
       // Add the tag to the tokenMap for this token
       token.possible.add(tag);
 
@@ -611,7 +605,6 @@ export default class AutoTagForm extends React.Component {
 
     // This is a new tag
     } else if (tagValue !== undefined){
-      console.log('bar');
       // Create the tag. In this case we can not update the form until the
       // ajax call is successful as the tag ID is not known until it returns
       // and that is important imformation

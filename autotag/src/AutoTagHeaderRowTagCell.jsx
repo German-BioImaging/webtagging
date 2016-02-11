@@ -40,13 +40,12 @@ export default class AutoTagHeaderRowTagCell extends React.Component {
                  onChange={this.handleCheckedChangeAll} />
         </div>
         <div className={'tag'}>
-          <span style={{position: 'relative'}}>
 
-            <a className={"tag_inner tag_button_unmatched"}
+            <span className={"tag_inner tag_button_unmatched"}
                data-tip
                data-for={tooltipID}>{tag.value}
-            </a>
-            <ReactTooltip id={tooltipID} place="top" type="dark" effect="solid">
+            </span>
+            <ReactTooltip id={tooltipID} place="top" type="dark" effect="solid" class={"autotag_tooltip"}>
               <ul>
                 <li><strong>ID:</strong> {tag.id}</li>
                 <li><strong>Value:</strong> {tag.value}</li>
@@ -58,7 +57,6 @@ export default class AutoTagHeaderRowTagCell extends React.Component {
               </ul>
             </ReactTooltip>
 
-          </span>
         </div>
       </th>
     );

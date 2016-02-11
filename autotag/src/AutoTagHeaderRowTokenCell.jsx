@@ -50,28 +50,15 @@ export default class AutoTagHeaderRowTokenCell extends React.Component {
     }
   }
 
+  getTooltipId() {
+    return 'tooltip-token-' + this.props.token.value;
+  }
+
   selectGetOptionLabel(option) {
     let label = this.formatTagLabel(option);
-    let tooltipID = 'tooltip-token-' + this.props.token.value;
 
     return (
-      <span data-tip data-for={tooltipID}>{label}
-        {
-          this.props.tag &&
-          <ReactTooltip id={tooltipID} place="top" type="dark" effect="solid">
-            <ul>
-              <li><strong>ID:</strong> {this.props.tag.id}</li>
-              <li><strong>Value:</strong> {this.props.tag.value}</li>
-              {
-                this.props.tag.description &&
-                <li><strong>Description:</strong> {this.props.tag.description}</li>
-              }
-              <li><strong>Owner:</strong> {this.props.tag.owner.omeName}</li>
-            </ul>
-          </ReactTooltip>
-        }
-      </span>
-
+      <span data-tip data-for={this.getTooltipId()}>{label}</span>
     )
 	}
 
@@ -90,14 +77,18 @@ export default class AutoTagHeaderRowTokenCell extends React.Component {
       }
     )
 
+    let newExisting = (
+      <span style={{color: "blue", fontWeight: "bold", borderStyle: "solid"}}>New/Existing Tag</span>
+    );
+
     options.push({
       value: undefined,
-      label: 'New/Existing Tag'
+      label: newExisting
     });
 
     let tagClassName = "tag_button";
     if (tag === null) {
-      tagClassName = "tag_button_inactive";
+      tagClassName += " tag_button_inactive";
     }
 
     return (
@@ -119,6 +110,20 @@ export default class AutoTagHeaderRowTokenCell extends React.Component {
               className={tagClassName}
               placeholder="&nbsp; "
           />
+          {
+            this.props.tag &&
+            <ReactTooltip id={this.getTooltipId()} place="top" type="dark" effect="solid" class={"autotag_tooltip"}>
+              <ul>
+                <li><strong>ID:</strong> {this.props.tag.id}</li>
+                <li><strong>Value:</strong> {this.props.tag.value}</li>
+                {
+                  this.props.tag.description &&
+                  <li><strong>Description:</strong> {this.props.tag.description}</li>
+                }
+                <li><strong>Owner:</strong> {this.props.tag.owner.omeName}</li>
+              </ul>
+            </ReactTooltip>
+          }
         </div>
       </th>
     );
