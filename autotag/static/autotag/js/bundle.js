@@ -24915,33 +24915,33 @@ var autotagform =
 
 	__webpack_require__(446);
 
-	var _Token = __webpack_require__(449);
+	var _Token = __webpack_require__(448);
 
 	var _Token2 = _interopRequireDefault(_Token);
 
-	var _Image = __webpack_require__(450);
+	var _Image = __webpack_require__(449);
 
 	var _Image2 = _interopRequireDefault(_Image);
 
-	var _Tag = __webpack_require__(451);
+	var _Tag = __webpack_require__(450);
 
 	var _Tag2 = _interopRequireDefault(_Tag);
 
-	var _User = __webpack_require__(452);
+	var _User = __webpack_require__(451);
 
 	var _User2 = _interopRequireDefault(_User);
 
-	var _SetUtils = __webpack_require__(453);
+	var _SetUtils = __webpack_require__(452);
 
-	var _AutoTagToolbar = __webpack_require__(454);
+	var _AutoTagToolbar = __webpack_require__(453);
 
 	var _AutoTagToolbar2 = _interopRequireDefault(_AutoTagToolbar);
 
-	var _AutoTagTable = __webpack_require__(458);
+	var _AutoTagTable = __webpack_require__(457);
 
 	var _AutoTagTable2 = _interopRequireDefault(_AutoTagTable);
 
-	var _TagSelectModal = __webpack_require__(472);
+	var _TagSelectModal = __webpack_require__(471);
 
 	var _TagSelectModal2 = _interopRequireDefault(_TagSelectModal);
 
@@ -27807,19 +27807,13 @@ var autotagform =
 
 
 	// module
-	exports.push([module.id, ".toolbar{text-align:right}th.extensionTokens,th.pathTokens{background-color:#ffc}.table td{text-align:center}.table tbody tr>td.success{background-color:#dff0d8!important}.table tbody tr>td.error{background-color:#f2dede!important}.table tbody tr>td.warning{background-color:#fcf8e3!important}.table tbody tr>td.info{background-color:#d9edf7!important}.table-hover tbody tr:hover>td.success{background-color:#d0e9c6!important}.table-hover tbody tr:hover>td.error{background-color:#ebcccc!important}.table-hover tbody tr:hover>td.warning{background-color:#faf2cc!important}.table-hover tbody tr:hover>td.info{background-color:#c4e3f3!important}.btn-default{border:0;background-color:transparent}.btn-default:focus{outline:none}.showTag{color:#000;cursor:pointer;font-weight:700;text-shadow:0 1px 0 hsla(0,0%,100%,.7);display:inline-block;width:12px;height:12px;position:absolute;z-index:90;right:5px;top:1px;border-radius:20px;text-align:center;margin-left:5px;overflow:hidden;display:block!important;background:url(" + __webpack_require__(448) + ") center center no-repeat;text-indent:-99px;pointer-events:none}.tagInactive{background-image:-webkit-gradient(linear,left bottom,left top,from(#f2c0c8),to(#f5d6db))!important;background:blue!important;background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#f2c0c8),color-stop(100%,#f5d6db))!important;background-image:-webkit-linear-gradient(top,#edabb6,#f5d6db !important);background-image:-ms-linear-gradient(top,#edabb6 0,#f5d6db 100%)!important;filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#4795CC',endColorstr='#3987BF',GradientType=0)!important;background:linear-gradient(top,#edabb6,#f5d6db)!important;text-decoration:none!important;text-shadow:0 1px 0 hsla(0,0%,100%,.4)!important;color:#63363d!important}.token{text-align:center}.tag{white-space:nowrap}.Select-arrow-zone,.Select-clear-zone{display:table-cell!important}.Select-option,.Select-placeholder{font-size:14px}#auto_tag_panel .table{width:100%;margin-bottom:20px}#auto_tag_panel .table tbody>tr>td,#auto_tag_panel .table tbody>tr>th,#auto_tag_panel .table tfoot>tr>td,#auto_tag_panel .table tfoot>tr>th,#auto_tag_panel .table thead>tr>td,#auto_tag_panel .table thead>tr>th{padding:8px;line-height:1.428571429;vertical-align:top;border-top:1px solid #ddd}#auto_tag_panel .table thead>tr>th{vertical-align:bottom;border-bottom:2px solid #ddd}#auto_tag_panel .table caption+thead tr:first-child td,#auto_tag_panel .table caption+thead tr:first-child th,#auto_tag_panel .table colgroup+thead tr:first-child td,#auto_tag_panel .table colgroup+thead tr:first-child th,#auto_tag_panel .table thead:first-child tr:first-child td,#auto_tag_panel .table thead:first-child tr:first-child th{border-top:0}#auto_tag_panel .table tbody+tbody{border-top:2px solid #ddd}#auto_tag_panel .table{background-color:#fff}#auto_tag_panel .table-condensed tbody>tr>td,#auto_tag_panel .table-condensed tbody>tr>th,#auto_tag_panel .table-condensed tfoot>tr>td,#auto_tag_panel .table-condensed tfoot>tr>th,#auto_tag_panel .table-condensed thead>tr>td,#auto_tag_panel .table-condensed thead>tr>th{padding:5px}#auto_tag_panel .table-bordered,#auto_tag_panel .table-bordered>tbody>tr>td,#auto_tag_panel .table-bordered>tbody>tr>th,#auto_tag_panel .table-bordered>tfoot>tr>td,#auto_tag_panel .table-bordered>tfoot>tr>th,#auto_tag_panel .table-bordered>thead>tr>td,#auto_tag_panel .table-bordered>thead>tr>th{border:1px solid #ddd}#auto_tag_panel .table-bordered>thead>tr>td,#auto_tag_panel .table-bordered>thead>tr>th{border-bottom-width:2px}#auto_tag_panel .table-striped>tbody>tr:nth-child(odd)>td,#auto_tag_panel .table-striped>tbody>tr:nth-child(odd)>th{background-color:#f9f9f9}#auto_tag_panel .table-hover>tbody>tr:hover>td,#auto_tag_panel .table-hover>tbody>tr:hover>th{background-color:#f5f5f5}#auto_tag_panel table col[class*=col-]{float:none;display:table-column}#auto_tag_panel table td[class*=col-],#auto_tag_panel table th[class*=col-]{float:none;display:table-cell}#auto_tag_panel .table>tbody>tr.active>td,#auto_tag_panel .table>tbody>tr.active>th,#auto_tag_panel .table>tbody>tr>td.active,#auto_tag_panel .table>tbody>tr>th.active,#auto_tag_panel .table>tfoot>tr.active>td,#auto_tag_panel .table>tfoot>tr.active>th,#auto_tag_panel .table>tfoot>tr>td.active,#auto_tag_panel .table>tfoot>tr>th.active,#auto_tag_panel .table>thead>tr.active>td,#auto_tag_panel .table>thead>tr.active>th,#auto_tag_panel .table>thead>tr>td.active,#auto_tag_panel .table>thead>tr>th.active{background-color:#f5f5f5}#auto_tag_panel .table>tbody>tr.success>td,#auto_tag_panel .table>tbody>tr.success>th,#auto_tag_panel .table>tbody>tr>td.success,#auto_tag_panel .table>tbody>tr>th.success,#auto_tag_panel .table>tfoot>tr.success>td,#auto_tag_panel .table>tfoot>tr.success>th,#auto_tag_panel .table>tfoot>tr>td.success,#auto_tag_panel .table>tfoot>tr>th.success,#auto_tag_panel .table>thead>tr.success>td,#auto_tag_panel .table>thead>tr.success>th,#auto_tag_panel .table>thead>tr>td.success,#auto_tag_panel .table>thead>tr>th.success{background-color:#dff0d8;border-color:#d6e9c6}#auto_tag_panel .table-hover>tbody>tr.success:hover>td,#auto_tag_panel .table-hover>tbody>tr>td.success:hover,#auto_tag_panel .table-hover>tbody>tr>th.success:hover{background-color:#d0e9c6;border-color:#c9e2b3}#auto_tag_panel .table>tbody>tr.danger>td,#auto_tag_panel .table>tbody>tr.danger>th,#auto_tag_panel .table>tbody>tr>td.danger,#auto_tag_panel .table>tbody>tr>th.danger,#auto_tag_panel .table>tfoot>tr.danger>td,#auto_tag_panel .table>tfoot>tr.danger>th,#auto_tag_panel .table>tfoot>tr>td.danger,#auto_tag_panel .table>tfoot>tr>th.danger,#auto_tag_panel .table>thead>tr.danger>td,#auto_tag_panel .table>thead>tr.danger>th,#auto_tag_panel .table>thead>tr>td.danger,#auto_tag_panel .table>thead>tr>th.danger{background-color:#f2dede;border-color:#eed3d7}#auto_tag_panel .table-hover>tbody>tr.danger:hover>td,#auto_tag_panel .table-hover>tbody>tr>td.danger:hover,#auto_tag_panel .table-hover>tbody>tr>th.danger:hover{background-color:#ebcccc;border-color:#e6c1c7}#auto_tag_panel .table>tbody>tr.warning>td,#auto_tag_panel .table>tbody>tr.warning>th,#auto_tag_panel .table>tbody>tr>td.warning,#auto_tag_panel .table>tbody>tr>th.warning,#auto_tag_panel .table>tfoot>tr.warning>td,#auto_tag_panel .table>tfoot>tr.warning>th,#auto_tag_panel .table>tfoot>tr>td.warning,#auto_tag_panel .table>tfoot>tr>th.warning,#auto_tag_panel .table>thead>tr.warning>td,#auto_tag_panel .table>thead>tr.warning>th,#auto_tag_panel .table>thead>tr>td.warning,#auto_tag_panel .table>thead>tr>th.warning{background-color:#fcf8e3;border-color:#fbeed5}#auto_tag_panel .table-hover>tbody>tr.warning:hover>td,#auto_tag_panel .table-hover>tbody>tr>td.warning:hover,#auto_tag_panel .table-hover>tbody>tr>th.warning:hover{background-color:#faf2cc;border-color:#f8e5be}@media (max-width:768px){#auto_tag_panel .table-responsive{width:100%;margin-bottom:15px;overflow-y:hidden;overflow-x:scroll;border:1px solid #ddd}#auto_tag_panel .table-responsive>.table{margin-bottom:0;background-color:#fff}#auto_tag_panel .table-responsive>.table>tbody>tr>td,#auto_tag_panel .table-responsive>.table>tbody>tr>th,#auto_tag_panel .table-responsive>.table>tfoot>tr>td,#auto_tag_panel .table-responsive>.table>tfoot>tr>th,#auto_tag_panel .table-responsive>.table>thead>tr>td,#auto_tag_panel .table-responsive>.table>thead>tr>th{white-space:nowrap}#auto_tag_panel .table-responsive>.table-bordered{border:0}#auto_tag_panel .table-responsive>.table-bordered>tbody>tr>td:first-child,#auto_tag_panel .table-responsive>.table-bordered>tbody>tr>th:first-child,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr>td:first-child,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr>th:first-child,#auto_tag_panel .table-responsive>.table-bordered>thead>tr>td:first-child,#auto_tag_panel .table-responsive>.table-bordered>thead>tr>th:first-child{border-left:0}#auto_tag_panel .table-responsive>.table-bordered>tbody>tr>td:last-child,#auto_tag_panel .table-responsive>.table-bordered>tbody>tr>th:last-child,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr>td:last-child,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr>th:last-child,#auto_tag_panel .table-responsive>.table-bordered>thead>tr>td:last-child,#auto_tag_panel .table-responsive>.table-bordered>thead>tr>th:last-child{border-right:0}#auto_tag_panel .table-responsive>.table-bordered>tbody>tr:last-child>td,#auto_tag_panel .table-responsive>.table-bordered>tbody>tr:last-child>th,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr:last-child>td,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr:last-child>th,#auto_tag_panel .table-responsive>.table-bordered>thead>tr:last-child>td,#auto_tag_panel .table-responsive>.table-bordered>thead>tr:last-child>th{border-bottom:0}}#auto_tag_panel .Select-placeholder,#auto_tag_panel .Select-value{padding-left:7px;padding-right:5px;white-space:nowrap;position:inherit;display:table-cell}#auto_tag_panel .Select-control{line-height:inherit;height:auto}#auto_tag_panel .Select-arrow-zone,#auto_tag_panel .Select-clear-zone,#auto_tag_panel .Select-placeholder,#auto_tag_panel .Select-value{line-height:inherit;height:auto;cursor:pointer}#auto_tag_panel .Select-value-label{text-shadow:0 1px 0 hsla(0,0%,100%,.8);color:#3e5e74}#auto_tag_panel .Select-input{line-height:inherit;height:auto;padding-left:0;padding-right:0}#auto_tag_panel .Select-arrow-zone,#auto_tag_panel .Select-clear-zone{padding:0 2px}#auto_tag_panel .Select-arrow-zone{padding-top:2px;padding-right:7px}#auto_tag_panel .Select-clear-zone{font-weight:700;padding-bottom:2px;padding-right:4px}#auto_tag_panel .Select-control{background:none transparent}#auto_tag_panel .Select-placeholder{font-size:inherit;color:inherit}#auto_tag_panel .Select-clear{font-size:10px;color:#000}#auto_tag_panel .Select-menu-outer{width:auto;margin-top:2px}#auto_tag_panel .Select-option{width:auto;font-size:11px;padding-top:3px;padding-bottom:3px}#auto_tag_panel .tag_button{display:inline-block;border-radius:30px;border:1px solid #70a0c2;background-image:-webkit-gradient(linear,left bottom,left top,from(#c0ddf2),to(#d6e8f5));background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#d6e8f5),color-stop(100%,#cbdbe6));background-image:-webkit-linear-gradient(top,#d6e8f5,#cbdbe6);background-image:-ms-linear-gradient(top,#d6e8f5 0,#cbdbe6 100%);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#5CACE6',endColorstr='#8DB9D9',GradientType=0);background:linear-gradient(top,#d6e8f5,#cbdbe6);color:#3e5e74!important;box-shadow:inset 0 1px 0 hsla(0,0%,100%,.5)}#auto_tag_panel .tag_button:hover{background-image:-webkit-gradient(linear,left bottom,left top,from(#93c7ec),to(#abd2ed));background:blue;background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#abd2ed),color-stop(100%,#93c7ec));background-image:-webkit-linear-gradient(top,#abd2ed,#93c7ec);background-image:-ms-linear-gradient(top,#abd2ed 0,#93c7ec 100%);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#4795CC',endColorstr='#3987BF',GradientType=0);background:linear-gradient(top,#abd2ed,#93c7ec);text-decoration:none;text-shadow:0 1px 0 hsla(0,0%,100%,.4);color:#365063}#auto_tag_panel .tag_button_inactive{background-image:-webkit-gradient(linear,left bottom,left top,from(#f2c0c8),to(#f5d6db))!important;background:blue!important;background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#f2c0c8),color-stop(100%,#f5d6db))!important;background-image:-webkit-linear-gradient(top,#edabb6,#f5d6db !important);background-image:-ms-linear-gradient(top,#edabb6 0,#f5d6db 100%)!important;background:linear-gradient(top,#edabb6,#f5d6db)!important;box-shadow:inset 0 1px 0 hsla(0,0%,100%,.5)}#auto_tag_panel .tag_button_inactive,#auto_tag_panel .tag_button_inactive:hover{filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#4795CC',endColorstr='#3987BF',GradientType=0)!important;text-decoration:none!important;text-shadow:0 1px 0 hsla(0,0%,100%,.4)!important;color:#63363d!important}#auto_tag_panel .tag_button_inactive:hover{background-image:-webkit-gradient(linear,left bottom,left top,from(#ec93a2),to(#edabb6))!important;background:blue;background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#edabb6),color-stop(100%,#ec93a2))!important;background-image:-webkit-linear-gradient(top,#edabb6,#ec93a2)!important;background-image:-ms-linear-gradient(top,#edabb6 0,#ec93a2 100%)!important;background:linear-gradient(top,#edabb6,#ec93a2)!important}#auto_tag_panel .tag_button_unmatched{background-image:-webkit-gradient(linear,left bottom,left top,from(#d0f2c0),to(#d6e8f5))!important;background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#e0f5d6),color-stop(100%,#d4e6cb))!important;background-image:-webkit-linear-gradient(top,#e0f5d6,#d4e6cb)!important;background-image:-ms-linear-gradient(top,#e0f5d6 0,#d4e6cb 100%)!important;filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#5CACE6',endColorstr='#8DB9D9',GradientType=0)!important;background:linear-gradient(top,#e0f5d6,#d4e6cb)!important;color:#252a22!important;box-shadow:inset 0 1px 0 hsla(0,0%,100%,.5)}#auto_tag_panel .autotag_tooltip{text-align:left;font-size:11px;padding:8px 30px 8px 6px}", ""]);
+	exports.push([module.id, ".Select-arrow-zone,.Select-clear-zone{display:table-cell!important}.Select-option,.Select-placeholder{font-size:14px}#auto_tag_panel .toolbar{text-align:right}#auto_tag_panel th.extensionTokens,#auto_tag_panel th.pathTokens{background-color:#ffc}#auto_tag_panel .table td{text-align:center}#auto_tag_panel .table tbody tr>td.success{background-color:#dff0d8!important}#auto_tag_panel .table tbody tr>td.error{background-color:#f2dede!important}#auto_tag_panel .table tbody tr>td.warning{background-color:#fcf8e3!important}#auto_tag_panel .table tbody tr>td.info{background-color:#d9edf7!important}#auto_tag_panel .table-hover tbody tr:hover>td.success{background-color:#d0e9c6!important}#auto_tag_panel .table-hover tbody tr:hover>td.error{background-color:#ebcccc!important}#auto_tag_panel .table-hover tbody tr:hover>td.warning{background-color:#faf2cc!important}#auto_tag_panel .table-hover tbody tr:hover>td.info{background-color:#c4e3f3!important}#auto_tag_panel .btn-default{border:0;background-color:transparent}#auto_tag_panel .btn-default:focus{outline:none}#auto_tag_panel .token{text-align:center}#auto_tag_panel .tag{white-space:nowrap}#auto_tag_panel .table{width:100%;margin-bottom:20px}#auto_tag_panel .table tbody>tr>td,#auto_tag_panel .table tbody>tr>th,#auto_tag_panel .table tfoot>tr>td,#auto_tag_panel .table tfoot>tr>th,#auto_tag_panel .table thead>tr>td,#auto_tag_panel .table thead>tr>th{padding:8px;line-height:1.428571429;vertical-align:top;border-top:1px solid #ddd}#auto_tag_panel .table thead>tr>th{vertical-align:bottom;border-bottom:2px solid #ddd}#auto_tag_panel .table caption+thead tr:first-child td,#auto_tag_panel .table caption+thead tr:first-child th,#auto_tag_panel .table colgroup+thead tr:first-child td,#auto_tag_panel .table colgroup+thead tr:first-child th,#auto_tag_panel .table thead:first-child tr:first-child td,#auto_tag_panel .table thead:first-child tr:first-child th{border-top:0}#auto_tag_panel .table tbody+tbody{border-top:2px solid #ddd}#auto_tag_panel .table{background-color:#fff}#auto_tag_panel .table-condensed tbody>tr>td,#auto_tag_panel .table-condensed tbody>tr>th,#auto_tag_panel .table-condensed tfoot>tr>td,#auto_tag_panel .table-condensed tfoot>tr>th,#auto_tag_panel .table-condensed thead>tr>td,#auto_tag_panel .table-condensed thead>tr>th{padding:5px}#auto_tag_panel .table-bordered,#auto_tag_panel .table-bordered>tbody>tr>td,#auto_tag_panel .table-bordered>tbody>tr>th,#auto_tag_panel .table-bordered>tfoot>tr>td,#auto_tag_panel .table-bordered>tfoot>tr>th,#auto_tag_panel .table-bordered>thead>tr>td,#auto_tag_panel .table-bordered>thead>tr>th{border:1px solid #ddd}#auto_tag_panel .table-bordered>thead>tr>td,#auto_tag_panel .table-bordered>thead>tr>th{border-bottom-width:2px}#auto_tag_panel .table-striped>tbody>tr:nth-child(odd)>td,#auto_tag_panel .table-striped>tbody>tr:nth-child(odd)>th{background-color:#f9f9f9}#auto_tag_panel .table-hover>tbody>tr:hover>td,#auto_tag_panel .table-hover>tbody>tr:hover>th{background-color:#f5f5f5}#auto_tag_panel table col[class*=col-]{float:none;display:table-column}#auto_tag_panel table td[class*=col-],#auto_tag_panel table th[class*=col-]{float:none;display:table-cell}#auto_tag_panel .table>tbody>tr.active>td,#auto_tag_panel .table>tbody>tr.active>th,#auto_tag_panel .table>tbody>tr>td.active,#auto_tag_panel .table>tbody>tr>th.active,#auto_tag_panel .table>tfoot>tr.active>td,#auto_tag_panel .table>tfoot>tr.active>th,#auto_tag_panel .table>tfoot>tr>td.active,#auto_tag_panel .table>tfoot>tr>th.active,#auto_tag_panel .table>thead>tr.active>td,#auto_tag_panel .table>thead>tr.active>th,#auto_tag_panel .table>thead>tr>td.active,#auto_tag_panel .table>thead>tr>th.active{background-color:#f5f5f5}#auto_tag_panel .table>tbody>tr.success>td,#auto_tag_panel .table>tbody>tr.success>th,#auto_tag_panel .table>tbody>tr>td.success,#auto_tag_panel .table>tbody>tr>th.success,#auto_tag_panel .table>tfoot>tr.success>td,#auto_tag_panel .table>tfoot>tr.success>th,#auto_tag_panel .table>tfoot>tr>td.success,#auto_tag_panel .table>tfoot>tr>th.success,#auto_tag_panel .table>thead>tr.success>td,#auto_tag_panel .table>thead>tr.success>th,#auto_tag_panel .table>thead>tr>td.success,#auto_tag_panel .table>thead>tr>th.success{background-color:#dff0d8;border-color:#d6e9c6}#auto_tag_panel .table-hover>tbody>tr.success:hover>td,#auto_tag_panel .table-hover>tbody>tr>td.success:hover,#auto_tag_panel .table-hover>tbody>tr>th.success:hover{background-color:#d0e9c6;border-color:#c9e2b3}#auto_tag_panel .table>tbody>tr.danger>td,#auto_tag_panel .table>tbody>tr.danger>th,#auto_tag_panel .table>tbody>tr>td.danger,#auto_tag_panel .table>tbody>tr>th.danger,#auto_tag_panel .table>tfoot>tr.danger>td,#auto_tag_panel .table>tfoot>tr.danger>th,#auto_tag_panel .table>tfoot>tr>td.danger,#auto_tag_panel .table>tfoot>tr>th.danger,#auto_tag_panel .table>thead>tr.danger>td,#auto_tag_panel .table>thead>tr.danger>th,#auto_tag_panel .table>thead>tr>td.danger,#auto_tag_panel .table>thead>tr>th.danger{background-color:#f2dede;border-color:#eed3d7}#auto_tag_panel .table-hover>tbody>tr.danger:hover>td,#auto_tag_panel .table-hover>tbody>tr>td.danger:hover,#auto_tag_panel .table-hover>tbody>tr>th.danger:hover{background-color:#ebcccc;border-color:#e6c1c7}#auto_tag_panel .table>tbody>tr.warning>td,#auto_tag_panel .table>tbody>tr.warning>th,#auto_tag_panel .table>tbody>tr>td.warning,#auto_tag_panel .table>tbody>tr>th.warning,#auto_tag_panel .table>tfoot>tr.warning>td,#auto_tag_panel .table>tfoot>tr.warning>th,#auto_tag_panel .table>tfoot>tr>td.warning,#auto_tag_panel .table>tfoot>tr>th.warning,#auto_tag_panel .table>thead>tr.warning>td,#auto_tag_panel .table>thead>tr.warning>th,#auto_tag_panel .table>thead>tr>td.warning,#auto_tag_panel .table>thead>tr>th.warning{background-color:#fcf8e3;border-color:#fbeed5}#auto_tag_panel .table-hover>tbody>tr.warning:hover>td,#auto_tag_panel .table-hover>tbody>tr>td.warning:hover,#auto_tag_panel .table-hover>tbody>tr>th.warning:hover{background-color:#faf2cc;border-color:#f8e5be}@media (max-width:768px){#auto_tag_panel .table-responsive{width:100%;margin-bottom:15px;overflow-y:hidden;overflow-x:scroll;border:1px solid #ddd}#auto_tag_panel .table-responsive>.table{margin-bottom:0;background-color:#fff}#auto_tag_panel .table-responsive>.table>tbody>tr>td,#auto_tag_panel .table-responsive>.table>tbody>tr>th,#auto_tag_panel .table-responsive>.table>tfoot>tr>td,#auto_tag_panel .table-responsive>.table>tfoot>tr>th,#auto_tag_panel .table-responsive>.table>thead>tr>td,#auto_tag_panel .table-responsive>.table>thead>tr>th{white-space:nowrap}#auto_tag_panel .table-responsive>.table-bordered{border:0}#auto_tag_panel .table-responsive>.table-bordered>tbody>tr>td:first-child,#auto_tag_panel .table-responsive>.table-bordered>tbody>tr>th:first-child,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr>td:first-child,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr>th:first-child,#auto_tag_panel .table-responsive>.table-bordered>thead>tr>td:first-child,#auto_tag_panel .table-responsive>.table-bordered>thead>tr>th:first-child{border-left:0}#auto_tag_panel .table-responsive>.table-bordered>tbody>tr>td:last-child,#auto_tag_panel .table-responsive>.table-bordered>tbody>tr>th:last-child,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr>td:last-child,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr>th:last-child,#auto_tag_panel .table-responsive>.table-bordered>thead>tr>td:last-child,#auto_tag_panel .table-responsive>.table-bordered>thead>tr>th:last-child{border-right:0}#auto_tag_panel .table-responsive>.table-bordered>tbody>tr:last-child>td,#auto_tag_panel .table-responsive>.table-bordered>tbody>tr:last-child>th,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr:last-child>td,#auto_tag_panel .table-responsive>.table-bordered>tfoot>tr:last-child>th,#auto_tag_panel .table-responsive>.table-bordered>thead>tr:last-child>td,#auto_tag_panel .table-responsive>.table-bordered>thead>tr:last-child>th{border-bottom:0}}#auto_tag_panel .Select-placeholder,#auto_tag_panel .Select-value{padding-left:7px;padding-right:5px;white-space:nowrap;position:inherit;display:table-cell}#auto_tag_panel .Select-control{line-height:inherit;height:auto}#auto_tag_panel .Select-arrow-zone,#auto_tag_panel .Select-clear-zone,#auto_tag_panel .Select-placeholder,#auto_tag_panel .Select-value{line-height:inherit;height:auto;cursor:pointer}#auto_tag_panel .Select-value-label{text-shadow:0 1px 0 hsla(0,0%,100%,.8);color:#3e5e74}#auto_tag_panel .Select-input{line-height:inherit;height:auto;padding-left:0;padding-right:0}#auto_tag_panel .Select-arrow-zone,#auto_tag_panel .Select-clear-zone{padding:0 2px}#auto_tag_panel .Select-arrow-zone{padding-top:2px;padding-right:7px}#auto_tag_panel .Select-clear-zone{font-weight:700;padding-bottom:2px;padding-right:4px}#auto_tag_panel .Select-control{background:none transparent}#auto_tag_panel .Select-placeholder{font-size:inherit;color:inherit}#auto_tag_panel .Select-clear{font-size:10px;color:#000}#auto_tag_panel .Select-menu-outer{width:auto;margin-top:2px}#auto_tag_panel .Select-option{width:auto;font-size:11px;padding-top:3px;padding-bottom:3px}#auto_tag_panel .tag_button{display:inline-block;border-radius:30px;border:1px solid #70a0c2;background-image:-webkit-gradient(linear,left bottom,left top,from(#c0ddf2),to(#d6e8f5));background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#d6e8f5),color-stop(100%,#cbdbe6));background-image:-webkit-linear-gradient(top,#d6e8f5,#cbdbe6);background-image:-ms-linear-gradient(top,#d6e8f5 0,#cbdbe6 100%);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#5CACE6',endColorstr='#8DB9D9',GradientType=0);background:linear-gradient(top,#d6e8f5,#cbdbe6);color:#3e5e74!important;box-shadow:inset 0 1px 0 hsla(0,0%,100%,.5)}#auto_tag_panel .tag_button:hover{background-image:-webkit-gradient(linear,left bottom,left top,from(#93c7ec),to(#abd2ed));background:blue;background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#abd2ed),color-stop(100%,#93c7ec));background-image:-webkit-linear-gradient(top,#abd2ed,#93c7ec);background-image:-ms-linear-gradient(top,#abd2ed 0,#93c7ec 100%);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#4795CC',endColorstr='#3987BF',GradientType=0);background:linear-gradient(top,#abd2ed,#93c7ec);text-decoration:none;text-shadow:0 1px 0 hsla(0,0%,100%,.4);color:#365063}#auto_tag_panel .tag_button_inactive{background-image:-webkit-gradient(linear,left bottom,left top,from(#f2c0c8),to(#f5d6db))!important;background:blue!important;background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#f2c0c8),color-stop(100%,#f5d6db))!important;background-image:-webkit-linear-gradient(top,#edabb6,#f5d6db !important);background-image:-ms-linear-gradient(top,#edabb6 0,#f5d6db 100%)!important;background:linear-gradient(top,#edabb6,#f5d6db)!important;box-shadow:inset 0 1px 0 hsla(0,0%,100%,.5)}#auto_tag_panel .tag_button_inactive,#auto_tag_panel .tag_button_inactive:hover{filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#4795CC',endColorstr='#3987BF',GradientType=0)!important;text-decoration:none!important;text-shadow:0 1px 0 hsla(0,0%,100%,.4)!important;color:#63363d!important}#auto_tag_panel .tag_button_inactive:hover{background-image:-webkit-gradient(linear,left bottom,left top,from(#ec93a2),to(#edabb6))!important;background:blue;background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#edabb6),color-stop(100%,#ec93a2))!important;background-image:-webkit-linear-gradient(top,#edabb6,#ec93a2)!important;background-image:-ms-linear-gradient(top,#edabb6 0,#ec93a2 100%)!important;background:linear-gradient(top,#edabb6,#ec93a2)!important}#auto_tag_panel .tag_button_unmatched{background-image:-webkit-gradient(linear,left bottom,left top,from(#d0f2c0),to(#d6e8f5))!important;background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#e0f5d6),color-stop(100%,#d4e6cb))!important;background-image:-webkit-linear-gradient(top,#e0f5d6,#d4e6cb)!important;background-image:-ms-linear-gradient(top,#e0f5d6 0,#d4e6cb 100%)!important;filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#5CACE6',endColorstr='#8DB9D9',GradientType=0)!important;background:linear-gradient(top,#e0f5d6,#d4e6cb)!important;color:#252a22!important;box-shadow:inset 0 1px 0 hsla(0,0%,100%,.5)}#auto_tag_panel .autotag_tooltip{text-align:left;font-size:11px;padding:8px 30px 8px 6px}", ""]);
 
 	// exports
 
 
 /***/ },
 /* 448 */
-/***/ function(module, exports) {
-
-	module.exports = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAGCAYAAAD68A/GAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA5NpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpDMDk5ODU0N0U5MjA2ODExODhDNkJBNzRDM0U2QkE2NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo3NzdGNkM5Nzc4MTkxMUUxOTY2OEJEQjhGOUExQ0Y3RCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo3NzdGNkM5Njc4MTkxMUUxOTY2OEJEQjhGOUExQ0Y3RCIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M2ICgxMy4wIDIwMTIwMzA1Lm0uNDE1IDIwMTIvMDMvMDU6MjE6MDA6MDApICAoTWFjaW50b3NoKSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkMwOTk4NTQ3RTkyMDY4MTE4OEM2QkE3NEMzRTZCQTY3IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkMwOTk4NTQ3RTkyMDY4MTE4OEM2QkE3NEMzRTZCQTY3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+ywbCkAAAAIBJREFUeNpi1NfXb2BgYKhnwA8amV+8eMHw/PlzxVevXilwcnIyoGN3d/eDK1euXMD4//9/kA6HyZMnN5w+fdoe2RhTU9ODubm5IBsPwBSCFU+dOrXh7NmzYMXGxsYHs7OzwYrAsiCFSNihu7v7AAiD2MhyyCbCTYbSB5AFAQIMAPZnSFpKuI9/AAAAAElFTkSuQmCC"
-
-/***/ },
-/* 449 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -27876,7 +27870,7 @@ var autotagform =
 	exports.default = Token;
 
 /***/ },
-/* 450 */
+/* 449 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -27947,7 +27941,7 @@ var autotagform =
 	exports.default = Image;
 
 /***/ },
-/* 451 */
+/* 450 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -27993,7 +27987,7 @@ var autotagform =
 	exports.default = Tag;
 
 /***/ },
-/* 452 */
+/* 451 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -28021,7 +28015,7 @@ var autotagform =
 	exports.default = User;
 
 /***/ },
-/* 453 */
+/* 452 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -28060,7 +28054,7 @@ var autotagform =
 	}
 
 /***/ },
-/* 454 */
+/* 453 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -28097,7 +28091,7 @@ var autotagform =
 
 	var _reactRange2 = _interopRequireDefault(_reactRange);
 
-	var _reactTooltip = __webpack_require__(455);
+	var _reactTooltip = __webpack_require__(454);
 
 	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
 
@@ -28218,7 +28212,7 @@ var autotagform =
 	exports.default = AutoTagToolbar;
 
 /***/ },
-/* 455 */
+/* 454 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -28239,11 +28233,11 @@ var autotagform =
 
 	var _reactDom = __webpack_require__(348);
 
-	var _classnames = __webpack_require__(456);
+	var _classnames = __webpack_require__(455);
 
 	var _classnames2 = _interopRequireDefault(_classnames);
 
-	var _style = __webpack_require__(457);
+	var _style = __webpack_require__(456);
 
 	var _style2 = _interopRequireDefault(_style);
 
@@ -28873,7 +28867,7 @@ var autotagform =
 
 
 /***/ },
-/* 456 */
+/* 455 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -28922,7 +28916,7 @@ var autotagform =
 
 
 /***/ },
-/* 457 */
+/* 456 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -28933,7 +28927,7 @@ var autotagform =
 
 
 /***/ },
-/* 458 */
+/* 457 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -28974,11 +28968,11 @@ var autotagform =
 
 	var _reactDom2 = _interopRequireDefault(_reactDom);
 
-	var _AutoTagHeaderRow = __webpack_require__(459);
+	var _AutoTagHeaderRow = __webpack_require__(458);
 
 	var _AutoTagHeaderRow2 = _interopRequireDefault(_AutoTagHeaderRow);
 
-	var _AutoTagImageRow = __webpack_require__(469);
+	var _AutoTagImageRow = __webpack_require__(468);
 
 	var _AutoTagImageRow2 = _interopRequireDefault(_AutoTagImageRow);
 
@@ -29071,7 +29065,7 @@ var autotagform =
 	exports.default = AutoTagForm;
 
 /***/ },
-/* 459 */
+/* 458 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -29108,11 +29102,11 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _AutoTagHeaderRowTokenCell = __webpack_require__(460);
+	var _AutoTagHeaderRowTokenCell = __webpack_require__(459);
 
 	var _AutoTagHeaderRowTokenCell2 = _interopRequireDefault(_AutoTagHeaderRowTokenCell);
 
-	var _AutoTagHeaderRowTagCell = __webpack_require__(468);
+	var _AutoTagHeaderRowTagCell = __webpack_require__(467);
 
 	var _AutoTagHeaderRowTagCell2 = _interopRequireDefault(_AutoTagHeaderRowTagCell);
 
@@ -29178,7 +29172,7 @@ var autotagform =
 	exports.default = AutoTagHeaderRow;
 
 /***/ },
-/* 460 */
+/* 459 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -29219,11 +29213,11 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactTooltip = __webpack_require__(455);
+	var _reactTooltip = __webpack_require__(454);
 
 	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
 
-	var _reactSelect = __webpack_require__(461);
+	var _reactSelect = __webpack_require__(460);
 
 	var _reactSelect2 = _interopRequireDefault(_reactSelect);
 
@@ -29442,7 +29436,7 @@ var autotagform =
 	exports.default = AutoTagHeaderRowTokenCell;
 
 /***/ },
-/* 461 */
+/* 460 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -29463,27 +29457,27 @@ var autotagform =
 
 	var _reactDom2 = _interopRequireDefault(_reactDom);
 
-	var _reactInputAutosize = __webpack_require__(462);
+	var _reactInputAutosize = __webpack_require__(461);
 
 	var _reactInputAutosize2 = _interopRequireDefault(_reactInputAutosize);
 
-	var _classnames = __webpack_require__(463);
+	var _classnames = __webpack_require__(462);
 
 	var _classnames2 = _interopRequireDefault(_classnames);
 
-	var _utilsStripDiacritics = __webpack_require__(464);
+	var _utilsStripDiacritics = __webpack_require__(463);
 
 	var _utilsStripDiacritics2 = _interopRequireDefault(_utilsStripDiacritics);
 
-	var _Async = __webpack_require__(465);
+	var _Async = __webpack_require__(464);
 
 	var _Async2 = _interopRequireDefault(_Async);
 
-	var _Option = __webpack_require__(466);
+	var _Option = __webpack_require__(465);
 
 	var _Option2 = _interopRequireDefault(_Option);
 
-	var _Value = __webpack_require__(467);
+	var _Value = __webpack_require__(466);
 
 	var _Value2 = _interopRequireDefault(_Value);
 
@@ -30185,7 +30179,7 @@ var autotagform =
 	module.exports = exports['default'];
 
 /***/ },
-/* 462 */
+/* 461 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -30312,7 +30306,7 @@ var autotagform =
 	module.exports = AutosizeInput;
 
 /***/ },
-/* 463 */
+/* 462 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -30366,7 +30360,7 @@ var autotagform =
 
 
 /***/ },
-/* 464 */
+/* 463 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -30381,7 +30375,7 @@ var autotagform =
 	};
 
 /***/ },
-/* 465 */
+/* 464 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -30394,11 +30388,11 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _Select = __webpack_require__(461);
+	var _Select = __webpack_require__(460);
 
 	var _Select2 = _interopRequireDefault(_Select);
 
-	var _utilsStripDiacritics = __webpack_require__(464);
+	var _utilsStripDiacritics = __webpack_require__(463);
 
 	var _utilsStripDiacritics2 = _interopRequireDefault(_utilsStripDiacritics);
 
@@ -30553,7 +30547,7 @@ var autotagform =
 	module.exports = Async;
 
 /***/ },
-/* 466 */
+/* 465 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -30564,7 +30558,7 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _classnames = __webpack_require__(463);
+	var _classnames = __webpack_require__(462);
 
 	var _classnames2 = _interopRequireDefault(_classnames);
 
@@ -30632,7 +30626,7 @@ var autotagform =
 	module.exports = Option;
 
 /***/ },
-/* 467 */
+/* 466 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -30643,7 +30637,7 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _classnames = __webpack_require__(463);
+	var _classnames = __webpack_require__(462);
 
 	var _classnames2 = _interopRequireDefault(_classnames);
 
@@ -30719,7 +30713,7 @@ var autotagform =
 	module.exports = Value;
 
 /***/ },
-/* 468 */
+/* 467 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -30756,7 +30750,7 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactTooltip = __webpack_require__(455);
+	var _reactTooltip = __webpack_require__(454);
 
 	var _reactTooltip2 = _interopRequireDefault(_reactTooltip);
 
@@ -30904,7 +30898,7 @@ var autotagform =
 	exports.default = AutoTagHeaderRowTagCell;
 
 /***/ },
-/* 469 */
+/* 468 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -30941,11 +30935,11 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _AutoTagImageRowTokenCell = __webpack_require__(470);
+	var _AutoTagImageRowTokenCell = __webpack_require__(469);
 
 	var _AutoTagImageRowTokenCell2 = _interopRequireDefault(_AutoTagImageRowTokenCell);
 
-	var _AutoTagImageRowTagCell = __webpack_require__(471);
+	var _AutoTagImageRowTagCell = __webpack_require__(470);
 
 	var _AutoTagImageRowTagCell2 = _interopRequireDefault(_AutoTagImageRowTagCell);
 
@@ -31018,7 +31012,7 @@ var autotagform =
 	exports.default = AutoTagImageRow;
 
 /***/ },
-/* 470 */
+/* 469 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -31137,7 +31131,7 @@ var autotagform =
 	exports.default = AutoTagImageRowTokenCell;
 
 /***/ },
-/* 471 */
+/* 470 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -31242,7 +31236,7 @@ var autotagform =
 	exports.default = AutoTagImageRowTagCell;
 
 /***/ },
-/* 472 */
+/* 471 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -31287,11 +31281,11 @@ var autotagform =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactSelect = __webpack_require__(461);
+	var _reactSelect = __webpack_require__(460);
 
 	var _reactSelect2 = _interopRequireDefault(_reactSelect);
 
-	var _SetUtils = __webpack_require__(453);
+	var _SetUtils = __webpack_require__(452);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
