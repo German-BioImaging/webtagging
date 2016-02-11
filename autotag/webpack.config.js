@@ -5,8 +5,8 @@ var path = require('path');
 
 module.exports = {
   entry: {
-    'bundle.min': './src/main.jsx',
-    'bundle': './src/main.jsx'
+    'bundle.min': ['babel-polyfill', './src/main.jsx'],
+    'bundle': ['babel-polyfill', './src/main.jsx'],
   },
   output: {
     path: './static/autotag/js',
@@ -26,6 +26,7 @@ module.exports = {
         loader: 'babel-loader',
         exclude: /node_modules/,
         query: {
+          plugins: ['transform-runtime'],
           presets: ['react', 'es2015']
         }
       },
