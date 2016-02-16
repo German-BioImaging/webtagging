@@ -43,7 +43,7 @@ export default class AutoTagHeaderRowTagCell extends React.Component {
 
             <span className={"tag_button tag_button_unmatched"}
                data-tip
-               data-for={tooltipID}>{tag.value}
+               data-for={tooltipID}>{tag.value + "\u00a0" + "(" + tag.id + ")"}
             </span>
             <ReactTooltip id={tooltipID} place="top" type="dark" effect="solid" class={"autotag_tooltip"}>
               <ul>

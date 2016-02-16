@@ -30835,7 +30835,7 @@ var autotagform =
 	            { className: "tag_button tag_button_unmatched",
 	              'data-tip': true,
 	              'data-for': tooltipID },
-	            tag.value
+	            tag.value + ' ' + "(" + tag.id + ")"
 	          ),
 	          _react2.default.createElement(
 	            _reactTooltip2.default,
