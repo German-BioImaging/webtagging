@@ -33,15 +33,15 @@ export default class AutoTagHeaderRowTagCell extends React.Component {
     let tooltipID = 'tooltip-tag-' + tag.id;
 
     return (
-      <th className={"unmatchedTag"}>
-        <div className={'token'}>
+      <th>
+        <div className={'token'}>test
           <input type="checkbox"
                  checked={this.isChecked()}
                  onChange={this.handleCheckedChangeAll} />
         </div>
         <div className={'tag'}>
 
-            <span className={"tag_inner tag_button_unmatched"}
+            <span className={"tag_button tag_button_unmatched"}
                data-tip
                data-for={tooltipID}>{tag.value}
             </span>
