@@ -35,7 +35,7 @@ export default class AutoTagToolbar extends React.Component {
           top: '5px',
           left: '0px',
           right: '0px',
-          height: '29px',
+          height: '58px',
           marginRight: '10px'
         }}
         className={'toolbar'}

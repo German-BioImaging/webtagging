@@ -54,7 +54,7 @@ export default class AutoTagForm extends React.Component {
       <div style={{position:'absolute',
                    bottom:'25px',
                    left:'0px',
-                   top:'29px',
+                   top:'58px',
                    overflow:'auto',
                    marginTop:'0px',
                    right:'0px'}}>

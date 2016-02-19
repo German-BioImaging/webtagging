@@ -28141,7 +28141,7 @@ var autotagform =
 	            top: '5px',
 	            left: '0px',
 	            right: '0px',
-	            height: '29px',
+	            height: '58px',
 	            marginRight: '10px'
 	          },
 	          className: 'toolbar'
@@ -29035,7 +29035,7 @@ var autotagform =
 	        { style: { position: 'absolute',
 	            bottom: '25px',
 	            left: '0px',
-	            top: '29px',
+	            top: '58px',
 	            overflow: 'auto',
 	            marginTop: '0px',
 	            right: '0px' } },
