@@ -43,7 +43,7 @@ export default class AutoTagImageRow extends React.Component {
       <tr>
         {cellNodesToken}
         {cellNodesTag}
-        <td>{image.clientPath}&nbsp;({image.id})</td>
+        <td style={{whiteSpace: 'nowrap'}}>{image.clientPath}&nbsp;({image.id})</td>
       </tr>
     );
   }

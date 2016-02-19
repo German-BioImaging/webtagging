@@ -41,29 +41,35 @@ export default class AutoTagToolbar extends React.Component {
         className={'toolbar'}
       >
 
-        <span
-          style={{
-            float: 'left',
-            marginLeft: '20px',
-            fontSize: '12px',
-            fontWeight: 'bold'
-          }}
-        >
         {
           this.props.showUnmapped &&
-          <span>
-            <span data-tip data-for={'tooltip-toolbar-slider'} style={{marginRight: '10px'}}>Rarity Threshold</span>
-            {this.props.requiredTokenCardinality}
-            <Range className='slider'
-                   onChange={this.handleChangeRequiredTokenCardinality}
-                   type='range'
-                   value={this.props.requiredTokenCardinality}
-                   min={1}
-                   max={this.props.maxTokenCardinality}
-                   style={{marginLeft: '10px', marginTop: '-1px', position: 'relative', bottom: '-3px'}} />
-          </span>
+          <span
+            data-tip
+            data-for={'tooltip-toolbar-slider'}
+            style={{
+              float: 'left',
+              marginLeft: '10px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              lineHeight: '29px'
+            }}
+          >Rarity Threshold&nbsp;&nbsp;{this.props.requiredTokenCardinality}</span>
         }
-        </span>
+        {
+          this.props.showUnmapped &&
+          <Range className='slider'
+                 onChange={this.handleChangeRequiredTokenCardinality}
+                 type='range'
+                 value={this.props.requiredTokenCardinality}
+                 min={1}
+                 max={this.props.maxTokenCardinality}
+                 style={{
+                   float: 'left',
+                   marginLeft: '10px',
+                   lineHeight: '29px',
+                   paddingTop: '5px'
+                 }} />
+        }
 
         <ReactTooltip id={'tooltip-toolbar-slider'} place="bottom" type="dark" effect="float">
           Hide columns if token is found on fewer than this number of images
@@ -72,7 +78,7 @@ export default class AutoTagToolbar extends React.Component {
         <span
           data-tip
           data-for={'tooltip-toolbar-show-all'}
-          style={{fontSize: '12px', fontWeight: 'bold'}}
+          style={{fontSize: '12px', fontWeight: 'bold', lineHeight: '29px'}}
         >
           Show All Potential Tags
         </span>
