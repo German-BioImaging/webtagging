@@ -57,9 +57,9 @@ export default class AutoTagToolbar extends React.Component {
         }
         {
           this.props.showUnmapped &&
-          <Range className='slider'
-                 onChange={this.handleChangeRequiredTokenCardinality}
+          <input className='slider'
                  type='range'
+                 onChange={this.handleChangeRequiredTokenCardinality}
                  value={this.props.requiredTokenCardinality}
                  min={1}
                  max={this.props.maxTokenCardinality}
