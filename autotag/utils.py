@@ -1,39 +1,11 @@
 import omero
-import os
 from omero.rtypes import rlong
 
-def parse_path(path):
-    # TODO Should take arguments relating to regex
-    """ 
-    Splits the path up according to regex and returns lists of tokens
-    per seperator.
-    Hardcoded for now, one for the path, one for the name, one for the extension
-    """
-
-    # Split by '/' to get the path, then by '_'
-    path_tokens = []
-    temp_tokens = path.split(r'/')
-    file = temp_tokens.pop()
-    for token in temp_tokens:
-        path_tokens.extend(token.split(r'_'))
-
-    # Split by first '.' to get the extension (considered to be everything
-    # after the first '.'), then by '_'
-    ext_tokens = []
-    temp_tokens = file.rsplit(r'.')
-    file = temp_tokens.pop(0)
-    for token in temp_tokens:
-        ext_tokens.extend(token.split(r'_'))
-
-    #TODO Cope with multiple separators
-    file_tokens = file.split(r'_')
-
-    return path_tokens, file_tokens, ext_tokens
 
 def createTagAnnotationsLinks(conn, additions=[], removals=[]):
     """
-    Links or unlinks existing Images with existing Tag annotations 
-    
+    Links or unlinks existing Images with existing Tag annotations
+
     @param additions:       List of tags to add to images
     @param additions:       List of tags to remove from images
     """
@@ -72,42 +44,24 @@ def createTagAnnotationsLinks(conn, additions=[], removals=[]):
     if len(removals) > 0:
         # Get existing links belonging to current user (all at once to save
         # on queries)
-        allImageIds, allTagIds, allTokenNames = zip(*removals)
+        allImageIds, allTagIds = zip(*removals)
 
-        # removalsCheck has to exist because the check to see if the
-        # image/tagId combo was in the list, there is no knowledge of the
-        # tokenName
-        removalsCheck = zip(allImageIds, allTagIds)
         params = omero.sys.Parameters()
         params.theFilter = omero.sys.Filter()
         params.theFilter.ownerId = rlong(conn.getUserId())
+        # This query gets all the relationships between these images and these
+        # tags, otherwise we'd have to get them individually.
         links = conn.getAnnotationLinks("Image",
                                         parent_ids=list(allImageIds),
                                         ann_ids=list(allTagIds),
                                         params=params)
 
-        # The above returns image->tag links that were not specified for
-        # deletion, so only delete the appropriate ones 
+
+        # The above returns more image->tag links that were specified for
+        # deletion, so only delete the appropriate ones
         for link in links:
-            if (link.parent.id.val, link.child.id.val) in removalsCheck:
+            if (link.parent.id.val, link.child.id.val) in removals:
                 conn.deleteObjectDirect(link._obj)
-
-
-def getImageClientPath(imageWrapper):
-    qs = imageWrapper._conn.getQueryService()
-    params = omero.sys.ParametersI()
-    params.addLong("iid", imageWrapper.getId())
-    query = "select fse from FilesetEntry fse join fse.fileset as fs "\
-            "left outer join fs.images as image where image.id=:iid"
-
-    # this could be OMERO 4, so handle that
-    try:
-        r = qs.findAllByQuery(query, params, imageWrapper._conn.SERVICE_OPTS)
-        paths = [fs.clientPath.val for fs in r]
-        path = os.path.commonprefix(paths)
-    except:
-        path = ""
-    return path
 
 
 class BlitzSet(object):

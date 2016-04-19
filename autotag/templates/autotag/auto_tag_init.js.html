@@ -1,190 +1,73 @@
 {% load url from future %}
+
+<script src="{% static "autotag/js/bundle.min.js" %}"></script>
+
 <script>
 
 $(function() {
 
-    $("#auto_tag_panel").omeroweb_center_plugin({
-        plugin_index: {{ forloop.counter }},        // since we're in a Django template loop
-        empty_on_sel_change: false,                 // Do not completely erase content when changing selection
-        load_plugin_content: function(selected, dtype, oid){
+  var pluginIndex = {{ forloop.counter }};
+  var url="{% url 'webtagging_get_image_detail_and_tags' %}";
+  var urlUpdate="{% url 'webtagging_process_update' %}";
+  var urlCreateTag="{% url 'webtagging_create_tag' %}";
 
 
-            // If this is the old jstree, add some methods to the tree object to make it behave like the new jstree
-            // Also, define get_obj_id function different in each case
-            if ($.jstree.hasOwnProperty('version') && parseInt($.jstree.version.split('.')[0]) >= 3) {
+  var reactRender = function(datatree, selectedNode) {
+    var imageIds = [];
 
-                // this may have been called before datatree was initialised...
-                var datatree = $.jstree.reference('#dataTree');
-                if (!datatree) return;
-
-                var get_obj_id = function(obj) {
-                    var node = datatree.get_node(obj);
-                    return node.data.obj.id;
-                };
-            } else {
-
-                // this may have been called before datatree was initialised...
-                var datatree = $.jstree._focused();
-                if (!datatree) return;
-
-                datatree.get_selected = function() {
-                    return datatree.data.ui.selected;
-                };
-
-                datatree.get_parent = function(node) {
-                    return node.parent().parent();
-                };
-
-                datatree.get_type = function(node) {
-                    return datatree._get_type(node);
-                };
-
-                var get_obj_id = function(node) {
-                    return $(node).attr('id').split("-")[1];
-                };
-            }
-
-
-
-            // we use the tree to access selected objects, since we can traverse to check parents etc...
-            var tree_selected = datatree.get_selected();
-
-            //TODO if nothing selected, simply update selection
-            // var sel_objs = $("body").data("selected_objects.ome");
-            // if (sel_objs.length == 0) {
-            //     if (force_update === true) {
-            //         $("div#content_details").empty();
-            //         $("div#content_details").removeAttr('rel');
-            //     }
-            //     return;
-            // }
-
-            // TODO Multiple selection
-            // if (selected.length > 1) {
-            //     //TODO if any non-images are selected, clear the centre panel
-            //     if (selected.filter('li:not([id|=image])').length > 0) {
-            //         $("div#content_details").empty();
-            //         $("div#content_details").removeAttr('rel');
-            //         return;
-            //     }
-            // }
-
-            // handle single object (or multi-image) selection...
-            // These are not used as the list of ids and the type are passed into this function
-            // var oid = selected.attr('id');                              // E.g. 'dataset-501'
-            // var orel = selected.attr('rel').replace("-locked", "");     // E.g. 'dataset'
-
-            var standby = function() {
-                // Display waiting message
-                $("div#auto_tag_panel").html('<p class="loading_center">Loading... please wait. <img src ="{% static "webgateway/img/spinner_big.gif" %}"/></p>');
-            };
-
-            var standby_then_load = function(datatype, id) {
-                standby();
-                // Set datatype attribute
-                $("div#auto_tag_panel").attr('rel', datatype + '-' + id);
-
-                // Get and load actual contents
-                auto_tag_url = '{% url 'webtagging_index' %}auto_tag/' + datatype + '/'+id+'/';
-                $("div#auto_tag_panel").load(auto_tag_url);
-            };
-
-            var check_same = function(datatype, id) {
-                // Check if this data is already being displayed
-                var crel = $("div#auto_tag_panel").attr('rel');
-                if (crel !== undefined && crel.length > 0 ) {
-                    if (crel === datatype + '-' + id) {
-                        return true;
-                    }
-                }
-                return false;
-            };
-
-            // TODO Make this whole section less clumsy and unreadable. Some refactoring
-            var auto_tag_url;
-            if (dtype=="image") {
-                var pr = datatree.get_parent(tree_selected);
-                var prType = datatree.get_type(pr);
-                if (pr.length>0) {
-                    if (prType === 'dataset') {
-                        var parentId = get_obj_id(pr);
-                        if (check_same('dataset', parentId)) {
-                            //TODO Change selection
-                            return;
-                        }
-
-                        standby_then_load('dataset', parentId);
-
-                    } else if (prType === 'orphaned') {
-
-                        var exp = datatree.get_parent(tree_selected);
-
-                        if (exp.length>0) {
-                            var experimenterId = get_obj_id(exp);
-
-                            if (check_same('orphaned', experimenterId)) {
-                                //TODO Change selection
-                                return;
-                            }
-
-                            standby_then_load('orphaned', experimenterId);
-                        }
-                    } else if (prType === 'tag') {
-                        var tagId = get_obj_id(pr);
-                        if (check_same('tag', tagId)) {
-                            //TODO Change selection
-                            return;
-                        }
-
-                        standby_then_load('tag', tagId)
-
-                    } else {
-                        return;
-                    }
-                } else {
-                    return;
-                }
-
-            } else if (dtype=="dataset") {
-                // Check if this dataset is already being displayed
-                // If so, selecting dataset itself equates to no images selected
-                if (check_same('dataset', oid)) {
-                    //TODO Change selection to none
-                    return;
-                }
-
-                standby_then_load('dataset', oid);
-            } else if (dtype == "orphaned") {
-
-                // Get the experimenter that we want orphaned images for
-                var exp = datatree.get_parent(tree_selected);
-
-                if (exp.length>0) {
-                    var experimenterId = get_obj_id(exp);
-
-                    if (check_same('orphaned', experimenterId)) {
-                        //TODO Change selection
-                        return;
-                    }
-
-                    standby_then_load('orphaned', experimenterId);
-                }
-            } else if (dtype=="tag") {
-                // Check if this tag is already being displayed
-                // If so, selecting tag itself equates to no images selected
-                if (check_same('tag', oid)) {
-                    //TODO Change selection to none
-                    return;
-                }
-
-                standby_then_load('tag', oid);
-            } else {
-                return;
-            }
-
-        },
-        supported_obj_types: ['dataset', 'image', 'orphaned', 'tag']
+    $.each(selectedNode.children, function(index, child) {
+      imageIds.push(datatree.get_node(child).data.obj.id);
     });
+
+    autotagform.default(imageIds, url, urlUpdate, urlCreateTag);
+
+  };
+
+  $("#auto_tag_panel").omeroweb_center_plugin({
+    plugin_index: pluginIndex,        // From the Django template loop
+    empty_on_sel_change: false,       // Do not completely erase content when changing selection
+    load_plugin_content: function(selected, dtype, oid) {
+
+      // this may have been called before datatree was initialised...
+      var datatree = $.jstree.reference('#dataTree');
+      if (!datatree) return;
+
+      // We use the tree to access selected objects, since we can traverse
+      // to check parents etc...
+      // Note: We do not use the parameters selected, dtype or oid as
+      // it is easier to use the tree directly as these do not refer to
+      // a jstree node
+      var tree_selected = datatree.get_selected(true);
+
+      if (tree_selected === undefined) {
+        return;
+      }
+
+      // TODO Handle multi-selection
+      var selected = tree_selected[0];
+
+      // If the selected object is an image, return that image and its siblings
+      if (selected.type === 'image') {
+        // Set selected to be the parent so that lastSelected can be compared
+        // to the container
+        selected = datatree.get_node(datatree.get_parent(selected));
+        reactRender(datatree, selected);
+      }
+
+      // If the selected object is a Dataset, tag or orphaned return its children
+      else if (selected.type === 'dataset' || selected.type === 'orphaned' || selected.type === 'tag'){
+        // Make sure that the dataset is loaded
+        if (!datatree.is_loaded(selected)) {
+          datatree.load_node(selected, function(node, status){
+            reactRender(datatree, datatree.get_node(node));
+          });
+        } else {
+          reactRender(datatree, datatree.get_node(selected));
+        }
+      }
+    },
+    supported_obj_types: ['dataset', 'image', 'orphaned', 'tag']
+  });
 });
 
 </script>
