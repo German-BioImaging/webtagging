@@ -17,7 +17,7 @@ Documentation for using PYTHONPATH to allow omero to find webapps is [here](http
 Clone the repository in to a location outsude of the Omero.Web installation, e.g. ```~/Checkout/webtagging```
 
     cd Checkout
-    git clone git://github.com/dpwrussell/webtagging.git webtagging
+    git clone git://github.com/MicronOxford/webtagging.git webtagging
 
 Add this location to the PYTHONPATH
 
