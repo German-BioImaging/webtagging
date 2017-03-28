@@ -28,12 +28,12 @@
     <link rel="stylesheet" href="{% static "3rdparty/jquery.tablesorter-2.0.3/jquery.tablesorter.css" %}" type="text/css" media="screen"/>
     <link rel="stylesheet" href="{% static "tagsearch/3rd-party/chosen/chosen.css" %}" type="text/css" media="screen"/>
     <link rel="stylesheet" href="{% static "tagsearch/css/webtagging_search.css" %}" type="text/css" media="screen"/>
-  
+
   <!--[if lte IE 8]>
     <link rel="stylesheet" type="text/css" href="{% static "/webgateway/css/ome.table_ie.css" %}" />
   <![endif]-->
-  
-    
+
+
 {% endblock %}
 
 {% block script %}
@@ -48,7 +48,7 @@
     <script src="{% static "tagsearch/3rd-party/chosen.order.jquery.js" %}"></script>
 
     <script type="text/javascript">
-        $(document).ready(function() 
+        $(document).ready(function()
             {
                 $("#id_selectedTags").chosen({placeholder_text:'Choose tags'});
 
@@ -64,7 +64,7 @@
                 });
 
                 // Form Submission
-                $("#tagSearchForm").ajaxForm({  
+                $("#tagSearchForm").ajaxForm({
                   beforeSubmit: function() {
                     // prevent submitting the form again while waiting
                     $("div#content_details").html('<p>{% trans "Loading data... please wait" %} <img src ="{% static "webgateway/img/spinner.gif" %}"/></p>');
@@ -89,14 +89,14 @@
                       } else {
                         $(".tagnav-image span").html('0');
                       }
-   
+
                       if (data.preview) {
                         $("#filtersearch").removeClass('hidden');
                         OME.table_selection_changed();
                       } else {
                         $("#filtersearch").addClass('hidden');
                       }
-                    
+
 
                     // Hide any options that are no longer possible and
                     // show any that have become possible
@@ -119,13 +119,13 @@
 
                     // Restore the ordering
                     $('#id_selectedTags').setSelectionOrder(selection);
-                    
+
                   }
                 });
 
                 // Selection change
                 $( "#id_selectedTags" ).chosen().change(function(event, params) {
-                  
+
                   // Selection made
                   if (params.selected) {
                     // Instead of submitting, serialize the input data and load the url
@@ -147,12 +147,12 @@
                         if ($("#id_selectedTags option:selected").length) {
                           $("#tagSearchForm").submit();
                         }
-                        
+
                     } else {
                         $("div#content_details").empty();
                         $("#filtersearch").addClass('hidden');
                         // TODO Hide filter
-                    }   
+                    }
                 });
 
 
@@ -170,7 +170,7 @@
 <div id="user_selection">
 
 {% include "webclient/base/includes/group_user_dropdown.html" %}
-  
+
 </div>
 
 
@@ -204,7 +204,7 @@
               </ul>
 
           </div>
-      
+
 
       </form>
 
@@ -216,7 +216,7 @@
 {% block center %}
 
   <div id="center_panel_header">
-    
+
     <form class="search filtersearch hidden" id="filtersearch" action="#">
         <div>
             <label for="id_search">
@@ -229,7 +229,7 @@
         <img class="loader" alt="Loading" src="{% static "webgateway/img/spinner.gif" %}">
       </span>
     </form>
-    
+
   </div>
 
   <div id="content_details" class="center_panel_content"> </div>

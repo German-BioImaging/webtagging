@@ -1,8 +1,7 @@
 from django.http import (HttpResponse, HttpResponseNotAllowed,
-                         HttpResponseBadRequest)
+                         HttpResponseBadRequest, JsonResponse)
 
-from omeroweb.webclient.decorators import login_required, render_response
-from omeroweb.http import HttpJsonResponse
+from omeroweb.webclient.decorators import login_required
 
 import omero
 from omero.rtypes import rstring, rlong, wrap, unwrap
@@ -109,7 +108,7 @@ def create_tag(request, conn=None, **kwargs):
 
     tag = tree._marshal_tag(conn, e)
 
-    return HttpJsonResponse(
+    return JsonResponse(
         tag
     )
 
@@ -195,7 +194,7 @@ def get_image_detail_and_tags(request, conn=None, **kwargs):
     # Get the users from this group for reference
     users = tree.marshal_experimenters(conn, group_id=group_id, page=None)
 
-    return HttpJsonResponse(
+    return JsonResponse(
         {
             'tags': tags,
             'images': images,
