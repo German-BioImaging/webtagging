@@ -1,7 +1,6 @@
 import os
 import json
 from subprocess import check_call
-import xmlrpclib
 import git
 import requests
 from datetime import datetime
@@ -22,11 +21,11 @@ def read_version(path):
 
 
 def check_unreleased(version, package):
-    pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
-    latest = pypi.package_releases('omero-webtagging-%s' % package)
-    if len(latest) > 0:
-        return latest[0] != version
-    return True
+    url = 'https://pypi.python.org/pypi/omero-webtagging-%s/json' % package
+    info = requests.get(url)
+    if not info.ok:
+        print 'Package not registered on PyPi'
+    return version not in info.json()['releases'].keys()
 
 
 def cmds_exist():
@@ -37,6 +36,10 @@ def cmds_exist():
     ):
         print('twine command line tool missing')
         exit(1)
+
+
+def now():
+    return '%s+00:00' % datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
 
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -92,7 +95,7 @@ create_tag_payload = {
     'tagger': {
         'name': username,
         'email': email,
-        'date': datetime.utcnow().isoformat()
+        'date': now()
     }
 }
 print 'Creating tag...'
