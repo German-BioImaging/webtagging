@@ -5,7 +5,6 @@
 <script>
 
 $(function() {
-  console.log("auto_tag_init running");
   var pluginIndex = {{ forloop.counter }};
   var url="{% url 'webtagging_get_image_detail_and_tags' %}";
   var urlUpdate="{% url 'webtagging_process_update' %}";

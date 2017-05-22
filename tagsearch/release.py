@@ -24,7 +24,7 @@ def check_unreleased(version, package):
     url = 'https://pypi.python.org/pypi/omero-webtagging-%s/json' % package
     info = requests.get(url)
     if not info.ok:
-        print 'Package not registered on PyPi'
+        print 'Package not registered on PyPI'
     return version not in info.json()['releases'].keys()
 
 
