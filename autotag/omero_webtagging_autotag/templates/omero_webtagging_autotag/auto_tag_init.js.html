@@ -1,11 +1,10 @@
 {% load url from future %}
 
-<script src="{% static "autotag/js/bundle.min.js" %}"></script>
+<script src="{% static "omero_webtagging_autotag/js/bundle.min.js" %}"></script>
 
 <script>
 
 $(function() {
-
   var pluginIndex = {{ forloop.counter }};
   var url="{% url 'webtagging_get_image_detail_and_tags' %}";
   var urlUpdate="{% url 'webtagging_process_update' %}";

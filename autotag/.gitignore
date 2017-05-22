@@ -3,8 +3,8 @@
 *.pyc
 local_settings.py
 .DS_Store
-
-# Sublime
-*.sublime-project
-*.sublime-workspace
+*.egg-info
+static
+dist
 node_modules
+build
