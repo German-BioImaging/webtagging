@@ -135,10 +135,10 @@ for remote in repo.remotes:
 
 # Register and upload to pypi
 print 'Registering with pypi...'
-check_call(['twine', 'register', '-r', 'pypitest',
+check_call(['twine', 'register', '-r', 'pypi',
            'dist/omero-webtagging-%s-%s.tar.gz' % (PACKAGE, VERSION)])
 print 'Uploading to pypi...'
-check_call(['twine', 'upload', '-r', 'pypitest',
+check_call(['twine', 'upload', '-r', 'pypi',
            'dist/omero-webtagging-%s-%s.tar.gz' % (PACKAGE, VERSION)])
 
 print 'Successful release of %s %s' % (PACKAGE, VERSION)
