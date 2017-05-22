@@ -25,6 +25,7 @@ def check_unreleased(version, package):
     info = requests.get(url)
     if not info.ok:
         print 'Package not registered on PyPI'
+        exit(1)
     return version not in info.json()['releases'].keys()
 
 
