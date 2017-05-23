@@ -1,3 +1,4 @@
 include README.rst
 include LICENSE.txt
+include VERSION.txt
 recursive-include omero_webtagging_tagsearch *
