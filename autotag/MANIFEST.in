@@ -1,3 +1,4 @@
 include README.rst
 include LICENSE.txt
+include package.json
 recursive-include omero_webtagging_autotag *
