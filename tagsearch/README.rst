@@ -13,7 +13,7 @@ to install it manually as described `here <https://www.openmicroscopy.org/site/s
   omero config append omero.web.apps '"omero_webtagging_tagsearch"'
 
   # Add a top-link to tagsearch designer
-  omero config append omero.web.ui.top_links '["Tag Search", "omero_webtagging_tagsearch"]'
+  omero config append omero.web.ui.top_links '["Tag Search", "tagsearch"]'
 
 
 Documentation
