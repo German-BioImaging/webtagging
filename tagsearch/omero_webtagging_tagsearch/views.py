@@ -24,7 +24,7 @@ def index(request, conn=None, **kwargs):
 
     # TODO Hardcode menu as search until I figure out what to do with menu
     menu = 'search'
-    template = "tagsearch/tagnav.html"
+    template = "omero_webtagging_tagsearch/tagnav.html"
 
     # tree support
     init = {'initially_open': None, 'initially_select': []}
@@ -301,8 +301,10 @@ def tag_image_search(request, conn=None, **kwargs):
 
             context['manager'] = manager
 
-            html_response = render_to_string("tagsearch/search_details.html",
-                                             context)
+            html_response = render_to_string(
+                "omero_webtagging_tagsearch/search_details.html",
+                context
+            )
 
             middle = time.time()
 
