@@ -50,11 +50,20 @@
   background: url('../image/folder_image16.png') no-repeat;
 }
 
+.tagnav-screen .tagnav-icon {
+  background: url('../image/folder_screen16.png') no-repeat;
+}
+
+.tagnav-plate .tagnav-icon {
+  background: url('../image/folder_plate16.png') no-repeat;
+}
+
 .tagnav-image .tagnav-icon {
   background: url('../image/image16.png') no-repeat;
 }
 
-.tagnav-project span, .tagnav-dataset span , .tagnav-image span {
+.tagnav-project span, .tagnav-dataset span , .tagnav-screen span,
+.tagnav-plate span, .tagnav-image span {
     width: 25%;
     display: inline-block;
     color: hsl(210,10%,50%);

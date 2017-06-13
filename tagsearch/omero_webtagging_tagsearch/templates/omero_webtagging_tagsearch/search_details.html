@@ -134,7 +134,7 @@
             {% for c in manager.containers.screen %}
                 <tr id="screen-{{ c.id }}" class="{{ c.getPermsCss }}">
                     <td class="image">
-                        <img id="{{ c.id }}" src="{% static "webclient/image/folder_screen32.png" %}" alt="screen" title="{{ c.name }}"/>
+                        <img id="{{ c.id }}" src="{% static "webclient/image/folder_screen16.png" %}" alt="screen" title="{{ c.name }}"/>
                     </td>
                     <td class="desc"><a>{{ c.name|truncatebefor:"65" }}</a></td>
                     <td class="date">{{ c.creationEventDate }}</td>
@@ -160,7 +160,7 @@
             {% for c in manager.containers.plate %}
                 <tr id="plate-{{ c.id }}" class="{{ c.getPermsCss }}">
                     <td class="image">
-                        <img id="{{ c.id }}" src="{% static "webclient/image/folder_plate32.png" %}" alt="plate" title="{{ c.name }}"/>
+                        <img id="{{ c.id }}" src="{% static "webclient/image/folder_plate16.png" %}" alt="plate" title="{{ c.name }}"/>
                     </td>
                     <td class="desc"><a>{{ c.name|truncatebefor:"65" }}</a></td>
                     <td class="date">{{ c.creationEventDate }}</td>

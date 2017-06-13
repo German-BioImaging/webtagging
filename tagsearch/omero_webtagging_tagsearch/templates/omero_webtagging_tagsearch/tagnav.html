@@ -84,6 +84,18 @@
                         $(".tagnav-dataset span").html('0');
                       }
 
+                      if (data.screen_count > 0) {
+                        $(".tagnav-screen span").html(data.screen_count);
+                      } else {
+                        $(".tagnav-screen span").html('0');
+                      }
+
+                      if (data.plate_count > 0) {
+                        $(".tagnav-plate span").html(data.plate_count);
+                      } else {
+                        $(".tagnav-plate span").html('0');
+                      }
+
                       if (data.image_count > 0) {
                         $(".tagnav-image span").html(data.image_count);
                       } else {
@@ -200,6 +212,8 @@
               <ul>
                   <li class="tagnav-project"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
                   <li class="tagnav-dataset"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
+                  <li class="tagnav-screen"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
+                  <li class="tagnav-plate"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
                   <li class="tagnav-image"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
               </ul>
 
