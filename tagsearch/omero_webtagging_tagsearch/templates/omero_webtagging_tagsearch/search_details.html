@@ -134,7 +134,7 @@
             {% for c in manager.containers.screen %}
                 <tr id="screen-{{ c.id }}" class="{{ c.getPermsCss }}">
                     <td class="image">
-                        <img id="{{ c.id }}" src="{% static "webclient/image/folder_screen32.png" %}" alt="screen" title="{{ c.name }}"/>
+                        <img id="{{ c.id }}" src="{% static "webclient/image/folder_screen16.png" %}" alt="screen" title="{{ c.name }}"/>
                     </td>
                     <td class="desc"><a>{{ c.name|truncatebefor:"65" }}</a></td>
                     <td class="date">{{ c.creationEventDate }}</td>
@@ -160,12 +160,25 @@
             {% for c in manager.containers.plate %}
                 <tr id="plate-{{ c.id }}" class="{{ c.getPermsCss }}">
                     <td class="image">
-                        <img id="{{ c.id }}" src="{% static "webclient/image/folder_plate32.png" %}" alt="plate" title="{{ c.name }}"/>
+                        <img id="{{ c.id }}" src="{% static "webclient/image/folder_plate16.png" %}" alt="plate" title="{{ c.name }}"/>
                     </td>
                     <td class="desc"><a>{{ c.name|truncatebefor:"65" }}</a></td>
                     <td class="date">{{ c.creationEventDate }}</td>
                     <td class="group">{{ c.getDetails.group.name.val }}</td>
                     <td><a href="{% url 'webindex' %}?show=plate-{{ c.id }}" title="{% trans 'Show in hierarchy view' %}">
+                        {% trans "Browse" %}
+                    </a></td>
+                </tr>
+            {% endfor %}
+            {% for c in manager.containers.acquisition %}
+                <tr id="acquisition-{{ c.id }}" class="{{ c.getPermsCss }}">
+                    <td class="image">
+                        <img id="{{ c.id }}" src="{% static "webclient/image/run16.png" %}" alt="acquisition" title="{{ c.name }}"/>
+                    </td>
+                    <td class="desc"><a>{{ c.name|truncatebefor:"65" }}</a></td>
+                    <td class="date">{{ c.creationEventDate }}</td>
+                    <td class="group">{{ c.getDetails.group.name.val }}</td>
+                    <td><a href="{% url 'webindex' %}?show=acquisition-{{ c.id }}" title="{% trans 'Show in hierarchy view' %}">
                         {% trans "Browse" %}
                     </a></td>
                 </tr>

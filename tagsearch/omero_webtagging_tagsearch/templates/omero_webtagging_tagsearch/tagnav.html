@@ -73,15 +73,33 @@
                     $("div#content_details").html(data.html);
 
                       if (data.project_count > 0) {
-                        $(".tagnav-project span").html(data.project_count);
+                        $("#tagnav-project span").html(data.project_count);
                       } else {
-                          $(".tagnav-project span").html('0');
+                          $("#tagnav-project span").html('0');
                       }
 
                       if (data.dataset_count > 0) {
                         $(".tagnav-dataset span").html(data.dataset_count);
                       } else {
                         $(".tagnav-dataset span").html('0');
+                      }
+
+                      if (data.screen_count > 0) {
+                        $(".tagnav-screen span").html(data.screen_count);
+                      } else {
+                        $(".tagnav-screen span").html('0');
+                      }
+
+                      if (data.plate_count > 0) {
+                        $(".tagnav-plate span").html(data.plate_count);
+                      } else {
+                        $(".tagnav-plate span").html('0');
+                      }
+
+                      if (data.acquisition_count > 0) {
+                        $(".tagnav-acquisition span").html(data.acquisition_count);
+                      } else {
+                        $(".tagnav-acquisition span").html('0');
                       }
 
                       if (data.image_count > 0) {
@@ -198,9 +216,12 @@
               {{ tagnav_form.results_preview }}
               <h2>Results</h2>
               <ul>
-                  <li class="tagnav-project"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
-                  <li class="tagnav-dataset"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
-                  <li class="tagnav-image"><div class="tagnav-icon">&nbsp;</div><span>0</span></li>
+                  <li class="tagnav-project"><div class="tagnav-icon">&nbsp;</div>Project:&nbsp;<span>0</span></li>
+                  <li class="tagnav-dataset"><div class="tagnav-icon">&nbsp;</div>Dataset:&nbsp;<span>0</span></li>
+                  <li class="tagnav-screen"><div class="tagnav-icon">&nbsp;</div>Screen:&nbsp;<span>0</span></li>
+                  <li class="tagnav-plate"><div class="tagnav-icon">&nbsp;</div>Plate:&nbsp;<span>0</span></li>
+                  <li class="tagnav-acquisition"><div class="tagnav-icon">&nbsp;</div>Plate Acquisition/Run:&nbsp;<span>0</span></li>
+                  <li class="tagnav-image"><div class="tagnav-icon">&nbsp;</div>Image:&nbsp;<span>0</span></li>
               </ul>
 
           </div>

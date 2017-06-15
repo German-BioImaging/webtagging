@@ -197,6 +197,9 @@ def index(request, conn=None, **kwargs):
     tags = set(get_tags('Image'))
     tags.update(get_tags('Dataset'))
     tags.update(get_tags('Project'))
+    tags.update(get_tags('Plate'))
+    tags.update(get_tags('PlateAcquisition'))
+    tags.update(get_tags('Screen'))
 
     # Convert back to an ordered list and sort
     tags = list(tags)
@@ -266,20 +269,40 @@ def tag_image_search(request, conn=None, **kwargs):
         preview = False
         project_count = 0
         dataset_count = 0
+        screen_count = 0
+        plate_count = 0
+        acquisition_count = 0
         image_count = 0
 
         if selected_tags:
             image_ids = getObjectsWithAllAnnotations('Image', selected_tags)
             context['image_count'] = len(image_ids)
             image_count = len(image_ids)
+
             dataset_ids = getObjectsWithAllAnnotations('Dataset',
                                                        selected_tags)
             context['dataset_count'] = len(dataset_ids)
             dataset_count = len(dataset_ids)
+
             project_ids = getObjectsWithAllAnnotations('Project',
                                                        selected_tags)
             context['project_count'] = len(project_ids)
             project_count = len(project_ids)
+
+            screen_ids = getObjectsWithAllAnnotations('Screen',
+                                                      selected_tags)
+            context['screen_count'] = len(screen_ids)
+            screen_count = len(screen_ids)
+
+            plate_ids = getObjectsWithAllAnnotations('Plate',
+                                                     selected_tags)
+            context['plate_count'] = len(plate_ids)
+            plate_count = len(plate_ids)
+
+            acquisition_ids = getObjectsWithAllAnnotations('PlateAcquisition',
+                                                           selected_tags)
+            context['acquisition_count'] = len(acquisition_ids)
+            acquisition_count = len(acquisition_ids)
 
             if results_preview:
                 if image_ids:
@@ -294,8 +317,22 @@ def tag_image_search(request, conn=None, **kwargs):
                     projects = conn.getObjects('Project', ids=project_ids)
                     manager['containers']['project'] = list(projects)
 
+                if screen_ids:
+                    screens = conn.getObjects('Screen', ids=screen_ids)
+                    manager['containers']['screen'] = list(screens)
+
+                if plate_ids:
+                    plates = conn.getObjects('Plate', ids=plate_ids)
+                    manager['containers']['plate'] = list(plates)
+
+                if acquisition_ids:
+                    acquisitions = conn.getObjects('PlateAcquisition',
+                                                   ids=acquisition_ids)
+                    manager['containers']['acquisition'] = list(acquisitions)
+
                 manager['c_size'] = len(image_ids) + len(dataset_ids) + \
-                    len(project_ids)
+                    len(project_ids) + len(screen_ids) + len(plate_ids) + \
+                    len(acquisition_ids)
                 if manager['c_size'] > 0:
                     preview = True
 
@@ -345,6 +382,15 @@ def tag_image_search(request, conn=None, **kwargs):
             if project_ids:
                 remaining.update(getAnnotationsForObjects('Project',
                                                           project_ids))
+            if acquisition_ids:
+                remaining.update(getAnnotationsForObjects('PlateAcquisition',
+                                                          acquisition_ids))
+            if plate_ids:
+                remaining.update(getAnnotationsForObjects('Plate',
+                                                          plate_ids))
+            if screen_ids:
+                remaining.update(getAnnotationsForObjects('Screen',
+                                                          screen_ids))
 
             end = time.time()
             logger.info(
@@ -359,6 +405,9 @@ def tag_image_search(request, conn=None, **kwargs):
                                         "preview": preview,
                                         "project_count": project_count,
                                         "dataset_count": dataset_count,
+                                        "screen_count": screen_count,
+                                        "plate_count": plate_count,
+                                        "acquisition_count": acquisition_count,
                                         "image_count": image_count,
                                         "html": html_response}),
                             content_type="application/json")

@@ -50,18 +50,29 @@
   background: url('../image/folder_image16.png') no-repeat;
 }
 
+.tagnav-screen .tagnav-icon {
+  background: url('../image/folder_screen16.png') no-repeat;
+}
+
+.tagnav-plate .tagnav-icon {
+  background: url('../image/folder_plate16.png') no-repeat;
+}
+
+.tagnav-acquisition .tagnav-icon {
+  background: url('../image/run16.png') no-repeat;
+}
+
 .tagnav-image .tagnav-icon {
   background: url('../image/image16.png') no-repeat;
 }
 
-.tagnav-project span, .tagnav-dataset span , .tagnav-image span {
-    width: 25%;
-    display: inline-block;
+.tagnav-project, .tagnav-dataset, .tagnav-screen,
+.tagnav-plate, .tagnav-acquisition, .tagnav-image {
     color: hsl(210,10%,50%);
     font-size: 1.2em;
     text-shadow: 0 1px 0 white;
-    vertical-align: top;
+    vertical-align: middle;
     font-weight: bold;
     margin-left: 5px;
-    margin-top: 2px;
+    margin-top: 10px;
   }
