@@ -11,6 +11,6 @@ Requirements
 * Python 2.7 or later
 
 User Documentation
-=============
+==================
 
-http://www.openmicroscopy.org/site/support/partner/omero.webtagging
+http://help.openmicroscopy.org/web-tagging.html

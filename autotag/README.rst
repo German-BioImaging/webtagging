@@ -19,7 +19,7 @@ to install it manually as described `here <https://www.openmicroscopy.org/site/s
 Documentation
 =============
 
-Available on the `OMERO website <http://www.openmicroscopy.org/site/support/partner/omero.webtagging>`_.
+Available on the `OMERO website <http://help.openmicroscopy.org/web-tagging.html>`_.
 
 
 Development
