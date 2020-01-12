@@ -1,3 +1,4 @@
+from builtins import str, zip, object
 import omero
 from omero.rtypes import rlong
 
@@ -27,7 +28,7 @@ def createTagAnnotationsLinks(conn, additions=[], removals=[]):
             newLinks,
             conn.SERVICE_OPTS
         )
-    except omero.ValidationException, x:
+    except omero.ValidationException:
         # This will occur if the user has modified the tag landscape outside
         # of the auto-tagger while using the auto-tagger. Not likely to often
         # happen, but very possible.
@@ -38,13 +39,13 @@ def createTagAnnotationsLinks(conn, additions=[], removals=[]):
                     link,
                     conn.SERVICE_OPTS)
                 )
-            except omero.ValidationException, x2:
-                failed+=1
+            except omero.ValidationException:
+                failed += 1
 
     if len(removals) > 0:
         # Get existing links belonging to current user (all at once to save
         # on queries)
-        allImageIds, allTagIds = zip(*removals)
+        allImageIds, allTagIds = list(zip(*removals))
 
         params = omero.sys.Parameters()
         params.theFilter = omero.sys.Filter()
@@ -55,7 +56,6 @@ def createTagAnnotationsLinks(conn, additions=[], removals=[]):
                                         parent_ids=list(allImageIds),
                                         ann_ids=list(allTagIds),
                                         params=params)
-
 
         # The above returns more image->tag links that were specified for
         # deletion, so only delete the appropriate ones
@@ -97,8 +97,7 @@ class BlitzSet(object):
     def __init__(self, s=[]):
 
         self.__items = dict(
-            (self.__item_key(i), i) for
-             i in s
+            (self.__item_key(i), i) for i in s
         )
 
     def __item_key(self, item):
@@ -167,7 +166,7 @@ class BlitzSet(object):
 
         # Compute the intersection
         inter = BlitzSet()
-        for k in s1.iterkeys():
+        for k in s1.keys():
             if k in s2:
                 inter.add(s1[k])
         return inter
@@ -185,7 +184,7 @@ class BlitzSet(object):
         """
 
         inter = BlitzSet()
-        for k in self.__items.iterkeys():
+        for k in self.__items.keys():
             if k not in other.__items:
                 inter.add(self.__items[k])
         return inter
@@ -215,13 +214,13 @@ class BlitzSet(object):
         return self.symmetric_difference(other)
 
     def __str__(self):
-        return str(self.__items.values())
+        return str(list(self.__items.values()))
 
     def __contains__(self, item):
         return self.__item_key(item) in self.__items
 
     def __iter__(self):
-        return self.__items.itervalues()
+        return iter(self.__items.values())
 
     def __len__(self):
         return len(self.__items)

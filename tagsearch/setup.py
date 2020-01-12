@@ -50,7 +50,7 @@ setup(
         'Topic :: Text Processing :: Markup :: HTML'
     ],
     author=AUTHOR,
-    author_email='douglas_russell@hms.harvard.edu',
+    author_email='dpwrussell@gmail.com',
     license=LICENSE,
     url=HOMEPAGE,
     download_url='%s/archive/v%s.tar.gz' % (HOMEPAGE, VERSION),

@@ -1,5 +1,4 @@
-from django.forms import Form
-from django.forms import MultipleChoiceField, BooleanField
+from django.forms import Form, MultipleChoiceField, BooleanField
 
 
 class TagSearchForm(Form):

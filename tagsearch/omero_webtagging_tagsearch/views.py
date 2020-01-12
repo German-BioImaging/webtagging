@@ -1,18 +1,16 @@
+from __future__ import absolute_import
+from builtins import str
 import json
-
+import logging
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
-
 from omeroweb.webclient.decorators import render_response, login_required
 from omero.sys import Parameters
 from omero.rtypes import rlong, rlist
 from omeroweb.webclient.views import switch_active_group
 from omeroweb.webclient.forms import GlobalSearchForm, ContainerForm
-
 from .forms import TagSearchForm
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -33,14 +31,14 @@ def index(request, conn=None, **kwargs):
 
     # E.g. backwards compatible support for
     # path=project=51|dataset=502|image=607 (select the image)
-    path = request.REQUEST.get('path', '')
+    path = request.GET.get('path', '')
     i = path.split("|")[-1]
     if i.split("=")[0] in ('project', 'dataset', 'image', 'screen', 'plate',
                            'tag'):
         init['initially_select'].append(str(i).replace("=", '-'))
 
     # Now we support show=image-607|image-123  (multi-objects selected)
-    show = request.REQUEST.get('show', '')
+    show = request.GET.get('show', '')
     for i in show.split("|"):
         if i.split("-")[0] in ('project', 'dataset', 'image', 'screen',
                                'plate', 'tag', 'acquisition', 'run', 'well'):
@@ -65,9 +63,9 @@ def index(request, conn=None, **kwargs):
             # set context to 'cross-group'
             conn.SERVICE_OPTS.setOmeroGroup('-1')
             if first_obj == "tag":
-                first_sel = conn.getObject("TagAnnotation", long(first_id))
+                first_sel = conn.getObject("TagAnnotation", int(first_id))
             else:
-                first_sel = conn.getObject(first_obj, long(first_id))
+                first_sel = conn.getObject(first_obj, int(first_id))
                 initially_open_owner = first_sel.details.owner.id.val
                 # Wells aren't in the tree, so we need parent...
                 if first_obj == "well":
@@ -106,7 +104,7 @@ def index(request, conn=None, **kwargs):
         switch_active_group(request, first_sel.details.group.id.val)
 
     # search support
-    global_search_form = GlobalSearchForm(data=request.REQUEST.copy())
+    global_search_form = GlobalSearchForm(data=request.GET.copy())
     if menu == "search":
         if global_search_form.is_valid():
             init['query'] = global_search_form.cleaned_data['search_query']
@@ -132,20 +130,20 @@ def index(request, conn=None, **kwargs):
     users = tuple(users)
 
     # check any change in experimenter...
-    user_id = request.REQUEST.get('experimenter')
+    user_id = request.GET.get('experimenter')
     if initially_open_owner is not None:
         # if we're not already showing 'All Members'...
         if (request.session.get('user_id', None) != -1):
             user_id = initially_open_owner
     try:
-        user_id = long(user_id)
+        user_id = int(user_id)
     except:
         user_id = None
 
     # Check is user_id is in a current group
     if (user_id not in (
-            set(map(lambda x: x.id, leaders))
-            | set(map(lambda x: x.id, members))
+            set([x.id for x in leaders])
+            | set([x.id for x in members])
     ) and user_id != -1):
             # All users in group is allowed
         user_id = None
@@ -215,10 +213,10 @@ def index(request, conn=None, **kwargs):
     }
     context['groups'] = myGroups
     context['active_group'] = conn.getObject("ExperimenterGroup",
-                                             long(active_group))
+                                             int(active_group))
     for g in context['groups']:
         g.groupSummary()    # load leaders / members
-    context['active_user'] = conn.getObject("Experimenter", long(user_id))
+    context['active_user'] = conn.getObject("Experimenter", int(user_id))
 
     context['isLeader'] = conn.isLeader()
     context['current_url'] = url
@@ -237,7 +235,7 @@ def tag_image_search(request, conn=None, **kwargs):
     start = time.time()
     if request.method == "POST":
 
-        selected_tags = [long(x) for x in request.POST.getlist('selectedTags')]
+        selected_tags = [int(x) for x in request.POST.getlist('selectedTags')]
         results_preview = bool(request.POST.get('results_preview'))
 
         # validate experimenter is in the active group

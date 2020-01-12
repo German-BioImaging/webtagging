@@ -1,9 +1,7 @@
-from django.conf.urls import url, patterns
-
+from django.conf.urls import url
 from . import views
 
-urlpatterns = patterns(
-    'django.views.generic.simple',
+urlpatterns = [
 
     url(r'^get_image_detail_and_tags/$',
         views.get_image_detail_and_tags,
@@ -19,4 +17,4 @@ urlpatterns = patterns(
         views.create_tag,
         name="webtagging_create_tag"),
 
-)
+]

@@ -1,19 +1,15 @@
-from django.http import (HttpResponse, HttpResponseNotAllowed,
-                         HttpResponseBadRequest, JsonResponse)
-
-from omeroweb.webclient.decorators import login_required
-
-import omero
-from omero.rtypes import rstring, rlong, wrap, unwrap
-
-from utils import createTagAnnotationsLinks
-
+from __future__ import absolute_import
+from builtins import map, str
 from copy import deepcopy
-
-from omeroweb.webclient import tree
-
 import json
 import logging
+from django.http import (HttpResponse, HttpResponseNotAllowed,
+                         HttpResponseBadRequest, JsonResponse)
+from omeroweb.webclient.decorators import login_required
+import omero
+from omero.rtypes import rstring, unwrap
+from omeroweb.webclient import tree
+from .utils import createTagAnnotationsLinks
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +30,14 @@ def process_update(request, conn=None, **kwargs):
 
         additions.extend(
             [
-                (long(image_id), long(addition),)
+                (int(image_id), int(addition),)
                 for addition in image['additions']
             ]
         )
 
         removals.extend(
             [
-                (long(image_id), long(removal),)
+                (int(image_id), int(removal),)
                 for removal in image['removals']
             ]
         )
@@ -94,7 +90,7 @@ def create_tag(request, conn=None, **kwargs):
         where tag.id = :tid
         '''
 
-    params.add('tid', rlong(tag.id))
+    params.addLong('tid', tag.id)
 
     e = qs.projection(q, params, service_opts)[0]
     e = unwrap(e)
@@ -119,6 +115,7 @@ def _marshal_image(conn, row, tags_on_images):
     image['tags'] = tags_on_images.get(image['id']) or []
     return image
 
+
 @login_required(setGroupContext=True)
 def get_image_detail_and_tags(request, conn=None, **kwargs):
     # According to REST, this should be a GET, but because of the amount of
@@ -131,7 +128,7 @@ def get_image_detail_and_tags(request, conn=None, **kwargs):
     if not image_ids:
         return HttpResponseBadRequest('Image IDs required')
 
-    image_ids = map(long, image_ids)
+    image_ids = list(map(int, image_ids))
 
     group_id = request.session.get('active_group')
     if group_id is None:
@@ -147,7 +144,7 @@ def get_image_detail_and_tags(request, conn=None, **kwargs):
     # Set the desired group context
     service_opts.setOmeroGroup(group_id)
 
-    params.add('iids', wrap(image_ids))
+    params.addLongs('iids', image_ids)
 
     qs = conn.getQueryService()
 

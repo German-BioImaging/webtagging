@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import json
 from subprocess import check_call
@@ -25,9 +26,9 @@ def check_unreleased(version, package):
     url = 'https://pypi.python.org/pypi/omero-webtagging-%s/json' % package
     info = requests.get(url)
     if not info.ok:
-        print 'Package not registered on PyPI'
+        print('Package not registered on PyPI')
         exit(1)
-    return version not in info.json()['releases'].keys()
+    return version not in list(info.json()['releases'].keys())
 
 
 def cmds_exist():
@@ -63,28 +64,28 @@ auth = requests.auth.HTTPBasicAuth(username, token)
 
 # Ensure that there are no changes in this repository, staged or otherwise
 if repo.is_dirty():
-    print 'Repository has changes, commit changes before releasing for safety'
+    print('Repository has changes, commit changes before releasing for safety')
     exit(1)
 
 # Ensure the commit exists on gitHub
 existing_commit_url = '%s/commits/%s' % (GIT_API_URL, head)
 existing_commit = requests.get(existing_commit_url, auth=auth)
 if not existing_commit.ok:
-    print 'Commit is not on GitHub, push before releasing'
+    print('Commit is not on GitHub, push before releasing')
     exit(1)
 
 # Ensure this tag does not already exist
 existing_tag_url = '%s/git/refs/tags/%s-v%s' % (GIT_API_URL, PACKAGE, VERSION)
 existing_tag = requests.get(existing_tag_url, auth=auth)
 if existing_tag.status_code != 404:
-    print 'Tag already exists on GitHub, version number might need bumping'
+    print('Tag already exists on GitHub, version number might need bumping')
     exit(1)
 
 # Check pypi released version and build
 if check_unreleased(VERSION, PACKAGE):
     check_call(['python', 'setup.py', 'sdist'])
 else:
-    print 'This release already exists'
+    print('This release already exists')
     exit(1)
 
 # Create the tag on GitHub
@@ -100,10 +101,10 @@ create_tag_payload = {
         'date': now()
     }
 }
-print 'Creating tag...'
+print('Creating tag...')
 create_tag = requests.post(create_tag_url, json=create_tag_payload, auth=auth)
 if not create_tag.ok:
-    print 'Tag creation failed'
+    print('Tag creation failed')
     exit(1)
 
 # Create the tag reference on GitHub
@@ -112,10 +113,10 @@ create_ref_payload = {
     'ref': 'refs/tags/%s-v%s' % (PACKAGE, VERSION),
     'sha': create_tag.json()['sha']
 }
-print 'Creating tag reference...'
+print('Creating tag reference...')
 create_ref = requests.post(create_ref_url, json=create_ref_payload, auth=auth)
 if not create_ref.ok:
-    print 'Tag reference creation failed'
+    print('Tag reference creation failed')
     exit(1)
 
 # Create the release on gitHub
@@ -124,23 +125,23 @@ create_release_payload = {
     'tag_name': '%s-v%s' % (PACKAGE, VERSION),
     'name': '%s %s' % (PACKAGE, VERSION)
 }
-print 'Creating release...'
+print('Creating release...')
 create_release = requests.post(create_release_url,
                                json=create_release_payload, auth=auth)
 if not create_release.ok:
-    print 'Release creation failed'
+    print('Release creation failed')
     exit(1)
 
-print 'Fetching newly created references...'
+print('Fetching newly created references...')
 for remote in repo.remotes:
     remote.fetch()
 
 # Register and upload to pypi
-print 'Registering with pypi...'
+print('Registering with pypi...')
 check_call(['twine', 'register', '-r', 'pypi',
            'dist/omero-webtagging-%s-%s.tar.gz' % (PACKAGE, VERSION)])
-print 'Uploading to pypi...'
+print('Uploading to pypi...')
 check_call(['twine', 'upload', '-r', 'pypi',
            'dist/omero-webtagging-%s-%s.tar.gz' % (PACKAGE, VERSION)])
 
-print 'Successful release of %s %s' % (PACKAGE, VERSION)
+print('Successful release of %s %s' % (PACKAGE, VERSION))
