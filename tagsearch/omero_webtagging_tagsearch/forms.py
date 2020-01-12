@@ -9,5 +9,5 @@ class TagSearchForm(Form):
         super(TagSearchForm, self).__init__(*args, **kwargs)
 
         # Process Tags into choices (lists of tuples)
-        self.fields['selectedTags'].choices = tags
+        self.fields["selectedTags"].choices = tags
         self.conn = conn

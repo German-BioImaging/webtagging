@@ -3,8 +3,12 @@ from builtins import map, str
 from copy import deepcopy
 import json
 import logging
-from django.http import (HttpResponse, HttpResponseNotAllowed,
-                         HttpResponseBadRequest, JsonResponse)
+from django.http import (
+    HttpResponse,
+    HttpResponseNotAllowed,
+    HttpResponseBadRequest,
+    JsonResponse,
+)
 from omeroweb.webclient.decorators import login_required
 import omero
 from omero.rtypes import rstring, unwrap
@@ -18,7 +22,7 @@ logger = logging.getLogger(__name__)
 def process_update(request, conn=None, **kwargs):
 
     if not request.POST:
-        return HttpResponseNotAllowed('Methods allowed: POST')
+        return HttpResponseNotAllowed("Methods allowed: POST")
 
     images = json.loads(request.body)
 
@@ -26,27 +30,21 @@ def process_update(request, conn=None, **kwargs):
     removals = []
 
     for image in images:
-        image_id = image['imageId']
+        image_id = image["imageId"]
 
         additions.extend(
-            [
-                (int(image_id), int(addition),)
-                for addition in image['additions']
-            ]
+            [(int(image_id), int(addition),) for addition in image["additions"]]
         )
 
         removals.extend(
-            [
-                (int(image_id), int(removal),)
-                for removal in image['removals']
-            ]
+            [(int(image_id), int(removal),) for removal in image["removals"]]
         )
 
     # TODO Interface for createTagAnnotationsLinks is a bit nasty, but go
     # along with it for now
     createTagAnnotationsLinks(conn, additions, removals)
 
-    return HttpResponse('')
+    return HttpResponse("")
 
 
 @login_required(setGroupContext=True)
@@ -56,12 +54,12 @@ def create_tag(request, conn=None, **kwargs):
     """
 
     if not request.POST:
-        return HttpResponseNotAllowed('Methods allowed: POST')
+        return HttpResponseNotAllowed("Methods allowed: POST")
 
     tag = json.loads(request.body)
 
-    tag_value = tag['value']
-    tag_description = tag['description']
+    tag_value = tag["value"]
+    tag_description = tag["description"]
 
     tag = omero.model.TagAnnotationI()
     tag.textValue = rstring(str(tag_value))
@@ -75,7 +73,7 @@ def create_tag(request, conn=None, **kwargs):
 
     qs = conn.getQueryService()
 
-    q = '''
+    q = """
         select new map(tag.id as id,
                tag.textValue as textValue,
                tag.description as description,
@@ -88,31 +86,31 @@ def create_tag(request, conn=None, **kwargs):
                 and aalink2.parent.id=tag.id) as childCount)
         from TagAnnotation tag
         where tag.id = :tid
-        '''
+        """
 
-    params.addLong('tid', tag.id)
+    params.addLong("tid", tag.id)
 
     e = qs.projection(q, params, service_opts)[0]
     e = unwrap(e)
-    e = [e[0]["id"],
-         e[0]["textValue"],
-         e[0]["description"],
-         e[0]["ownerId"],
-         e[0]["tag_details_permissions"],
-         e[0]["ns"],
-         e[0]["childCount"]]
+    e = [
+        e[0]["id"],
+        e[0]["textValue"],
+        e[0]["description"],
+        e[0]["ownerId"],
+        e[0]["tag_details_permissions"],
+        e[0]["ns"],
+        e[0]["childCount"],
+    ]
 
     tag = tree._marshal_tag(conn, e)
 
-    return JsonResponse(
-        tag
-    )
+    return JsonResponse(tag)
 
 
 def _marshal_image(conn, row, tags_on_images):
     image = tree._marshal_image(conn, row[0:5])
-    image['clientPath'] = unwrap(row[5])
-    image['tags'] = tags_on_images.get(image['id']) or []
+    image["clientPath"] = unwrap(row[5])
+    image["tags"] = tags_on_images.get(image["id"]) or []
     return image
 
 
@@ -121,16 +119,16 @@ def get_image_detail_and_tags(request, conn=None, **kwargs):
     # According to REST, this should be a GET, but because of the amount of
     # data being submitted, this is problematic
     if not request.POST:
-        return HttpResponseNotAllowed('Methods allowed: POST')
+        return HttpResponseNotAllowed("Methods allowed: POST")
 
     image_ids = request.POST.getlist("imageIds[]")
 
     if not image_ids:
-        return HttpResponseBadRequest('Image IDs required')
+        return HttpResponseBadRequest("Image IDs required")
 
     image_ids = list(map(int, image_ids))
 
-    group_id = request.session.get('active_group')
+    group_id = request.session.get("active_group")
     if group_id is None:
         group_id = conn.getEventContext().groupId
 
@@ -144,7 +142,7 @@ def get_image_detail_and_tags(request, conn=None, **kwargs):
     # Set the desired group context
     service_opts.setOmeroGroup(group_id)
 
-    params.addLongs('iids', image_ids)
+    params.addLongs("iids", image_ids)
 
     qs = conn.getQueryService()
 
@@ -180,21 +178,17 @@ def get_image_detail_and_tags(request, conn=None, **kwargs):
 
     for e in qs.projection(q, params, service_opts):
         e = unwrap(e)[0]
-        d = [e["id"],
-             e["name"],
-             e["ownerId"],
-             e["image_details_permissions"],
-             e["filesetId"],
-             e["clientPath"]]
+        d = [
+            e["id"],
+            e["name"],
+            e["ownerId"],
+            e["image_details_permissions"],
+            e["filesetId"],
+            e["clientPath"],
+        ]
         images.append(_marshal_image(conn, d, tags_on_images))
 
     # Get the users from this group for reference
     users = tree.marshal_experimenters(conn, group_id=group_id, page=None)
 
-    return JsonResponse(
-        {
-            'tags': tags,
-            'images': images,
-            'users': users
-        }
-    )
+    return JsonResponse({"tags": tags, "images": images, "users": users})

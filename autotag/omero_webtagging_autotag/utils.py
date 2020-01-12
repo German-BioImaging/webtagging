@@ -25,8 +25,7 @@ def createTagAnnotationsLinks(conn, additions=[], removals=[]):
     try:
         # will fail if any of the links already exist
         savedLinks = conn.getUpdateService().saveAndReturnArray(
-            newLinks,
-            conn.SERVICE_OPTS
+            newLinks, conn.SERVICE_OPTS
         )
     except omero.ValidationException:
         # This will occur if the user has modified the tag landscape outside
@@ -35,9 +34,8 @@ def createTagAnnotationsLinks(conn, additions=[], removals=[]):
 
         for link in newLinks:
             try:
-                savedLinks.append(conn.getUpdateService().saveAndReturnObject(
-                    link,
-                    conn.SERVICE_OPTS)
+                savedLinks.append(
+                    conn.getUpdateService().saveAndReturnObject(link, conn.SERVICE_OPTS)
                 )
             except omero.ValidationException:
                 failed += 1
@@ -52,10 +50,12 @@ def createTagAnnotationsLinks(conn, additions=[], removals=[]):
         params.theFilter.ownerId = rlong(conn.getUserId())
         # This query gets all the relationships between these images and these
         # tags, otherwise we'd have to get them individually.
-        links = conn.getAnnotationLinks("Image",
-                                        parent_ids=list(allImageIds),
-                                        ann_ids=list(allTagIds),
-                                        params=params)
+        links = conn.getAnnotationLinks(
+            "Image",
+            parent_ids=list(allImageIds),
+            ann_ids=list(allTagIds),
+            params=params,
+        )
 
         # The above returns more image->tag links that were specified for
         # deletion, so only delete the appropriate ones
@@ -94,11 +94,10 @@ class BlitzSet(object):
     tag2.
 
     """
+
     def __init__(self, s=[]):
 
-        self.__items = dict(
-            (self.__item_key(i), i) for i in s
-        )
+        self.__items = dict((self.__item_key(i), i) for i in s)
 
     def __item_key(self, item):
         return item.getId()
