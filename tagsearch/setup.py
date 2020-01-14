@@ -57,7 +57,7 @@ setup(
     download_url="%s/archive/v%s.tar.gz" % (HOMEPAGE, VERSION),
     keywords=["OMERO.web", "webtagging", "tagsearch"],
     install_requires=REQUIREMENTS,
-    python_requires="~=3.6",
+    python_requires="~=3.5",
     include_package_data=True,
     zip_safe=False,
 )
