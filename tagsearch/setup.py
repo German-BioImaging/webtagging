@@ -24,6 +24,8 @@ AUTHOR = "D.P.W. Russell"
 LICENSE = "AGPL-3.0"
 HOMEPAGE = "https://github.com/MicronOxford/webtagging"
 
+REQUIREMENTS = ["omero-web>=5.6.0"]
+
 setup(
     name="omero-webtagging-tagsearch",
     packages=find_packages(exclude=["ez_setup"]),
@@ -40,7 +42,7 @@ setup(
         "Natural Language :: English",
         "Operating System :: OS Independent",
         "Programming Language :: JavaScript",
-        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 3",
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
         "Topic :: Internet :: WWW/HTTP :: WSGI",
@@ -54,7 +56,8 @@ setup(
     url=HOMEPAGE,
     download_url="%s/archive/v%s.tar.gz" % (HOMEPAGE, VERSION),
     keywords=["OMERO.web", "webtagging", "tagsearch"],
-    install_requires=[],
+    install_requires=REQUIREMENTS,
+    python_requires="~=3.6",
     include_package_data=True,
     zip_safe=False,
 )
