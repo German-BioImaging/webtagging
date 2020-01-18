@@ -22,7 +22,7 @@ def read_version(path):
 
 
 def check_unreleased(version, package):
-    url = "https://pypi.python.org/pypi/omero-webtagging-%s/json" % package
+    url = "https://pypi.org/pypi/omero-webtagging-%s/json" % package
     info = requests.get(url)
     if not info.ok:
         print("Package not registered on PyPI")
@@ -132,17 +132,7 @@ print("Fetching newly created references...")
 for remote in repo.remotes:
     remote.fetch()
 
-# Register and upload to pypi
-print("Registering with pypi...")
-check_call(
-    [
-        "twine",
-        "register",
-        "-r",
-        "pypi",
-        "dist/omero-webtagging-%s-%s.tar.gz" % (PACKAGE, VERSION),
-    ]
-)
+# Upload to pypi
 print("Uploading to pypi...")
 check_call(
     [
