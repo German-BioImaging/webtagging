@@ -1,5 +1,4 @@
-from django.forms import Form
-from django.forms import MultipleChoiceField, BooleanField
+from django.forms import Form, MultipleChoiceField, BooleanField
 
 
 class TagSearchForm(Form):
@@ -10,5 +9,5 @@ class TagSearchForm(Form):
         super(TagSearchForm, self).__init__(*args, **kwargs)
 
         # Process Tags into choices (lists of tuples)
-        self.fields['selectedTags'].choices = tags
+        self.fields["selectedTags"].choices = tags
         self.conn = conn
