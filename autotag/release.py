@@ -23,7 +23,7 @@ def read_version(path):
 
 
 def check_unreleased(version, package):
-    url = "https://pypi.python.org/pypi/omero-webtagging-%s/json" % package
+    url = "https://pypi.org/pypi/omero-webtagging-%s/json" % package
     info = requests.get(url)
     if not info.ok:
         print("Package not registered on PyPI")
