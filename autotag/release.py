@@ -133,17 +133,7 @@ print("Fetching newly created references...")
 for remote in repo.remotes:
     remote.fetch()
 
-# Register and upload to pypi
-print("Registering with pypi...")
-check_call(
-    [
-        "twine",
-        "register",
-        "-r",
-        "pypi",
-        "dist/omero-webtagging-%s-%s.tar.gz" % (PACKAGE, VERSION),
-    ]
-)
+# Upload to pypi
 print("Uploading to pypi...")
 check_call(
     [
