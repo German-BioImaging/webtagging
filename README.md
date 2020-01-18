@@ -27,6 +27,7 @@ Acknowledgements
 
 These plugins were developed originally with the
 support of [Micron Advanced Bioimaging Unit](https://micronoxford.com/)
+funded by the Wellcome Trust Strategic Award 091911,
 and [Open Microscopy](https://www.openmicroscopy.org/).
 
 Continued development was supported by [The Laboratory
@@ -35,4 +36,4 @@ of Systems Pharmacology, Harvard Medical School](https://hits.harvard.edu/the-pr
 
 Continued development was sponsored by
 [Micron Advanced Bioimaging Unit](https://micronoxford.com/)
-funded by the Wellcome trust Strategic Award 107457.
+funded by the Wellcome Trust Strategic Award 107457.
