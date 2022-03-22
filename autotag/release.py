@@ -18,7 +18,7 @@ def read_file(path, fname, content_type=None):
 
 
 def read_version(path):
-    d = read_file(DIR_PATH, "package.json", "json")
+    d = read_file(path, "package.json", "json")
     return d["version"]
 
 
