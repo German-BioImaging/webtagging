@@ -3,7 +3,7 @@ from builtins import str
 import json
 import logging
 from django.http import HttpResponse, HttpResponseRedirect
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.template.loader import render_to_string
 from omeroweb.webclient.decorators import render_response, login_required
 from omero.sys import Parameters
