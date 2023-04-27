@@ -102,6 +102,12 @@
                         $(".tagnav-acquisition span").html('0');
                       }
 
+                      if (data.well_count > 0) {
+                        $(".tagnav-well span").html(data.well_count);
+                      } else {
+                        $(".tagnav-well span").html('0');
+                      }
+
                       if (data.image_count > 0) {
                         $(".tagnav-image span").html(data.image_count);
                       } else {
@@ -221,6 +227,7 @@
                   <li class="tagnav-screen"><div class="tagnav-icon">&nbsp;</div>Screen:&nbsp;<span>0</span></li>
                   <li class="tagnav-plate"><div class="tagnav-icon">&nbsp;</div>Plate:&nbsp;<span>0</span></li>
                   <li class="tagnav-acquisition"><div class="tagnav-icon">&nbsp;</div>Plate Acquisition/Run:&nbsp;<span>0</span></li>
+                  <li class="tagnav-well"><div class="tagnav-icon">&nbsp;</div>Well:&nbsp;<span>0</span></li>
                   <li class="tagnav-image"><div class="tagnav-icon">&nbsp;</div>Image:&nbsp;<span>0</span></li>
               </ul>
 

@@ -207,6 +207,7 @@ def index(request, conn=None, **kwargs):
     tags.update(get_tags("Plate"))
     tags.update(get_tags("PlateAcquisition"))
     tags.update(get_tags("Screen"))
+    tags.update(get_tags("Well"))
 
     # Convert back to an ordered list and sort
     tags = list(tags)
@@ -280,6 +281,7 @@ def tag_image_search(request, conn=None, **kwargs):
         screen_count = 0
         plate_count = 0
         acquisition_count = 0
+        well_count = 0
         image_count = 0
 
         if selected_tags:
@@ -302,6 +304,10 @@ def tag_image_search(request, conn=None, **kwargs):
             plate_ids = getObjectsWithAllAnnotations("Plate", selected_tags)
             context["plate_count"] = len(plate_ids)
             plate_count = len(plate_ids)
+
+            well_ids = getObjectsWithAllAnnotations("Well", selected_tags)
+            context["well_count"] = len(well_ids)
+            well_count = len(well_ids)
 
             acquisition_ids = getObjectsWithAllAnnotations(
                 "PlateAcquisition", selected_tags
@@ -330,6 +336,10 @@ def tag_image_search(request, conn=None, **kwargs):
                     plates = conn.getObjects("Plate", ids=plate_ids)
                     manager["containers"]["plate"] = list(plates)
 
+                if well_ids:
+                    wells = conn.getObjects("Well", ids=well_ids)
+                    manager["containers"]["well"] = list(wells)
+
                 if acquisition_ids:
                     acquisitions = conn.getObjects(
                         "PlateAcquisition", ids=acquisition_ids
@@ -342,6 +352,7 @@ def tag_image_search(request, conn=None, **kwargs):
                     + len(project_ids)
                     + len(screen_ids)
                     + len(plate_ids)
+                    + len(well_ids)
                     + len(acquisition_ids)
                 )
                 if manager["c_size"] > 0:
@@ -392,6 +403,8 @@ def tag_image_search(request, conn=None, **kwargs):
                 remaining.update(getAnnotationsForObjects("Dataset", dataset_ids))
             if project_ids:
                 remaining.update(getAnnotationsForObjects("Project", project_ids))
+            if well_ids:
+                remaining.update(getAnnotationsForObjects("Well", well_ids))
             if acquisition_ids:
                 remaining.update(
                     getAnnotationsForObjects("PlateAcquisition", acquisition_ids)
@@ -419,6 +432,7 @@ def tag_image_search(request, conn=None, **kwargs):
                     "screen_count": screen_count,
                     "plate_count": plate_count,
                     "acquisition_count": acquisition_count,
+                    "well_count": well_count,
                     "image_count": image_count,
                     "html": html_response,
                 }

@@ -62,12 +62,17 @@
   background: url('../image/run16.png') no-repeat;
 }
 
+.tagnav-well .tagnav-icon {
+  background: url('../image/well16.png') no-repeat;
+}
+
 .tagnav-image .tagnav-icon {
   background: url('../image/image16.png') no-repeat;
 }
 
 .tagnav-project, .tagnav-dataset, .tagnav-screen,
-.tagnav-plate, .tagnav-acquisition, .tagnav-image {
+.tagnav-plate, .tagnav-acquisition, .tagnav-well,
+.tagnav-image {
     color: hsl(210,10%,50%);
     font-size: 1.2em;
     text-shadow: 0 1px 0 white;
