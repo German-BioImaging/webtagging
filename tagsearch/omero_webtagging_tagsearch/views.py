@@ -337,8 +337,11 @@ def tag_image_search(request, conn=None, **kwargs):
                     manager["containers"]["plate"] = list(plates)
 
                 if well_ids:
-                    wells = conn.getObjects("Well", ids=well_ids)
-                    manager["containers"]["well"] = list(wells)
+                    wells = []
+                    for well in  conn.getObjects("Well", ids=well_ids):
+                        well.name = well.getParent().name + f" - {well.getWellPos()}"
+                        wells.append(well)
+                    manager["containers"]["well"] = wells
 
                 if acquisition_ids:
                     acquisitions = conn.getObjects(
