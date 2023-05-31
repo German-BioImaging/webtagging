@@ -22,8 +22,21 @@ User Documentation
 
 http://help.openmicroscopy.org/web-tagging.html
 
+Project Maintenance
+===================
+
+I (Douglas) am no longer actively developing
+OMERO.webtagging. I am thrilled to hand over
+maintainence and development to
+[German Bioimaging](https://gerbi-gmb.de/i3dbio/i3dbio-about/).
+
 Acknowledgements
 ================
+
+OMERO.webtagging was created by Douglas P. W. Russell
+(dpwrussell@gmail.com) while at Oxford University and
+Harvard Medical School, then later extended by DPWR
+Consulting Ltd.
 
 These plugins were developed originally with the
 support of [Micron Advanced Bioimaging Unit](https://micronoxford.com/)
