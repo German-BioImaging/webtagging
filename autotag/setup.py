@@ -30,7 +30,7 @@ VERSION = read_version()
 DESCRIPTION = "OMERO webtagging autotag app"
 AUTHOR = "D.P.W. Russell"
 LICENSE = "AGPL-3.0"
-HOMEPAGE = "https://github.com/MicronOxford/webtagging"
+HOMEPAGE = "https://github.com/German-BioImaging/webtagging"
 
 REQUIREMENTS = ["omero-web>=5.6.0"]
 
