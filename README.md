@@ -1,8 +1,15 @@
 OMERO.webtagging
 ================
 
+Archived repository of the two tools autotag and tagsearch. Both tools have now their own repositories, [omero-autotag](https://github.com/German-BioImaging/omero-autotag) and [omero-tagsearch](https://github.com/German-BioImaging/omero-tagsearch).
+Please refer from now on to the new repositories.
+
+
+README Legacy
+================
+
 This is composed of two tools: [autotag](autotag/README.rst) and
-[tagsearch](tagsearch/README.rst).
+[tagsearch](tagsearch/README.rst)..
 
 Requirements
 ============

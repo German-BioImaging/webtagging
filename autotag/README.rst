@@ -1,3 +1,12 @@
+Archived autotag
+================
+
+Archived repository of autotag. The tool now have its own repository, [omero-autotag](https://github.com/German-BioImaging/omero-autotag).
+Please refer from now on to the new repository.
+
+README Legacy
+================
+
 Installation
 ============
 

@@ -1,3 +1,12 @@
+Archived tagsearch
+================
+
+Archived repository of tagsearch. The tool now have its own repository, [omero-tagsearch](https://github.com/German-BioImaging/omero-tagsearch).
+Please refer from now on to the new repository.
+
+README Legacy
+================
+
 Installation
 ============
 
